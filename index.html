@@ -61,13 +61,29 @@ dialog.viewer{position:fixed;inset:0 0 0 auto;max-height:none;height:100vh;max-w
 .workspace-note{margin-top:18px;padding:13px 16px;background:var(--accent-soft);border-radius:10px;font-size:12px;line-height:1.65}
 @media(max-width:790px){.side{overflow:visible}.workspace-metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.workspace-stat{padding:13px}.workspace-stat strong{font-size:23px}.workspace-stat span{font-size:10px}.workspace-empty{padding:36px 18px}.workitem{font-size:13px}}
 @media(max-width:470px){.workspace-metrics{grid-template-columns:1fr}.workspace-stat{display:flex;align-items:center;justify-content:space-between;gap:10px}.workspace-stat strong{margin:0;order:2}}
+
+/* Acompanhamento efetivo: registros, filtros, indicadores e backup */
+.overview-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:26px 0 30px}
+.overview-card{border:1px solid var(--line);background:var(--card);border-radius:13px;padding:17px 19px;box-shadow:var(--shadow)}
+.overview-card label{display:block;font-size:12px;color:var(--muted);font-weight:650}.overview-card strong{font-size:29px;display:block;margin-top:5px;line-height:1.25}.overview-card small{display:block;color:var(--muted);font-size:11px;margin-top:4px}
+.overview-library-heading{margin:24px 0 4px;border-top:1px solid var(--line);padding-top:17px}.overview-library-heading h2{font-size:19px;margin:0}.overview-library-heading p{margin:2px 0;color:var(--muted);font-size:12px}
+.workspace-metrics.performance-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+.workspace-stat strong{color:var(--text)}.workspace-stat strong.nodata{color:var(--muted)}
+.statusbar{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 15px}.statusbutton{border:1px solid var(--line);background:var(--card);border-radius:9px;color:var(--muted);padding:8px 14px;font-size:12px;font-weight:700}.statusbutton[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.panel-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 17px}.panel-actions .smallbtn{padding:9px 12px}
+.regform{padding:18px 22px;background:var(--card);border:1px solid var(--line);border-radius:13px;margin:0 0 18px}.regform h2{font-size:16px;margin:0 0 13px}.formgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.formgrid .wide{grid-column:1/-1}.regform label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:650;color:var(--muted)}.regform input,.regform select,.regform textarea{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px 11px;min-width:0;font:inherit;font-size:13px}.regform textarea{min-height:66px;resize:vertical}.formfooter{display:flex;justify-content:flex-end;gap:10px;align-items:center;margin-top:15px}.regform p.help,.datahelp{font-size:11px;line-height:1.6;color:var(--muted);margin:11px 0 2px}
+.log-list{display:flex;flex-direction:column}.log-entry{padding:16px 20px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:14px}.log-entry:first-child{border-top:0}.log-entry h3{font-size:13px;margin:0 0 5px}.log-entry p{font-size:12px;color:var(--muted);margin:3px 0;line-height:1.5}.log-entry .smallbtn{font-size:11px;padding:7px 9px}.logbadge{display:inline-block;padding:2px 7px;background:var(--accent-soft);color:var(--accent);border-radius:6px;font-size:11px;font-weight:700;margin-right:5px}.emptytable{text-align:center;padding:38px 18px;color:var(--muted);font-size:13px}
+.insights{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.insight-panel{border:1px solid var(--line);border-radius:13px;background:var(--card);overflow:hidden}.insight-panel h2{font-size:15px;margin:0;padding:14px 17px;border-bottom:1px solid var(--line)}.insight-panel .emptytable{padding:25px 12px}.insight-panel .log-entry{padding:12px 16px}
+.statusnote{font-size:11px;color:var(--muted);margin:12px 0 18px;line-height:1.55}
+@media(max-width:880px){.overview-grid{grid-template-columns:1fr}.formgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.workspace-metrics.performance-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.formgrid{grid-template-columns:1fr}.insights{grid-template-columns:1fr}.workspace-metrics.performance-metrics{grid-template-columns:1fr 1fr}.log-entry{padding:14px}.overview-grid{gap:8px}}
 </style>
 </head>
 <body>
 <div class="app" id="app">
   <aside class="side">
-    <div class="identity"><div class="mark">CE</div><div><h2>Central de Estudos</h2><p>Biblioteca principal de comandos</p></div></div>
-    <div class="menuwrap"><div class="sidelabel">Menu</div><button class="navitem rootitem active" id="homeNav" data-home="1"><span><span class="navicon">⌂</span>Principal</span></button><details class="navgroup" name="secao" open><summary class="navsummary"><span><span class="navicon">☰</span>Comandos</span><span class="navcount" id="menuCommandCount">20</span></summary><nav id="subjectNav" class="subnav"></nav></details></div>
+    <div class="identity"><div class="mark">CE</div><div><h2>Central de Estudos</h2><p>Acompanhamento integrado de estudo</p></div></div>
+    <div class="menuwrap"><div class="sidelabel">Menu</div><button class="navitem rootitem active" id="homeNav" data-home="1"><span><span class="navicon">⌂</span>Visão Geral</span></button><details class="navgroup" name="secao" open><summary class="navsummary"><span><span class="navicon">☰</span>Comandos</span><span class="navcount" id="menuCommandCount">20</span></summary><nav id="subjectNav" class="subnav"></nav></details></div>
     <details class="navgroup" name="secao" data-navgroup="Estudos"><summary class="navsummary"><span><span class="navicon" aria-hidden="true">◫</span>Estudos</span><span class="groupcaret" aria-hidden="true">›</span></summary><nav class="subnav worknav" aria-label="Estudos">
     <button class="navitem workitem" type="button" data-view="estudos-geral"><span>Quadro Geral</span></button>
     <button class="navitem workitem" type="button" data-view="estudos-aprofundamento"><span>Estudos Iniciais – Aprofundamento</span></button>
@@ -97,7 +113,9 @@ dialog.viewer{position:fixed;inset:0 0 0 auto;max-height:none;height:100vh;max-w
     <div id="homePage">
     <div class="toprow"><div class="eyebrow">CENTRAL DE ESTUDOS · CÂMARA DOS DEPUTADOS</div><div class="topaction"><button class="quietbutton" id="themeBtn">◐ Aparência</button><button class="quietbutton" id="exportAll">⇩ Exportar tudo (.md)</button></div></div>
     <h1>Central de Estudos</h1>
-    <p class="sub">Sua biblioteca principal de comandos. Navegue pelo menu lateral, encontre os comandos por disciplina, modalidade ou palavra-chave e abra o texto integral sempre que precisar.</p>
+    <p class="sub">Acompanhe o planejamento e a realização dos estudos iniciais, o calendário de revisões e o desempenho nas questões do ChatGPT e do TEC. Identifique avanços, dificuldades e prioridades de reforço em uma visão integrada da preparação para a Câmara dos Deputados.</p>
+    <div class="overview-grid" id="overviewStats" aria-label="Panorama do estudo"></div>
+    <div class="overview-library-heading"><h2>Biblioteca de Comandos</h2><p>Acesse os modelos completos organizados por disciplina.</p></div>
     <div class="metrics"><div class="metric"><strong id="totalCount">20</strong><span>Comandos completos</span></div><div class="metric"><strong id="subjectCount">05</strong><span>Matérias cadastradas</span></div><div class="metric"><strong id="kindCount">04</strong><span>Modalidades cadastradas</span></div></div>
     <div class="guide"><strong>Critérios da metodologia:</strong> escolha Certo/Errado à esquerda + marcação independente de <strong>Inseguro à direita</strong>; no estudo inicial, correção seletiva de erros e acertos inseguros; na revisão, correção integrada à leitura comentada (regimentos/PL) ou ao resumo teórico (Ciência Política). Erros provocam reforço direcionado.</div>
     <div class="toolbar"><label class="search"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="query" type="search" placeholder="Buscar nome, número ou conteúdo do comando…" aria-label="Pesquisar comandos"></label><div class="filters" aria-label="Filtrar por tipo"><button data-kind="Todos" class="chip active">Todos</button><button data-kind="Estudo inicial" class="chip">Estudo inicial</button><button data-kind="Revisão" class="chip">Revisão</button><button data-kind="Questionário" class="chip">Questionários</button></div></div>
@@ -132,6 +150,7 @@ const label=(k)=>k==='Estudo inicial'?'Professor · estudo inicial':k==='Revisã
 const workspaceViews=[{"id":"estudos-geral","section":"Estudos","title":"Quadro Geral","description":"Acompanhe o andamento dos estudos iniciais, os tópicos realizados e os conteúdos ainda pendentes."},{"id":"estudos-aprofundamento","section":"Estudos","title":"Estudos Iniciais – Aprofundamento","description":"Área destinada ao registro das aulas teóricas, do aprofundamento e da cobertura dos tópicos."},{"id":"estudos-questoes","section":"Estudos","title":"Estudos Iniciais – Questões","description":"Área de acompanhamento das questões dos estudos iniciais, acertos, erros e respostas inseguras."},{"id":"revisoes-geral","section":"Revisões","title":"Quadro Geral","description":"Visão consolidada do ciclo de revisões D+1, D+7 e D+30, com datas programadas e realizadas."},{"id":"revisoes-dia","section":"Revisões","title":"Revisões do dia","description":"Consulte as revisões programadas para hoje e acompanhe o cumprimento das atividades."},{"id":"revisoes-d1","section":"Revisões","title":"Revisões D+1","description":"Acompanhe as revisões D+1 vinculadas às datas efetivas dos estudos iniciais."},{"id":"revisoes-d7","section":"Revisões","title":"Revisões D+7","description":"Acompanhe as revisões D+7 vinculadas às datas efetivas dos estudos iniciais."},{"id":"revisoes-d30","section":"Revisões","title":"Revisões D+30","description":"Acompanhe as revisões D+30 vinculadas às datas efetivas dos estudos iniciais."},{"id":"desempenho-geral","section":"Desempenho","title":"Quadro Geral","description":"Acompanhe os resultados de todas as disciplinas e identifique evolução, inseguranças e pontos de reforço."},{"id":"desempenho-regimentos","section":"Desempenho","title":"RICD/ PL/RCCN/","description":"Acompanhamento de desempenho da disciplina RICD/ PL/RCCN/, com resultados de questões e evolução das revisões."},{"id":"desempenho-lpling","section":"Desempenho","title":"LP/LING","description":"Acompanhamento de desempenho da disciplina LP/LING, com resultados de questões e evolução das revisões."},{"id":"desempenho-rfia","section":"Desempenho","title":"RFIA","description":"Acompanhamento de desempenho da disciplina RFIA, com resultados de questões e evolução das revisões."},{"id":"desempenho-cp","section":"Desempenho","title":"CP","description":"Acompanhamento de desempenho da disciplina CP, com resultados de questões e evolução das revisões."},{"id":"desempenho-dc","section":"Desempenho","title":"DC","description":"Acompanhamento de desempenho da disciplina DC, com resultados de questões e evolução das revisões."},{"id":"desempenho-da","section":"Desempenho","title":"DA","description":"Acompanhamento de desempenho da disciplina DA, com resultados de questões e evolução das revisões."},{"id":"desempenho-adm","section":"Desempenho","title":"ADM","description":"Acompanhamento de desempenho da disciplina ADM, com resultados de questões e evolução das revisões."},{"id":"desempenho-ti","section":"Desempenho","title":"TI","description":"Acompanhamento de desempenho da disciplina TI, com resultados de questões e evolução das revisões."}];
 const workspaceById=Object.fromEntries(workspaceViews.map(v=>[v.id,v]));
 function showPage(view='principal', updateHash=true){
+  showEntryForm='';
   activeView=(view==='principal'||workspaceById[view])?view:'principal';
   const isHome=activeView==='principal';
   g('homePage').hidden=!isHome;
@@ -150,21 +169,142 @@ function showPage(view='principal', updateHash=true){
   if(updateHash)try{history.replaceState(null,'',isHome?location.pathname+location.search:'#'+activeView)}catch(e){}
   window.scrollTo({top:0,behavior:'instant'});
 }
-function renderWorkspace(v){
-  const metrics=v.section==='Estudos'?['Planejados','Concluídos','Em andamento']:
-    v.section==='Revisões'?['Programadas','Realizadas','Pendentes']:
-    ['Questões respondidas','Aproveitamento','Acertos inseguros'];
-  const esc=escapeHtml;
-  g('workspacePage').innerHTML=`<div class="workspace-eyebrow">${esc(v.section)} / ${esc(v.title)}</div>
-    <h1 id="workspaceTitle">${esc(v.title)}</h1>
-    <p class="workspace-summary">${esc(v.description)}</p>
-    <div class="workspace-metrics">${metrics.map(x=>`<div class="workspace-stat"><span>${esc(x)}</span><strong aria-label="Sem dados">—</strong></div>`).join('')}</div>
-    <div class="workspace-panel"><div class="workspace-panel-header"><h2>Registros</h2><p>Dados confirmados, sem estimativas artificiais</p></div>
-    <div class="workspace-empty"><div class="workspace-empty-icon" aria-hidden="true">▤</div>
-    <h3>Nenhum registro cadastrado</h3>
-    <p>Esta área já está disponível na Central de Estudos. Ainda não existem registros de execução ou resultados associados a ela.</p></div></div>
-    <p class="workspace-note">O menu e a área de consulta estão prontos. Os dados de estudo, revisão e desempenho serão incorporados posteriormente, com base em informações reais, sem presumir atividades concluídas ou resultados.</p>`;
+
+const DATA_KEY='central-estudos-registros-v1';
+const DISCIPLINES=['RICD','PL','RCCN','LP/LING','RFIA','CP','DC','DA','ADM','TI'];
+let studyData={studies:[],reviews:[],attempts:[],classifications:[]};
+const viewFilters={};
+let showEntryForm='';
+let dataStorageAvailable=true;
+try{
+  const x=JSON.parse(localStorage.getItem(DATA_KEY)||'null');
+  if(x&&typeof x==='object')for(const k of Object.keys(studyData))if(Array.isArray(x[k]))studyData[k]=x[k];
+}catch(e){dataStorageAvailable=false}
+function writeData(){try{localStorage.setItem(DATA_KEY,JSON.stringify(studyData));dataStorageAvailable=true;return true}catch(e){dataStorageAvailable=false;toast('Não foi possível salvar neste navegador. Exporte uma cópia.');return false}}
+function todayISO(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+const dateBR=(date)=>date&&/^\d{4}-\d{2}-\d{2}$/.test(date)?date.split('-').reverse().join('/'):'Data não informada';
+const formatNum=n=>Number(n).toLocaleString('pt-BR');
+const formatPercent=v=>v===null?'—':`${(v*100).toLocaleString('pt-BR',{maximumFractionDigits:1,minimumFractionDigits:1})}%`;
+const safeNum=n=>(Number.isSafeInteger(+n)&&+n>=0)?+n:0;
+const subjOpts=(selected='')=>DISCIPLINES.map(k=>`<option value="${k}" ${k===selected?'selected':''}>${escapeHtml(k)}</option>`).join('');
+function freshId(){return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8)}
+function statusReview(x){if(x.status==='Realizada')return 'Realizadas';if(x.status==='Pendente'||(x.plannedDate&&x.plannedDate<todayISO()))return 'Pendentes';return 'Programadas'}
+function statusStudy(x){return x.status==='Concluído'?'Concluídos':'Planejados'}
+function metricsAttempt(list){
+ const out={chat:0,tec:0,cs:0,cu:0,ws:0,wu:0,correctOther:0,wrongOther:0,all:0,correct:0,chatCorrect:0,tecCorrect:0};
+ for(const x of list){const n=safeNum(x.cs)+safeNum(x.cu)+safeNum(x.ws)+safeNum(x.wu)+safeNum(x.correctOther)+safeNum(x.wrongOther); const correct=safeNum(x.cs)+safeNum(x.cu)+safeNum(x.correctOther);out.all+=n;out.correct+=correct;const source=x.source==='TEC'?'tec':'chat';out[source]+=n;out[source+'Correct']+=correct;for(const k of ['cs','cu','ws','wu','correctOther','wrongOther'])out[k]+=safeNum(x[k]);}
+ out.overall=out.all?out.correct/out.all:null;out.chatPct=out.chat?out.chatCorrect/out.chat:null;out.tecPct=out.tec?out.tecCorrect/out.tec:null;return out;
 }
+const allowedPerformance={
+ 'desempenho-geral':null,'desempenho-regimentos':['RICD','PL','RCCN'],'desempenho-lpling':['LP/LING'],
+ 'desempenho-rfia':['RFIA'],'desempenho-cp':['CP'],'desempenho-dc':['DC'],'desempenho-da':['DA'],'desempenho-adm':['ADM'],'desempenho-ti':['TI']
+};
+function subsetByView(v,collection){const allowed=allowedPerformance[v.id];return allowed?collection.filter(x=>allowed.includes(x.subject)):collection}
+function metricCard(label,value,desc=''){return `<div class="workspace-stat"><span>${escapeHtml(label)}</span><strong class="${value==='—'?'nodata':''}">${escapeHtml(value)}</strong>${desc?`<span>${escapeHtml(desc)}</span>`:''}</div>`}
+function panel(title,description,body){return `<div class="workspace-panel"><div class="workspace-panel-header"><h2>${escapeHtml(title)}</h2><p>${escapeHtml(description)}</p></div>${body}</div>`}
+function renderEntry(x,kind){
+ const status=kind==='study'?statusStudy(x):kind==='review'?statusReview(x):'';
+ const headline=kind==='attempt'?`${x.source} · ${x.topic||'Questões respondidas'}`:(kind==='class'?`${x.topic}`:x.topic);
+ const meta=kind==='study'?`${x.activity} · ${dateBR(x.date)}`:kind==='review'?`${x.stage} · Prevista: ${dateBR(x.plannedDate)}${x.doneDate?' · Realizada: '+dateBR(x.doneDate):''}`:kind==='attempt'?`${dateBR(x.date)} · ${safeNum(x.cs)+safeNum(x.cu)+safeNum(x.ws)+safeNum(x.wu)+safeNum(x.correctOther)+safeNum(x.wrongOther)} questões`:x.note||'Sem observações';
+ return `<div class="log-entry"><div><h3>${escapeHtml(headline)}</h3><p><span class="logbadge">${escapeHtml(x.subject)}</span>${status?`<span class="logbadge">${escapeHtml(status)}</span>`:''}${kind==='class'?`<span class="logbadge">${x.level==='Forte'?'Ponto forte':'Ponto fraco'}</span>`:''}</p><p>${escapeHtml(meta)}</p>${x.note&&kind!=='class'?`<p>${escapeHtml(x.note)}</p>`:''}</div><button class="smallbtn" type="button" data-remove="${escapeHtml(kind)}" data-recordid="${escapeHtml(x.id)}" aria-label="Excluir registro">Excluir</button></div>`;
+}
+function listFor(items,kind){return items.length?`<div class="log-list">${items.map(x=>renderEntry(x,kind)).join('')}</div>`:'<div class="emptytable">Nenhum registro nesta seleção.</div>'}
+function choiceBar(view,choices){const active=viewFilters[view]||choices[0];return `<div class="statusbar" aria-label="Filtrar por situação">${choices.map(s=>`<button class="statusbutton" type="button" data-filter="${escapeHtml(s)}" aria-pressed="${active===s}">${escapeHtml(s)}</button>`).join('')}</div>`}
+function entryForm(type,v){
+ if(showEntryForm!==type)return '';
+ const chosen=allowedPerformance[v.id]?.length===1?allowedPerformance[v.id][0]:'';
+ const common=`<label>Matéria<select name="subject" required>${subjOpts(chosen)}</select></label><label class="wide">Tópico / unidade<input name="topic" maxlength="180" required placeholder="Código e nome do tópico"></label>`;
+ let fields='';
+ if(type==='study')fields=`${common}<label>Tipo de estudo<select name="activity"><option ${v.id==='estudos-questoes'?'selected':''}>Questões</option><option ${v.id!=='estudos-questoes'?'selected':''}>Aprofundamento</option></select></label><label>Situação<select name="status"><option>Planejado</option><option>Concluído</option></select></label><label>Data<input name="date" type="date"></label><label class="wide">Observações<textarea name="note" maxlength="500" placeholder="Opcional"></textarea></label>`;
+ if(type==='review')fields=`${common}<label>Etapa<select name="stage"><option ${v.id==='revisoes-d1'?'selected':''}>D+1</option><option ${v.id==='revisoes-d7'?'selected':''}>D+7</option><option ${v.id==='revisoes-d30'?'selected':''}>D+30</option></select></label><label>Situação<select name="status"><option>Programada</option><option>Realizada</option><option>Pendente</option></select></label><label>Data programada<input type="date" name="plannedDate" required></label><label>Data da realização<input type="date" name="doneDate"></label><label class="wide">Observações<textarea name="note" maxlength="500" placeholder="Opcional"></textarea></label>`;
+ if(type==='attempt')fields=`${common}<label>Origem<select name="source"><option>ChatGPT</option><option>TEC</option></select></label><label>Data<input type="date" name="date"></label><label>Acertos seguros<input type="number" name="cs" min="0" step="1" value="0" required></label><label>Acertos inseguros<input type="number" name="cu" min="0" step="1" value="0" required></label><label>Erros seguros<input type="number" name="ws" min="0" step="1" value="0" required></label><label>Erros inseguros<input type="number" name="wu" min="0" step="1" value="0" required></label><label>Acertos sem classificação de segurança<input type="number" name="correctOther" min="0" step="1" value="0" required></label><label>Erros sem classificação de segurança<input type="number" name="wrongOther" min="0" step="1" value="0" required></label><label class="wide">Observações<textarea name="note" maxlength="500" placeholder="Opcional"></textarea></label>`;
+ if(type==='class')fields=`${common}<label>Classificação<select name="level"><option value="Forte">Ponto forte</option><option value="Fraco">Ponto fraco</option></select></label><label class="wide">Fundamento / observações<textarea name="note" maxlength="500" placeholder="Por que você considera este ponto forte ou fraco?"></textarea></label>`;
+ const helper=type==='attempt'?'<p class="help">Total de questões = soma dos acertos e erros. Se a segurança não foi registrada (por exemplo, em um filtro TEC), use os campos “sem classificação”, sem presumir resposta segura. Acertos inseguros contam integralmente no aproveitamento.</p>':type==='review'?'<p class="help">Revisões não realizadas com data programada anterior à data atual aparecem automaticamente como pendentes. Marque “Realizada” apenas depois da execução efetiva.</p>':'';
+ return `<form class="regform" id="regform" data-formtype="${type}"><h2>${type==='study'?'Registrar estudo inicial':type==='review'?'Registrar revisão':type==='attempt'?'Registrar resultado de questões':'Classificar conteúdo'}</h2><div class="formgrid">${fields}</div>${helper}<div class="formfooter"><button type="button" class="smallbtn" data-action="cancel-form">Cancelar</button><button type="submit" class="primary">Salvar registro</button></div></form>`;
+}
+function actionsHtml(type,second=false){return `<div class="panel-actions"><button type="button" class="primary" data-action="toggle-form" data-formtype="${type}">${type==='study'?'+ Registrar estudo':type==='review'?'+ Registrar revisão':type==='attempt'?'+ Registrar questões':'+ Classificar ponto'}</button>${!second?`<button type="button" class="smallbtn" data-action="export-data">Exportar dados (.json)</button><button type="button" class="smallbtn" data-action="import-data">Importar dados (.json)</button><input id="importDataFile" hidden type="file" accept="application/json,.json">`:''}</div>`}
+function getStudies(v){return v.id==='estudos-aprofundamento'?studyData.studies.filter(x=>x.activity==='Aprofundamento'):v.id==='estudos-questoes'?studyData.studies.filter(x=>x.activity==='Questões'):studyData.studies}
+function renderWorkspace(v){
+ const esc=escapeHtml;
+ let body='';
+ if(v.section==='Estudos'){
+   const rows=getStudies(v),p=rows.filter(x=>statusStudy(x)==='Planejados').length,c=rows.filter(x=>statusStudy(x)==='Concluídos').length;
+   const filt=viewFilters[v.id]||'Planejados';
+   const selected=rows.filter(x=>statusStudy(x)===filt).slice().reverse();
+   body=`<div class="workspace-metrics">${metricCard('Planejados',formatNum(p))}${metricCard('Concluídos',formatNum(c))}${metricCard('Total cadastrado',formatNum(rows.length))}</div>${choiceBar(v.id,['Planejados','Concluídos'])}${actionsHtml('study')}${entryForm('study',v)}${panel('Estudos iniciais · '+filt,'Apenas as situações Planejado e Concluído são utilizadas.',listFor(selected,'study'))}`;
+ }else if(v.section==='Revisões'){
+   const stage=v.id==='revisoes-d1'?'D+1':v.id==='revisoes-d7'?'D+7':v.id==='revisoes-d30'?'D+30':null;
+   const all=studyData.reviews.filter(x=>(!stage||x.stage===stage)&&(v.id!=='revisoes-dia'||x.plannedDate===todayISO()||x.doneDate===todayISO()));
+   const counts=['Programadas','Realizadas','Pendentes'].map(a=>all.filter(x=>statusReview(x)===a).length);
+   const filt=viewFilters[v.id]||'Programadas',selected=all.filter(x=>statusReview(x)===filt).slice().reverse();
+   body=`<div class="workspace-metrics">${metricCard('Programadas',formatNum(counts[0]))}${metricCard('Realizadas',formatNum(counts[1]))}${metricCard('Pendentes',formatNum(counts[2]))}</div>${choiceBar(v.id,['Programadas','Realizadas','Pendentes'])}${actionsHtml('review')}${entryForm('review',v)}${panel((stage||'Revisões')+' · '+filt,'Datas previstas, realizadas e atrasos calculados conforme os registros.',listFor(selected,'review'))}`;
+ }else{
+   const attemptList=subsetByView(v,studyData.attempts),m=metricsAttempt(attemptList);
+   const has=attemptList.length>0;
+   const metrics=[['Questões respondidas – ChatGPT',has?formatNum(m.chat):'—'],['Questões respondidas – TEC',has?formatNum(m.tec):'—'],['Acertos Seguros',has?formatNum(m.cs):'—'],['Acertos Inseguros',has?formatNum(m.cu):'—'],['Erros Seguros',has?formatNum(m.ws):'—'],['Erros Inseguros',has?formatNum(m.wu):'—'],['Aproveitamento geral',formatPercent(m.overall)],['Aproveitamento – ChatGPT',formatPercent(m.chatPct)],['Aproveitamento – TEC',formatPercent(m.tecPct)]];
+   const classes=subsetByView(v,studyData.classifications);
+   body=`<div class="workspace-metrics performance-metrics">${metrics.map(([a,b])=>metricCard(a,b)).join('')}</div><p class="statusnote">Aproveitamento = acertos / questões efetivamente respondidas. ChatGPT e TEC são calculados separadamente. Respostas sem classificação de segurança entram no total e no aproveitamento, mas não são classificadas como seguras.</p>${actionsHtml('attempt')}${entryForm('attempt',v)}${panel('Resultados registrados','Sessões de questões com origem identificada.',listFor(attemptList.slice().reverse(),'attempt'))}<div class="insights"><div class="insight-panel"><h2>Pontos fortes</h2>${listFor(classes.filter(x=>x.level==='Forte').slice().reverse(),'class')}</div><div class="insight-panel"><h2>Pontos fracos</h2>${listFor(classes.filter(x=>x.level==='Fraco').slice().reverse(),'class')}</div></div><div style="margin-top:16px">${actionsHtml('class',true)}${entryForm('class',v)}</div>`;
+ }
+ const note='<p class="workspace-note">Os dados inseridos aqui ficam salvos neste navegador, não são sincronizados entre aparelhos e não são lidos automaticamente do ChatGPT ou do TEC. Use <strong>Exportar dados</strong> para manter uma cópia e <strong>Importar dados</strong> para restaurá-la. Nenhuma atividade ou nota foi presumida.</p>';
+ g('workspacePage').innerHTML=`<div class="workspace-eyebrow">${esc(v.section)} / ${esc(v.title)}</div><h1 id="workspaceTitle">${esc(v.title)}</h1><p class="workspace-summary">${esc(v.description)}</p>${body}${note}`;
+}
+function refreshOverview(){
+ const el=g('overviewStats');if(!el)return;
+ const all=metricsAttempt(studyData.attempts);
+ const done=studyData.studies.filter(x=>statusStudy(x)==='Concluídos').length;
+ const due=studyData.reviews.filter(x=>statusReview(x)==='Pendentes').length;
+ const cards=[['Estudos iniciais concluídos',formatNum(done),`${formatNum(studyData.studies.filter(x=>statusStudy(x)==='Planejados').length)} planejados`],['Revisões pendentes',formatNum(due),`${formatNum(studyData.reviews.filter(x=>statusReview(x)==='Realizadas').length)} realizadas`],['Aproveitamento geral',formatPercent(all.overall),all.all?`${formatNum(all.all)} questões registradas`:'Sem resultados registrados']];
+ el.innerHTML=cards.map(([a,b,c])=>`<div class="overview-card"><label>${escapeHtml(a)}</label><strong>${escapeHtml(b)}</strong><small>${escapeHtml(c)}</small></div>`).join('');
+}
+function formSubmit(form){
+ const kind=form.dataset.formtype,fd=new FormData(form);
+ const val=k=>String(fd.get(k)||'').trim();
+ const subject=val('subject'),topic=val('topic');
+ if(!DISCIPLINES.includes(subject)||!topic){toast('Informe uma matéria e um tópico.');return}
+ let record={id:freshId(),subject,topic};
+ if(kind==='study')record={...record,activity:val('activity'),status:val('status'),date:val('date'),note:val('note')};
+ else if(kind==='review'){
+   record={...record,stage:val('stage'),status:val('status'),plannedDate:val('plannedDate'),doneDate:val('doneDate'),note:val('note')};
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(record.plannedDate)){toast('Informe a data programada.');return}
+   if(!['D+1','D+7','D+30'].includes(record.stage)||!['Programada','Realizada','Pendente'].includes(record.status))return;
+ }else if(kind==='attempt'){
+   record={...record,source:val('source'),date:val('date'),note:val('note')};let total=0;
+   for(const k of ['cs','cu','ws','wu','correctOther','wrongOther']){const n=Number(fd.get(k));if(!Number.isSafeInteger(n)||n<0){toast('Os números devem ser inteiros não negativos.');return}record[k]=n;total+=n}
+   if(total===0){toast('Informe pelo menos uma questão respondida.');return}
+   if(!['TEC','ChatGPT'].includes(record.source))return;
+ }else if(kind==='class'){record={...record,level:val('level'),note:val('note')};if(!['Forte','Fraco'].includes(record.level))return}
+ else return;
+ const key={study:'studies',review:'reviews',attempt:'attempts',class:'classifications'}[kind];
+ studyData[key].push(record);writeData();showEntryForm='';renderWorkspace(workspaceById[activeView]);refreshOverview();toast('Registro salvo.');
+}
+function deleteRecord(kind,id){
+ const key={study:'studies',review:'reviews',attempt:'attempts',class:'classifications'}[kind];if(!key)return;
+ if(!window.confirm('Excluir este registro?'))return;
+ studyData[key]=studyData[key].filter(x=>x.id!==id);
+ writeData();renderWorkspace(workspaceById[activeView]);refreshOverview();toast('Registro excluído.');
+}
+function exportData(){save(JSON.stringify({format:'central-estudos-registros-v1',exportedAt:new Date().toISOString(),...studyData},null,2),'Central_de_Estudos_dados.json','application/json;charset=utf-8')}
+async function importData(file){
+ try{
+   if(!file)return;
+   const data=JSON.parse(await file.text());
+   if(data.format!=='central-estudos-registros-v1'||!['studies','reviews','attempts','classifications'].every(k=>Array.isArray(data[k])))throw Error('Formato incompatível');
+   if(!window.confirm('Substituir TODOS os registros locais pelos dados deste arquivo?'))return;
+   studyData={studies:data.studies,reviews:data.reviews,attempts:data.attempts,classifications:data.classifications};writeData();renderWorkspace(workspaceById[activeView]);refreshOverview();toast('Dados importados.');
+ }catch(e){toast('Não foi possível importar: arquivo inválido ou incompatível.');}
+}
+// Controles dinâmicos das telas de acompanhamento; preserva os eventos dos comandos originais.
+g('workspacePage').addEventListener('click',e=>{
+ const btn=e.target.closest('button');if(!btn)return;
+ if(btn.dataset.filter){viewFilters[activeView]=btn.dataset.filter;renderWorkspace(workspaceById[activeView]);return}
+ if(btn.dataset.remove){deleteRecord(btn.dataset.remove,btn.dataset.recordid);return}
+ if(btn.dataset.action==='toggle-form'){showEntryForm=showEntryForm===btn.dataset.formtype?'':btn.dataset.formtype;renderWorkspace(workspaceById[activeView]);return}
+ if(btn.dataset.action==='cancel-form'){showEntryForm='';renderWorkspace(workspaceById[activeView]);return}
+ if(btn.dataset.action==='export-data'){exportData();return}
+ if(btn.dataset.action==='import-data'){g('importDataFile')?.click();return}
+});
+g('workspacePage').addEventListener('submit',e=>{if(e.target.id==='regform'){e.preventDefault();formSubmit(e.target)}});
+g('workspacePage').addEventListener('change',e=>{if(e.target.id==='importDataFile'){importData(e.target.files?.[0]);e.target.value=''}});
 
 function setActiveNav(docId=null){
   const home=g('homeNav');
@@ -265,7 +405,7 @@ g('themeBtn').addEventListener('click',()=>{const t=document.documentElement.get
 try{let theme=localStorage.getItem('cm-theme');if(theme)document.documentElement.setAttribute('data-theme',theme)}catch{}
 document.addEventListener('keydown',e=>{if(g('viewer').open){if(e.key==='ArrowLeft'&&e.altKey)openAdjacent(-1);if(e.key==='ArrowRight'&&e.altKey)openAdjacent(1)}});
 window.addEventListener('hashchange',()=>{const match=location.hash.match(/^#comando-(\d+)$/);if(match){openDoc(Number(match[1]),false);return}const id=location.hash.replace(/^#/, '');if(!g('viewer').open)showPage(workspaceById[id]?id:'principal',false)});
-draw();setActiveNav(null);const hash=location.hash.replace(/^#/,'');const match=location.hash.match(/^#comando-(\d+)$/);if(match)openDoc(Number(match[1]),false);else if(workspaceById[hash])showPage(hash,false);
+draw();refreshOverview();setActiveNav(null);const hash=location.hash.replace(/^#/,'');const match=location.hash.match(/^#comando-(\d+)$/);if(match)openDoc(Number(match[1]),false);else if(workspaceById[hash])showPage(hash,false);
 })();
 </script>
 </body>
