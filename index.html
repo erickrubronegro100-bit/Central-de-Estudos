@@ -29,16 +29,72 @@ dialog.viewer{position:fixed;inset:0 0 0 auto;max-height:none;height:100vh;max-w
 .subjectcommands .subitem{padding:7px 9px}
 .subjectcommands .subcode{font-size:11px}
 .subjectcommands .subtitle{max-width:160px;line-height:1.2}
+
+/* Navegação adicional: Estudos, Revisões e Desempenho. */
+.side{overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(172,202,223,.35) transparent}
+.menuwrap{flex-shrink:0}
+.navgroup{flex-shrink:0}
+.navsummary .groupcaret{font-size:22px;line-height:1;font-weight:400;display:inline-flex;align-items:center;justify-content:center;width:15px;color:#9cb7ce;transition:transform .15s}
+.navgroup[open]>.navsummary .groupcaret{transform:rotate(90deg)}
+.navgroup[open]>.navsummary{border-bottom:1px solid rgba(255,255,255,.08)}
+.worknav{max-height:none;overflow:visible;padding:7px 8px 10px}
+.workitem{display:block;text-align:left;padding:10px 12px;line-height:1.35;font-size:12px;border-left:2px solid transparent}
+.workitem.active{background:rgba(78,208,212,.13);border-left-color:#61dce0;color:#fff;font-weight:730}
+.workitem:hover{background:rgba(255,255,255,.1)}
+#homePage[hidden],#workspacePage[hidden]{display:none!important}
+.workspace-page{min-height:calc(100vh - 160px)}
+.workspace-eyebrow{font-size:11px;font-weight:750;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.workspace-page h1{font-size:clamp(26px,3.2vw,38px);letter-spacing:-1.1px;margin:0 0 10px}
+.workspace-summary{max-width:770px;color:var(--muted);font-size:14px;margin:0 0 28px}
+.workspace-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-bottom:26px}
+.workspace-stat{border:1px solid var(--line);border-radius:14px;padding:18px 20px;background:var(--card);box-shadow:var(--shadow)}
+.workspace-stat strong{display:block;font-size:28px;font-weight:750;line-height:1.2;color:var(--muted);margin:6px 0}
+.workspace-stat span{font-size:12px;color:var(--muted)}
+.workspace-panel{border:1px solid var(--line);background:var(--card);border-radius:15px;box-shadow:var(--shadow);overflow:hidden}
+.workspace-panel-header{padding:18px 22px;border-bottom:1px solid var(--line)}
+.workspace-panel-header h2{margin:0;font-size:16px;letter-spacing:-.3px}
+.workspace-panel-header p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.workspace-empty{padding:54px 28px;text-align:center;display:flex;align-items:center;flex-direction:column;gap:9px}
+.workspace-empty-icon{width:54px;height:54px;border-radius:16px;background:var(--accent-soft);display:grid;place-items:center;color:var(--accent);font-size:24px;margin-bottom:4px}
+.workspace-empty h3{margin:0;font-size:16px}
+.workspace-empty p{margin:0;color:var(--muted);max-width:515px;font-size:13px;line-height:1.7}
+.workspace-note{margin-top:18px;padding:13px 16px;background:var(--accent-soft);border-radius:10px;font-size:12px;line-height:1.65}
+@media(max-width:790px){.side{overflow:visible}.workspace-metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.workspace-stat{padding:13px}.workspace-stat strong{font-size:23px}.workspace-stat span{font-size:10px}.workspace-empty{padding:36px 18px}.workitem{font-size:13px}}
+@media(max-width:470px){.workspace-metrics{grid-template-columns:1fr}.workspace-stat{display:flex;align-items:center;justify-content:space-between;gap:10px}.workspace-stat strong{margin:0;order:2}}
 </style>
 </head>
 <body>
 <div class="app" id="app">
   <aside class="side">
     <div class="identity"><div class="mark">CE</div><div><h2>Central de Estudos</h2><p>Biblioteca principal de comandos</p></div></div>
-    <div class="menuwrap"><div class="sidelabel">Menu</div><button class="navitem rootitem active" id="homeNav" data-home="1"><span><span class="navicon">⌂</span>Principal</span></button><details class="navgroup" open><summary class="navsummary"><span><span class="navicon">☰</span>Comandos</span><span class="navcount" id="menuCommandCount">20</span></summary><nav id="subjectNav" class="subnav"></nav></details></div>
+    <div class="menuwrap"><div class="sidelabel">Menu</div><button class="navitem rootitem active" id="homeNav" data-home="1"><span><span class="navicon">⌂</span>Principal</span></button><details class="navgroup" name="secao" open><summary class="navsummary"><span><span class="navicon">☰</span>Comandos</span><span class="navcount" id="menuCommandCount">20</span></summary><nav id="subjectNav" class="subnav"></nav></details></div>
+    <details class="navgroup" name="secao" data-navgroup="Estudos"><summary class="navsummary"><span><span class="navicon" aria-hidden="true">◫</span>Estudos</span><span class="groupcaret" aria-hidden="true">›</span></summary><nav class="subnav worknav" aria-label="Estudos">
+    <button class="navitem workitem" type="button" data-view="estudos-geral"><span>Quadro Geral</span></button>
+    <button class="navitem workitem" type="button" data-view="estudos-aprofundamento"><span>Estudos Iniciais – Aprofundamento</span></button>
+    <button class="navitem workitem" type="button" data-view="estudos-questoes"><span>Estudos Iniciais – Questões</span></button>
+    </nav></details>
+    <details class="navgroup" name="secao" data-navgroup="Revisões"><summary class="navsummary"><span><span class="navicon" aria-hidden="true">◷</span>Revisões</span><span class="groupcaret" aria-hidden="true">›</span></summary><nav class="subnav worknav" aria-label="Revisões">
+    <button class="navitem workitem" type="button" data-view="revisoes-geral"><span>Quadro Geral</span></button>
+    <button class="navitem workitem" type="button" data-view="revisoes-dia"><span>Revisões do dia</span></button>
+    <button class="navitem workitem" type="button" data-view="revisoes-d1"><span>Revisões D+1</span></button>
+    <button class="navitem workitem" type="button" data-view="revisoes-d7"><span>Revisões D+7</span></button>
+    <button class="navitem workitem" type="button" data-view="revisoes-d30"><span>Revisões D+30</span></button>
+    </nav></details>
+    <details class="navgroup" name="secao" data-navgroup="Desempenho"><summary class="navsummary"><span><span class="navicon" aria-hidden="true">▤</span>Desempenho</span><span class="groupcaret" aria-hidden="true">›</span></summary><nav class="subnav worknav" aria-label="Desempenho">
+    <button class="navitem workitem" type="button" data-view="desempenho-geral"><span>Quadro Geral</span></button>
+    <button class="navitem workitem" type="button" data-view="desempenho-regimentos"><span>RICD/ PL/RCCN/</span></button>
+    <button class="navitem workitem" type="button" data-view="desempenho-lpling"><span>LP/LING</span></button>
+    <button class="navitem workitem" type="button" data-view="desempenho-rfia"><span>RFIA</span></button>
+    <button class="navitem workitem" type="button" data-view="desempenho-cp"><span>CP</span></button>
+    <button class="navitem workitem" type="button" data-view="desempenho-dc"><span>DC</span></button>
+    <button class="navitem workitem" type="button" data-view="desempenho-da"><span>DA</span></button>
+    <button class="navitem workitem" type="button" data-view="desempenho-adm"><span>ADM</span></button>
+    <button class="navitem workitem" type="button" data-view="desempenho-ti"><span>TI</span></button>
+    </nav></details>
     <div class="footnote" id="footnote">Comandos completos disponíveis sem internet, com cópia e exportação individual.</div>
   </aside>
   <main class="main">
+    <div id="homePage">
     <div class="toprow"><div class="eyebrow">CENTRAL DE ESTUDOS · CÂMARA DOS DEPUTADOS</div><div class="topaction"><button class="quietbutton" id="themeBtn">◐ Aparência</button><button class="quietbutton" id="exportAll">⇩ Exportar tudo (.md)</button></div></div>
     <h1>Central de Estudos</h1>
     <p class="sub">Sua biblioteca principal de comandos. Navegue pelo menu lateral, encontre os comandos por disciplina, modalidade ou palavra-chave e abra o texto integral sempre que precisar.</p>
@@ -46,6 +102,8 @@ dialog.viewer{position:fixed;inset:0 0 0 auto;max-height:none;height:100vh;max-w
     <div class="guide"><strong>Critérios da metodologia:</strong> escolha Certo/Errado à esquerda + marcação independente de <strong>Inseguro à direita</strong>; no estudo inicial, correção seletiva de erros e acertos inseguros; na revisão, correção integrada à leitura comentada (regimentos/PL) ou ao resumo teórico (Ciência Política). Erros provocam reforço direcionado.</div>
     <div class="toolbar"><label class="search"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="query" type="search" placeholder="Buscar nome, número ou conteúdo do comando…" aria-label="Pesquisar comandos"></label><div class="filters" aria-label="Filtrar por tipo"><button data-kind="Todos" class="chip active">Todos</button><button data-kind="Estudo inicial" class="chip">Estudo inicial</button><button data-kind="Revisão" class="chip">Revisão</button><button data-kind="Questionário" class="chip">Questionários</button></div></div>
     <div id="tables" aria-live="polite"></div>
+    </div>
+    <section id="workspacePage" class="workspace-page" hidden aria-live="polite" aria-labelledby="workspaceTitle"></section>
   </main>
 </div>
 <dialog class="viewer" id="viewer" aria-labelledby="viewtitle"><div class="viewercontent">
@@ -66,13 +124,52 @@ dialog.viewer{position:fixed;inset:0 0 0 auto;max-height:none;height:100vh;max-w
 (function(){
 const docs=JSON.parse(document.getElementById('docdata').textContent);
 let group='Todos',kind='Todos',query='',current=1,toastTimer=null;
+let activeView='principal';
 const g=(id)=>document.getElementById(id),subjectNames={RICD:['RICD','Regimento Interno da Câmara dos Deputados'],RCCN:['RCCN','Regimento Comum do Congresso Nacional'],PL:['Processo Legislativo','Processo Legislativo'],CP:['Ciência Política','Teorias, conceitos e instituições políticas'],RFIA:['RFIA','Reconhecimento de Fala, Transcrição e Inteligência Artificial']},subjects=[...new Set(docs.map(d=>d.materia))].map(id=>[id,...(subjectNames[id]||[id,'Comandos de estudo'])]);
 const escapeHtml=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const label=(k)=>k==='Estudo inicial'?'Professor · estudo inicial':k==='Revisão'?'Professor · revisão D+1/D+7/D+30':k;
+
+const workspaceViews=[{"id":"estudos-geral","section":"Estudos","title":"Quadro Geral","description":"Acompanhe o andamento dos estudos iniciais, os tópicos realizados e os conteúdos ainda pendentes."},{"id":"estudos-aprofundamento","section":"Estudos","title":"Estudos Iniciais – Aprofundamento","description":"Área destinada ao registro das aulas teóricas, do aprofundamento e da cobertura dos tópicos."},{"id":"estudos-questoes","section":"Estudos","title":"Estudos Iniciais – Questões","description":"Área de acompanhamento das questões dos estudos iniciais, acertos, erros e respostas inseguras."},{"id":"revisoes-geral","section":"Revisões","title":"Quadro Geral","description":"Visão consolidada do ciclo de revisões D+1, D+7 e D+30, com datas programadas e realizadas."},{"id":"revisoes-dia","section":"Revisões","title":"Revisões do dia","description":"Consulte as revisões programadas para hoje e acompanhe o cumprimento das atividades."},{"id":"revisoes-d1","section":"Revisões","title":"Revisões D+1","description":"Acompanhe as revisões D+1 vinculadas às datas efetivas dos estudos iniciais."},{"id":"revisoes-d7","section":"Revisões","title":"Revisões D+7","description":"Acompanhe as revisões D+7 vinculadas às datas efetivas dos estudos iniciais."},{"id":"revisoes-d30","section":"Revisões","title":"Revisões D+30","description":"Acompanhe as revisões D+30 vinculadas às datas efetivas dos estudos iniciais."},{"id":"desempenho-geral","section":"Desempenho","title":"Quadro Geral","description":"Acompanhe os resultados de todas as disciplinas e identifique evolução, inseguranças e pontos de reforço."},{"id":"desempenho-regimentos","section":"Desempenho","title":"RICD/ PL/RCCN/","description":"Acompanhamento de desempenho da disciplina RICD/ PL/RCCN/, com resultados de questões e evolução das revisões."},{"id":"desempenho-lpling","section":"Desempenho","title":"LP/LING","description":"Acompanhamento de desempenho da disciplina LP/LING, com resultados de questões e evolução das revisões."},{"id":"desempenho-rfia","section":"Desempenho","title":"RFIA","description":"Acompanhamento de desempenho da disciplina RFIA, com resultados de questões e evolução das revisões."},{"id":"desempenho-cp","section":"Desempenho","title":"CP","description":"Acompanhamento de desempenho da disciplina CP, com resultados de questões e evolução das revisões."},{"id":"desempenho-dc","section":"Desempenho","title":"DC","description":"Acompanhamento de desempenho da disciplina DC, com resultados de questões e evolução das revisões."},{"id":"desempenho-da","section":"Desempenho","title":"DA","description":"Acompanhamento de desempenho da disciplina DA, com resultados de questões e evolução das revisões."},{"id":"desempenho-adm","section":"Desempenho","title":"ADM","description":"Acompanhamento de desempenho da disciplina ADM, com resultados de questões e evolução das revisões."},{"id":"desempenho-ti","section":"Desempenho","title":"TI","description":"Acompanhamento de desempenho da disciplina TI, com resultados de questões e evolução das revisões."}];
+const workspaceById=Object.fromEntries(workspaceViews.map(v=>[v.id,v]));
+function showPage(view='principal', updateHash=true){
+  activeView=(view==='principal'||workspaceById[view])?view:'principal';
+  const isHome=activeView==='principal';
+  g('homePage').hidden=!isHome;
+  g('workspacePage').hidden=isHome;
+  document.querySelectorAll('.workitem').forEach(b=>b.classList.toggle('active',b.dataset.view===activeView));
+  if(isHome){
+    document.querySelectorAll('#subjectNav .subitem').forEach(b=>b.classList.remove('active'));
+    g('homeNav').classList.add('active');
+  }else{
+    g('homeNav').classList.remove('active');
+    const v=workspaceById[activeView];
+    const parent=document.querySelector(`[data-navgroup="${v.section}"]`);
+    if(parent)parent.open=true;
+    renderWorkspace(v);
+  }
+  if(updateHash)try{history.replaceState(null,'',isHome?location.pathname+location.search:'#'+activeView)}catch(e){}
+  window.scrollTo({top:0,behavior:'instant'});
+}
+function renderWorkspace(v){
+  const metrics=v.section==='Estudos'?['Planejados','Concluídos','Em andamento']:
+    v.section==='Revisões'?['Programadas','Realizadas','Pendentes']:
+    ['Questões respondidas','Aproveitamento','Acertos inseguros'];
+  const esc=escapeHtml;
+  g('workspacePage').innerHTML=`<div class="workspace-eyebrow">${esc(v.section)} / ${esc(v.title)}</div>
+    <h1 id="workspaceTitle">${esc(v.title)}</h1>
+    <p class="workspace-summary">${esc(v.description)}</p>
+    <div class="workspace-metrics">${metrics.map(x=>`<div class="workspace-stat"><span>${esc(x)}</span><strong aria-label="Sem dados">—</strong></div>`).join('')}</div>
+    <div class="workspace-panel"><div class="workspace-panel-header"><h2>Registros</h2><p>Dados confirmados, sem estimativas artificiais</p></div>
+    <div class="workspace-empty"><div class="workspace-empty-icon" aria-hidden="true">▤</div>
+    <h3>Nenhum registro cadastrado</h3>
+    <p>Esta área já está disponível na Central de Estudos. Ainda não existem registros de execução ou resultados associados a ela.</p></div></div>
+    <p class="workspace-note">O menu e a área de consulta estão prontos. Os dados de estudo, revisão e desempenho serão incorporados posteriormente, com base em informações reais, sem presumir atividades concluídas ou resultados.</p>`;
+}
+
 function setActiveNav(docId=null){
   const home=g('homeNav');
   document.querySelectorAll('#subjectNav .subitem').forEach(b=>b.classList.toggle('active',docId!==null&&Number(b.dataset.openNav)===Number(docId)));
-  if(home)home.classList.toggle('active',docId===null);
+  if(home)home.classList.toggle('active',docId===null && activeView==='principal');
   if(docId!==null){
     const selected=document.querySelector(`#subjectNav .subitem[data-open-nav="${Number(docId)}"]`);
     const section=selected&&selected.closest('details.menusubject');
@@ -95,12 +192,12 @@ function buildLibraryUI(){
 function filtered(){return docs.filter(d=>(group==='Todos'||d.materia===group)&&(kind==='Todos'||(kind==='Questionário'?d.categoria.startsWith('Questionário'):d.categoria===kind))&&(!query||[d.titulo,d.categoria,d.materia,d.codigo,d.conteudo,String(d.numero)].some(t=>t.toLocaleLowerCase('pt-BR').includes(query))));}
 function draw(){const show=filtered(), target=g('tables');target.innerHTML='';for(let [id,full,description] of subjects){const sel=show.filter(d=>d.materia===id);if((group!=='Todos'&&group!==id)||!sel.length)continue;const section=document.createElement('section');section.className='section';section.id='subject-'+id;section.innerHTML=`<div class="secrow"><h2 class="sectitle"><span class="secnum">BLOCO ${subjects.findIndex(v=>v[0]===id)+1}</span>${escapeHtml(full)} <span style="font-size:12px;color:var(--muted);font-weight:500">${escapeHtml(description)}</span></h2><span class="countlabel">${sel.length} de ${docs.filter(d=>d.materia===id).length}</span></div><div class="tablebox"><table class="library"><thead><tr><th style="width:105px">Código</th><th>Comando</th><th>Modalidade</th><th style="width:98px">Ação</th></tr></thead><tbody>${sel.map(d=>`<tr data-id="${d.id}" tabindex="0" role="button" aria-label="Abrir ${escapeHtml(d.codigo)}: ${escapeHtml(d.titulo)}"><td><span class="idpill">${escapeHtml(d.codigo)}</span></td><td><div class="itemtitle">${escapeHtml(d.titulo)}</div><div class="itemdesc">${d.categoria.startsWith('Questionário')?'Avaliação e registro para o Planejamento Geral':'Aula, fixação e recuperação ativa'} · ${d.palavras.toLocaleString('pt-BR')} palavras</div></td><td><span class="typebadge">${escapeHtml(label(d.categoria))}</span></td><td><button class="openbtn" data-open="${d.id}">Abrir ↗</button></td></tr>`).join('')}</tbody></table></div>`;target.appendChild(section)}if(!target.children.length)target.innerHTML='<div class="noresults">Nenhum comando encontrado com os filtros atuais. Experimente outra busca.</div>';target.querySelectorAll('tr[data-id]').forEach(tr=>{tr.addEventListener('click',()=>openDoc(Number(tr.dataset.id)));tr.addEventListener('keydown',(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openDoc(Number(tr.dataset.id))}})});}
 function toast(msg){clearTimeout(toastTimer);g('toast').textContent=msg;g('toast').classList.add('visible');toastTimer=setTimeout(()=>g('toast').classList.remove('visible'),2200)}
-function openDoc(id,updateHash=true){const pos=docs.findIndex(x=>x.id===id);if(pos===-1)return;const d=docs[pos];current=id;setActiveNav(id);g('viewlabel').textContent=`${d.codigo} · COMANDO ${String(d.numero).padStart(2,'0')}`;g('viewtitle').textContent=d.titulo;g('viewmeta').textContent=`${label(d.categoria)} · ${d.palavras.toLocaleString('pt-BR')} palavras · pronto para copiar`;g('promptbody').innerHTML=d.html;g('copyFallback').hidden=true;g('manualCopyText').value='';g('viewbody').scrollTop=0;g('pagination').textContent=`${String(pos+1).padStart(2,'0')} / ${String(docs.length).padStart(2,'0')}`;g('prev').disabled=pos===0;g('next').disabled=pos===docs.length-1;if(!g('viewer').open)g('viewer').showModal();if(updateHash)try{history.replaceState(null,'','#comando-'+id)}catch(e){}}
+function openDoc(id,updateHash=true){const pos=docs.findIndex(x=>x.id===id);if(pos===-1)return;if(activeView!=='principal')showPage('principal',false);const d=docs[pos];current=id;setActiveNav(id);g('viewlabel').textContent=`${d.codigo} · COMANDO ${String(d.numero).padStart(2,'0')}`;g('viewtitle').textContent=d.titulo;g('viewmeta').textContent=`${label(d.categoria)} · ${d.palavras.toLocaleString('pt-BR')} palavras · pronto para copiar`;g('promptbody').innerHTML=d.html;g('copyFallback').hidden=true;g('manualCopyText').value='';g('viewbody').scrollTop=0;g('pagination').textContent=`${String(pos+1).padStart(2,'0')} / ${String(docs.length).padStart(2,'0')}`;g('prev').disabled=pos===0;g('next').disabled=pos===docs.length-1;if(!g('viewer').open)g('viewer').showModal();if(updateHash)try{history.replaceState(null,'','#comando-'+id)}catch(e){}}
 function openAdjacent(delta){const i=docs.findIndex(x=>x.id===current),next=docs[i+delta];if(next)openDoc(next.id)}
-function closeDoc(){g('viewer').close();if(/^#comando-\d+$/.test(location.hash))try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}}
+function closeDoc(){g('viewer').close();if(/^#comando-\d+$/.test(location.hash))try{history.replaceState(null,'',(activeView==='principal'?location.pathname+location.search:'#'+activeView))}catch(e){}}
 function save(text,name,contentType='text/plain;charset=utf-8'){const blob=new Blob([text],{type:contentType});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=name;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(link.href),500)}
 function currentDoc(){return docs.find(d=>d.id===current)}
-g('close').addEventListener('click',closeDoc);g('viewer').addEventListener('click',e=>{if(e.target===g('viewer'))closeDoc()});g('viewer').addEventListener('close',()=>{if(/^#comando-\d+$/.test(location.hash))try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}});
+g('close').addEventListener('click',closeDoc);g('viewer').addEventListener('click',e=>{if(e.target===g('viewer'))closeDoc()});g('viewer').addEventListener('close',()=>{if(/^#comando-\d+$/.test(location.hash))try{history.replaceState(null,'',(activeView==='principal'?location.pathname+location.search:'#'+activeView))}catch(e){}});
 // A alternativa síncrona preserva a ativação do clique e mantém o textarea
 // dentro de <dialog>, pois elementos fora de uma janela modal ficam inertes.
 function copyWithSelection(value){
@@ -159,15 +256,16 @@ g('print').addEventListener('click',()=>window.print());g('backTop').addEventLis
 g('prev').addEventListener('click',()=>openAdjacent(-1));g('next').addEventListener('click',()=>openAdjacent(1));
 g('query').addEventListener('input',e=>{query=e.target.value.trim().toLocaleLowerCase('pt-BR');draw()});
 buildLibraryUI();
-g('homeNav').addEventListener('click',()=>{group='Todos';document.querySelectorAll('#subjectNav details.menusubject').forEach(d=>d.open=false);setActiveNav(null);draw();window.scrollTo({top:0,behavior:'smooth'})});
+document.querySelectorAll('.workitem').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.view)));
+g('homeNav').addEventListener('click',()=>{group='Todos';document.querySelectorAll('#subjectNav details.menusubject').forEach(d=>d.open=false);draw();showPage('principal');setActiveNav(null)});
 document.querySelectorAll('#subjectNav .subitem').forEach(btn=>btn.addEventListener('click',()=>openDoc(Number(btn.dataset.openNav))));
 document.querySelectorAll('#subjectNav details.menusubject').forEach(section=>section.addEventListener('toggle',()=>{if(section.open)document.querySelectorAll('#subjectNav details.menusubject').forEach(other=>{if(other!==section)other.open=false})}));
 document.querySelectorAll('.chip').forEach(btn=>btn.addEventListener('click',()=>{kind=btn.dataset.kind;document.querySelectorAll('.chip').forEach(b=>b.classList.toggle('active',b===btn));draw()}));
 g('themeBtn').addEventListener('click',()=>{const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('cm-theme',t)}catch{}});
 try{let theme=localStorage.getItem('cm-theme');if(theme)document.documentElement.setAttribute('data-theme',theme)}catch{}
 document.addEventListener('keydown',e=>{if(g('viewer').open){if(e.key==='ArrowLeft'&&e.altKey)openAdjacent(-1);if(e.key==='ArrowRight'&&e.altKey)openAdjacent(1)}});
-window.addEventListener('hashchange',()=>{let match=location.hash.match(/^#comando-(\d+)$/);if(match)openDoc(Number(match[1]),false)});
-draw();setActiveNav(null);let match=location.hash.match(/^#comando-(\d+)$/);if(match)openDoc(Number(match[1]),false);
+window.addEventListener('hashchange',()=>{const match=location.hash.match(/^#comando-(\d+)$/);if(match){openDoc(Number(match[1]),false);return}const id=location.hash.replace(/^#/, '');if(!g('viewer').open)showPage(workspaceById[id]?id:'principal',false)});
+draw();setActiveNav(null);const hash=location.hash.replace(/^#/,'');const match=location.hash.match(/^#comando-(\d+)$/);if(match)openDoc(Number(match[1]),false);else if(workspaceById[hash])showPage(hash,false);
 })();
 </script>
 </body>
