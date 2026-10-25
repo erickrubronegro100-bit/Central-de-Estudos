@@ -150,7 +150,7 @@ dialog.viewer{position:fixed;inset:0 0 0 auto;max-height:none;height:100vh;max-w
 <div class="app" id="app">
   <aside class="side">
     <div class="identity"><div class="mark">CE</div><div><h2>Central de Estudos</h2><p>Acompanhamento integrado de estudo</p></div></div>
-    <div class="menuwrap"><div class="sidelabel">Menu</div><button class="navitem rootitem active" id="homeNav" data-home="1"><span><span class="navicon">⌂</span>Visão Geral</span></button><details class="navgroup" name="secao" open><summary class="navsummary"><span><span class="navicon">☰</span>Comandos</span><span class="navcount" id="menuCommandCount">24</span></summary><nav id="subjectNav" class="subnav"></nav></details></div>
+    <div class="menuwrap"><div class="sidelabel">Menu</div><button class="navitem rootitem active" id="homeNav" data-home="1"><span><span class="navicon">⌂</span>Visão Geral</span></button><details class="navgroup" name="secao"><summary class="navsummary"><span><span class="navicon">☰</span>Comandos</span><span class="navcount" id="menuCommandCount">24</span></summary><nav id="subjectNav" class="subnav"></nav></details></div>
     <details class="navgroup" name="secao" data-navgroup="Estudos"><summary class="navsummary"><span><span class="navicon" aria-hidden="true">◫</span>Estudos</span><span class="groupcaret" aria-hidden="true">›</span></summary><nav class="subnav worknav" aria-label="Estudos">
     <button class="navitem workitem" type="button" data-view="estudos-geral"><span>Quadro Geral</span></button>
     <button class="navitem workitem" type="button" data-view="estudos-aprofundamento"><span>Estudos Iniciais – Aprofundamento</span></button>
@@ -507,7 +507,7 @@ function setActiveNav(docId=null){
   if(docId!==null){
     const selected=document.querySelector(`#subjectNav .subitem[data-open-nav="${Number(docId)}"]`);
     const section=selected&&selected.closest('details.menusubject');
-    if(section){document.querySelectorAll('#subjectNav details.menusubject').forEach(x=>{if(x!==section)x.open=false});section.open=true;}
+    if(section){section.closest('details.navgroup').open=true;document.querySelectorAll('#subjectNav details.menusubject').forEach(x=>{if(x!==section)x.open=false});section.open=true;}
   }
 }
 function buildLibraryUI(){
@@ -520,7 +520,7 @@ function buildLibraryUI(){
   g('totalCount').textContent=String(docs.length).padStart(2,'0');
   g('subjectCount').textContent=String(subjects.length).padStart(2,'0');
   g('kindCount').textContent=String(new Set(docs.map(d=>d.categoria)).size).padStart(2,'0');
-  g('footnote').innerHTML=`${docs.length} comandos completos • ${subjects.length} matérias.<br><br>Menu lateral estilo biblioteca, com acesso direto a cada comando.`;
+  g('footnote').textContent='Planejamento, revisões e desempenho em uma visão integrada. Consulte os comandos no menu dedicado.';
 }
 
 function filtered(){return docs.filter(d=>(group==='Todos'||d.materia===group)&&(kind==='Todos'||(kind==='Questionário'?d.categoria.startsWith('Questionário'):d.categoria===kind))&&(!query||[d.titulo,d.categoria,d.materia,d.codigo,d.conteudo,String(d.numero)].some(t=>t.toLocaleLowerCase('pt-BR').includes(query))));}
