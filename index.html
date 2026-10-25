@@ -81,6 +81,69 @@ dialog.viewer{position:fixed;inset:0 0 0 auto;max-height:none;height:100vh;max-w
 /* Planejamentos integrados: navegação por unidade e progresso local. */
 .plan-controls{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin:13px 0 16px}.plan-controls input,.plan-controls select{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:9px;padding:10px 12px;font-size:13px;min-width:0}.plan-controls input{flex:2;min-width:190px}.plan-controls select{flex:1;min-width:135px}.plan-legend{font-size:12px;color:var(--muted);margin:8px 0 14px}.plan-unit{display:flex;align-items:center;gap:15px;justify-content:space-between;border-bottom:1px solid var(--line);padding:14px 17px}.plan-unit:last-child{border-bottom:0}.plan-unit-left{min-width:0;flex:1}.plan-unit-index{font-size:11px;font-weight:800;color:var(--accent);display:inline-block;min-width:34px}.plan-unit-code{font-size:11px;font-weight:750;background:var(--accent-soft);padding:3px 7px;border-radius:6px;color:var(--accent);display:inline-block}.plan-unit-name{font-size:13px;font-weight:670;line-height:1.5;margin-top:5px;overflow-wrap:anywhere}.plan-unit-meta{font-size:11px;color:var(--muted);margin-top:3px}.plan-unit-actions{flex-shrink:0;display:flex;flex-direction:column;gap:7px;align-items:flex-end}.plan-unit-actions button{white-space:nowrap;font-size:11px}.plan-unit.done{background:color-mix(in srgb,var(--accent-soft) 30%,var(--card))}.plan-progress{height:9px;width:100%;background:var(--line);border-radius:8px;overflow:hidden;margin:2px 0 17px}.plan-progress-fill{height:100%;background:var(--accent);transition:width .2s}.plan-pager{padding:12px 18px;display:flex;gap:9px;align-items:center;justify-content:flex-end;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}.plan-pager button{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:8px;padding:7px 11px}.plan-pager button:disabled{opacity:.35;cursor:default}.plan-summary-card{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:12px 15px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:16px}.plan-summary-card strong{font-size:14px}.plan-summary-card span{font-size:12px;color:var(--muted)}.plan-note{font-size:12px;color:var(--muted);padding:14px 17px;line-height:1.6;border:1px solid var(--line);border-radius:9px;margin:0 0 15px;background:var(--card)}
 @media(max-width:540px){.plan-unit{align-items:flex-start;gap:9px;flex-direction:column}.plan-unit-actions{flex-direction:row;align-items:center;align-self:stretch;justify-content:flex-end}.plan-controls{flex-direction:column;align-items:stretch}.plan-controls input,.plan-controls select{width:100%}}
+
+/* Painel inicial dedicado exclusivamente ao acompanhamento. */
+#homePage[hidden],#libraryPage[hidden],#workspacePage[hidden]{display:none!important}
+.dashboard-intro{max-width:900px}
+.dashboard-topbar{margin-bottom:6px}
+.dash-section{margin-top:30px}
+.dash-titlebar{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:13px}
+.dash-titlebar h2{font-size:19px;letter-spacing:-.4px;margin:0}
+.dash-titlebar p{color:var(--muted);font-size:12px;margin:3px 0 0}
+.dash-link{border:1px solid var(--line);background:var(--card);color:var(--accent);padding:8px 12px;border-radius:9px;font-size:12px;font-weight:730;white-space:nowrap}
+.dash-link:hover{background:var(--accent-soft);border-color:var(--accent)}
+.dash-hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(280px,.7fr);gap:14px;margin:27px 0 16px}
+.dash-hero-main{border:1px solid var(--line);background:var(--card);border-radius:16px;padding:23px 26px;box-shadow:var(--shadow)}
+.dash-hero-kicker{color:var(--muted);font-weight:740;font-size:12px;letter-spacing:.25px}
+.dash-hero-value{display:flex;gap:20px;align-items:baseline;margin:12px 0 9px}
+.dash-hero-value strong{font-size:clamp(36px,5vw,55px);letter-spacing:-2px;line-height:1.05}
+.dash-hero-value span{color:var(--muted);font-size:13px}
+.dash-track{background:var(--line);height:10px;border-radius:20px;overflow:hidden}
+.dash-track >span{display:block;height:100%;background:var(--accent);border-radius:20px;transition:width .25s}
+.dash-hero-foot{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
+.dash-hero-side{display:grid;grid-template-rows:1fr 1fr;gap:12px}
+.dash-mini{border:1px solid var(--line);background:var(--card);border-radius:15px;padding:17px 19px;box-shadow:var(--shadow)}
+.dash-mini-head{display:flex;justify-content:space-between;gap:6px;align-items:center}
+.dash-mini-head span{font-size:12px;font-weight:760}
+.dash-mini-head strong{font-size:18px;letter-spacing:-.5px}
+.dash-mini-caption{font-size:11px;color:var(--muted);margin:7px 0 9px}
+.dash-mini .dash-track{height:7px}
+.dash-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.dash-kpi{border:1px solid var(--line);background:var(--card);border-radius:13px;padding:16px;min-width:0}
+.dash-kpi-label{display:block;font-size:12px;color:var(--muted);font-weight:650}
+.dash-kpi strong{display:block;font-size:27px;line-height:1.15;letter-spacing:-1px;margin:8px 0 5px}
+.dash-kpi small{display:block;font-size:11px;color:var(--muted)}
+.dash-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dash-panel{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card)}
+.dash-panel-head{padding:15px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center}
+.dash-panel-head h3{margin:0;font-size:14px}
+.dash-panel-sub{color:var(--muted);font-size:11px}
+.dash-panel-body{padding:16px 18px}
+.dash-stage-list{display:flex;flex-direction:column;gap:15px}
+.dash-stage{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center}
+.dash-stage strong{font-size:13px}
+.dash-stage-meta{font-size:11px;color:var(--muted);margin:3px 0 0}
+.dash-stage .dash-link{padding:6px 10px}
+.dash-detailgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.dash-detailgrid>div{padding:11px;background:var(--bg);border-radius:10px}
+.dash-detailgrid span{display:block;color:var(--muted);font-size:11px}
+.dash-detailgrid strong{display:block;margin:4px 0 0;font-size:20px}
+.dash-subject-list{display:grid;grid-template-columns:1fr 1fr;gap:13px 24px}
+.dash-subject-row{display:flex;justify-content:space-between;gap:6px;font-size:12px;margin-bottom:6px}
+.dash-subject-row span{font-weight:700}
+.dash-subject-row small{color:var(--muted)}
+.dash-subject-list .dash-track{height:6px}
+.dash-class-list{display:flex;flex-direction:column;gap:10px}
+.dash-class-item{border-bottom:1px solid var(--line);padding-bottom:10px}
+.dash-class-item:last-child{border:0;padding-bottom:0}
+.dash-class-item strong{font-size:12px;display:block}
+.dash-class-item span{font-size:11px;color:var(--muted)}
+.dash-empty{font-size:12px;color:var(--muted);line-height:1.6;margin:0}
+.dash-note{font-size:11px;color:var(--muted);line-height:1.6;margin:22px 0 0}
+.dash-tools{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:1200px){.dash-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:850px){.dash-hero{grid-template-columns:1fr}.dash-hero-side{grid-template-columns:1fr 1fr;grid-template-rows:auto}.dash-two{grid-template-columns:1fr}.dash-subject-list{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.dash-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.dash-kpi{padding:13px}.dash-kpi strong{font-size:24px}.dash-hero-main{padding:20px}.dash-hero-side{grid-template-columns:1fr}.dash-subject-list{grid-template-columns:1fr}.dash-detailgrid{gap:6px}.dash-detailgrid>div{padding:8px}.dash-detailgrid strong{font-size:17px}.dash-detailgrid span{font-size:10px}.dash-titlebar h2{font-size:17px}}
 </style>
 </head>
 <body>
@@ -114,17 +177,21 @@ dialog.viewer{position:fixed;inset:0 0 0 auto;max-height:none;height:100vh;max-w
     <div class="footnote" id="footnote">Comandos completos disponíveis sem internet, com cópia e exportação individual.</div>
   </aside>
   <main class="main">
-    <div id="homePage">
-    <div class="toprow"><div class="eyebrow">CENTRAL DE ESTUDOS · CÂMARA DOS DEPUTADOS</div><div class="topaction"><button class="quietbutton" id="themeBtn">◐ Aparência</button><button class="quietbutton" id="exportAll">⇩ Exportar tudo (.md)</button></div></div>
-    <h1>Central de Estudos</h1>
-    <p class="sub">Acompanhe o planejamento e a realização dos estudos iniciais, o calendário de revisões e o desempenho nas questões do ChatGPT e do TEC. Identifique avanços, dificuldades e prioridades de reforço em uma visão integrada da preparação para a Câmara dos Deputados.</p>
-    <div class="overview-grid" id="overviewStats" aria-label="Panorama do estudo"></div>
-    <div class="overview-library-heading"><h2>Biblioteca de Comandos</h2><p>Acesse os modelos completos organizados por disciplina.</p></div>
-    <div class="metrics"><div class="metric"><strong id="totalCount">24</strong><span>Comandos completos</span></div><div class="metric"><strong id="subjectCount">06</strong><span>Matérias cadastradas</span></div><div class="metric"><strong id="kindCount">04</strong><span>Modalidades cadastradas</span></div></div>
-    <div class="guide"><strong>Critérios da metodologia:</strong> escolha Certo/Errado à esquerda + marcação independente de <strong>Inseguro à direita</strong>; no estudo inicial, correção seletiva de erros e acertos inseguros; na revisão, correção integrada à leitura comentada (regimentos/PL) ou ao resumo teórico (Ciência Política). Erros provocam reforço direcionado.</div>
-    <div class="toolbar"><label class="search"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="query" type="search" placeholder="Buscar nome, número ou conteúdo do comando…" aria-label="Pesquisar comandos"></label><div class="filters" aria-label="Filtrar por tipo"><button data-kind="Todos" class="chip active">Todos</button><button data-kind="Estudo inicial" class="chip">Estudo inicial</button><button data-kind="Revisão" class="chip">Revisão</button><button data-kind="Questionário" class="chip">Questionários</button></div></div>
-    <div id="tables" aria-live="polite"></div>
-    </div>
+    <section id="homePage" aria-label="Painel de acompanhamento dos estudos">
+      <div class="toprow dashboard-topbar"><div class="eyebrow">CENTRAL DE ESTUDOS · CÂMARA DOS DEPUTADOS</div><div class="topaction"><button class="quietbutton" id="dashboardThemeBtn" type="button">◐ Aparência</button></div></div>
+      <h1>Visão Geral</h1>
+      <p class="sub dashboard-intro">Acompanhamento integrado do planejamento, da execução dos estudos, do ciclo de revisões e dos resultados de questões. Os indicadores são atualizados conforme os registros efetivamente realizados.</p>
+      <div id="dashboardRoot" aria-live="polite"></div>
+    </section>
+    <section id="libraryPage" hidden aria-label="Biblioteca de Comandos">
+      <div class="toprow"><div class="eyebrow">BIBLIOTECA DE COMANDOS · CEBRASPE</div><div class="topaction"><button class="quietbutton" id="themeBtn" type="button">◐ Aparência</button><button class="quietbutton" id="exportAll" type="button">⇩ Exportar tudo (.md)</button></div></div>
+      <h1>Biblioteca de Comandos</h1>
+      <p class="sub">Consulte os comandos completos por matéria, modalidade ou palavra-chave. Os estudos, revisões e resultados ficam disponíveis separadamente na Visão Geral.</p>
+      <div class="metrics"><div class="metric"><strong id="totalCount">24</strong><span>Comandos completos</span></div><div class="metric"><strong id="subjectCount">06</strong><span>Matérias cadastradas</span></div><div class="metric"><strong id="kindCount">04</strong><span>Modalidades cadastradas</span></div></div>
+      <div class="guide"><strong>Como utilizar:</strong> abra um comando por matéria no menu lateral ou utilize a busca abaixo. É possível copiar, salvar ou imprimir o texto integral.</div>
+      <div class="toolbar"><label class="search"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="query" type="search" placeholder="Buscar nome, número ou conteúdo do comando…" aria-label="Pesquisar comandos"></label><div class="filters" aria-label="Filtrar por tipo"><button data-kind="Todos" class="chip active">Todos</button><button data-kind="Estudo inicial" class="chip">Estudo inicial</button><button data-kind="Revisão" class="chip">Revisão</button><button data-kind="Questionário" class="chip">Questionários</button></div></div>
+      <div id="tables" aria-live="polite"></div>
+    </section>
     <section id="workspacePage" class="workspace-page" hidden aria-live="polite" aria-labelledby="workspaceTitle"></section>
   </main>
 </div>
@@ -158,14 +225,16 @@ const workspaceViews=[{"id":"estudos-geral","section":"Estudos","title":"Quadro 
 const workspaceById=Object.fromEntries(workspaceViews.map(v=>[v.id,v]));
 function showPage(view='principal', updateHash=true){
   showEntryForm='';
-  activeView=(view==='principal'||workspaceById[view])?view:'principal';
-  const isHome=activeView==='principal';
+  activeView=(view==='principal'||view==='comandos'||workspaceById[view])?view:'principal';
+  const isHome=activeView==='principal',isLibrary=activeView==='comandos';
   g('homePage').hidden=!isHome;
-  g('workspacePage').hidden=isHome;
+  g('libraryPage').hidden=!isLibrary;
+  g('workspacePage').hidden=isHome||isLibrary;
   document.querySelectorAll('.workitem').forEach(b=>b.classList.toggle('active',b.dataset.view===activeView));
-  if(isHome){
+  if(isHome||isLibrary){
     document.querySelectorAll('#subjectNav .subitem').forEach(b=>b.classList.remove('active'));
-    g('homeNav').classList.add('active');
+    g('homeNav').classList.toggle('active',isHome);
+    if(isHome)refreshOverview();
   }else{
     g('homeNav').classList.remove('active');
     const v=workspaceById[activeView];
@@ -298,15 +367,78 @@ function renderWorkspace(v){
  if(v.section==='Estudos')refreshPlanList(v);
 }
 function refreshOverview(){
- const el=g('overviewStats');if(!el)return;
- const all=metricsAttempt(studyData.attempts);
+ const root=g('dashboardRoot');if(!root)return;
  const overrides=planOverlays();
- const done=planUnits.filter(x=>overrides.get(x.id)?.status==='Concluído').length+studyData.studies.filter(x=>!x.planId&&statusStudy(x)==='Concluídos').length;
- const planned=planUnits.length-(planUnits.filter(x=>overrides.get(x.id)?.status==='Concluído').length)+studyData.studies.filter(x=>!x.planId&&statusStudy(x)==='Planejados').length;
- const due=studyData.reviews.filter(x=>statusReview(x)==='Pendentes').length;
- const cards=[['Estudos iniciais concluídos',formatNum(done),`${formatNum(planned)} planejados`],['Revisões pendentes',formatNum(due),`${formatNum(studyData.reviews.filter(x=>statusReview(x)==='Realizadas').length)} realizadas`],['Aproveitamento geral',formatPercent(all.overall),all.all?`${formatNum(all.all)} questões registradas`:'Sem resultados registrados']];
- el.innerHTML=cards.map(([a,b,c])=>`<div class="overview-card"><label>${escapeHtml(a)}</label><strong>${escapeHtml(b)}</strong><small>${escapeHtml(c)}</small></div>`).join('');
+ const manual=studyData.studies.filter(x=>!x.planId);
+ const inPlan=(x)=>overrides.get(x.id)?.status==='Concluído';
+ const planDone=planUnits.filter(inPlan).length;
+ const manualDone=manual.filter(x=>statusStudy(x)==='Concluídos').length;
+ const total=planUnits.length+manual.length,done=planDone+manualDone;
+ const pct=total?done/total:0;
+ const flowData={};
+ for(const [flow,name] of [['A','Aprofundamento'],['Q','Questões']]){
+   const base=planUnits.filter(x=>x.flow===flow);
+   const addition=manual.filter(x=>x.activity===name);
+   const completed=base.filter(inPlan).length+addition.filter(x=>statusStudy(x)==='Concluídos').length;
+   const size=base.length+addition.length;
+   flowData[flow]={completed,total:size,pct:size?completed/size:0};
+ }
+ const m=metricsAttempt(studyData.attempts);
+ const groups={Programadas:0,Realizadas:0,Pendentes:0};
+ const reviewStages=['D+1','D+7','D+30'].map(stage=>{
+   const filtered=studyData.reviews.filter(r=>r.stage===stage);
+   const count={Programadas:0,Realizadas:0,Pendentes:0};
+   for(const x of filtered)count[statusReview(x)]++;
+   for(const k of Object.keys(count))groups[k]+=count[k];
+   return {stage,...count,total:filtered.length};
+ });
+ const today=todayISO();
+ const todayToDo=studyData.reviews.filter(r=>r.plannedDate===today&&statusReview(r)!=='Realizadas').length;
+ const todayCompleted=studyData.reviews.filter(r=>statusReview(r)==='Realizadas'&&r.doneDate===today).length;
+ const subjectCounts=new Map();
+ for(const x of planUnits){const z=subjectCounts.get(x.subject)||{total:0,done:0};z.total++;if(inPlan(x))z.done++;subjectCounts.set(x.subject,z)}
+ for(const x of manual){const z=subjectCounts.get(x.subject)||{total:0,done:0};z.total++;if(statusStudy(x)==='Concluídos')z.done++;subjectCounts.set(x.subject,z)}
+ const totalAnswered=m.all;
+ const stat=(name,value,info)=>`<div class="dash-kpi"><span class="dash-kpi-label">${escapeHtml(name)}</span><strong>${escapeHtml(String(value))}</strong><small>${escapeHtml(info)}</small></div>`;
+ const bar=p=>`<div class="dash-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(p*100)}"><span style="width:${(p*100).toFixed(2)}%"></span></div>`;
+ const nav=(view,label)=>`<button class="dash-link" type="button" data-dashboard-view="${view}">${escapeHtml(label)}</button>`;
+ const mini=(name,data,view)=>`<div class="dash-mini"><div class="dash-mini-head"><span>${escapeHtml(name)}</span><strong>${formatPercent(data.pct)}</strong></div><div class="dash-mini-caption">${formatNum(data.completed)} de ${formatNum(data.total)} concluídos · ${formatNum(data.total-data.completed)} planejados</div>${bar(data.pct)}</div>`;
+ const miniBreak=(stage)=>`<div class="dash-stage"><div><strong>Revisão ${stage.stage}</strong><p class="dash-stage-meta">${formatNum(stage.Programadas)} programadas · ${formatNum(stage.Realizadas)} realizadas · ${formatNum(stage.Pendentes)} pendentes</p></div>${nav(stage.stage==='D+1'?'revisoes-d1':stage.stage==='D+7'?'revisoes-d7':'revisoes-d30','Ver')}</div>`;
+ const shortList=(level)=>{
+   const rows=studyData.classifications.filter(x=>x.level===level).slice().reverse().slice(0,3);
+   return rows.length?`<div class="dash-class-list">${rows.map(x=>`<div class="dash-class-item"><strong>${escapeHtml(x.topic)}</strong><span>${escapeHtml(x.subject)}${x.note?' · '+escapeHtml(x.note):''}</span></div>`).join('')}</div>`:`<p class="dash-empty">Nenhum ponto ${level==='Forte'?'forte':'fraco'} classificado até o momento.</p>`;
+ };
+ root.innerHTML=`
+ <div class="dash-hero">
+  <div class="dash-hero-main"><div class="dash-hero-kicker">PROGRESSO TOTAL DOS ESTUDOS INICIAIS</div><div class="dash-hero-value"><strong>${formatPercent(pct)}</strong><span>${formatNum(done)} de ${formatNum(total)} tópicos concluídos</span></div>${bar(pct)}<div class="dash-hero-foot"><span>${formatNum(total-done)} planejados</span><span>317 de aprofundamento + 227 de questões${manual.length?' + '+manual.length+' registros avulsos':''}</span></div></div>
+  <div class="dash-hero-side">${mini('Estudo inicial · Aprofundamento',flowData.A)}${mini('Estudo inicial · Questões',flowData.Q)}</div>
+ </div>
+ <div class="dash-kpi-grid">
+ ${stat('Tópicos concluídos',formatNum(done),'De '+formatNum(total)+' cadastrados')}
+ ${stat('Revisões do dia',formatNum(todayToDo),formatNum(todayCompleted)+' realizadas hoje')}
+ ${stat('Revisões pendentes',formatNum(groups.Pendentes),formatNum(groups.Programadas)+' futuras programadas')}
+ ${stat('Aproveitamento geral',formatPercent(m.overall),totalAnswered?formatNum(totalAnswered)+' questões respondidas':'Sem questões registradas')}
+ </div>
+ <section class="dash-section" aria-label="Resumo de estudos por matéria">
+  <div class="dash-titlebar"><div><h2>Estudos iniciais</h2><p>Progresso consolidado das duas sequências de planejamento.</p></div>${nav('estudos-geral','Abrir quadro geral')}</div>
+  <div class="dash-panel"><div class="dash-panel-head"><h3>Conclusão por matéria</h3><span class="dash-panel-sub">Concluídos / total planejado</span></div><div class="dash-panel-body"><div class="dash-subject-list">${[...subjectCounts].map(([name,r])=>`<div><div class="dash-subject-row"><span>${escapeHtml(name)}</span><small>${formatNum(r.done)} / ${formatNum(r.total)} · ${formatPercent(r.total?r.done/r.total:0)}</small></div>${bar(r.total?r.done/r.total:0)}</div>`).join('')}</div></div></div>
+ </section>
+ <section class="dash-section" aria-label="Resumo do calendário de revisões">
+  <div class="dash-titlebar"><div><h2>Revisões</h2><p>Situação do ciclo D+1, D+7 e D+30 com base nas datas registradas.</p></div>${nav('revisoes-geral','Abrir revisões')}</div>
+  <div class="dash-two"><div class="dash-panel"><div class="dash-panel-head"><h3>Situação geral</h3>${nav('revisoes-dia','Revisões do dia')}</div><div class="dash-panel-body"><div class="dash-detailgrid"><div><span>Programadas</span><strong>${formatNum(groups.Programadas)}</strong></div><div><span>Realizadas</span><strong>${formatNum(groups.Realizadas)}</strong></div><div><span>Pendentes</span><strong>${formatNum(groups.Pendentes)}</strong></div></div><p class="dash-note">Hoje: ${formatNum(todayToDo)} a realizar e ${formatNum(todayCompleted)} realizadas. Revisões vencidas e não realizadas são classificadas como pendentes.</p></div></div><div class="dash-panel"><div class="dash-panel-head"><h3>Acompanhamento por etapa</h3></div><div class="dash-panel-body"><div class="dash-stage-list">${reviewStages.map(miniBreak).join('')}</div></div></div></div>
+ </section>
+ <section class="dash-section" aria-label="Resumo dos resultados de desempenho">
+  <div class="dash-titlebar"><div><h2>Desempenho em questões</h2><p>Acertos, erros e aproveitamento bruto, sem misturar resultados do ChatGPT e do TEC.</p></div>${nav('desempenho-geral','Abrir desempenho')}</div>
+  <div class="dash-kpi-grid">${stat('Questões respondidas',formatNum(m.all),formatNum(m.chat)+' ChatGPT · '+formatNum(m.tec)+' TEC')}${stat('Aproveitamento geral',formatPercent(m.overall),'Acertos / questões respondidas')}${stat('Aproveitamento · ChatGPT',formatPercent(m.chatPct),formatNum(m.chat)+' respondidas')}${stat('Aproveitamento · TEC',formatPercent(m.tecPct),formatNum(m.tec)+' respondidas')}</div>
+  <div class="dash-panel" style="margin-top:13px"><div class="dash-panel-head"><h3>Segurança das respostas</h3><span class="dash-panel-sub">Totais registrados, independentemente da origem</span></div><div class="dash-panel-body"><div class="dash-kpi-grid">${stat('Acertos seguros',formatNum(m.cs),'Sem insegurança declarada')}${stat('Acertos inseguros',formatNum(m.cu),'Pontuam integralmente')}${stat('Erros seguros',formatNum(m.ws),'Sem insegurança declarada')}${stat('Erros inseguros',formatNum(m.wu),'Com insegurança declarada')}</div>${(m.correctOther+m.wrongOther)?`<p class="dash-note">${formatNum(m.correctOther+m.wrongOther)} respostas sem classificação de segurança incluídas nos cálculos de aproveitamento.</p>`:''}</div></div>
+ </section>
+ <section class="dash-section" aria-label="Diagnóstico de pontos fortes e fracos">
+  <div class="dash-titlebar"><div><h2>Pontos fortes e fracos</h2><p>Conteúdos classificados a partir das observações registradas.</p></div>${nav('desempenho-geral','Ver classificações')}</div>
+  <div class="dash-two"><div class="dash-panel"><div class="dash-panel-head"><h3>Pontos fortes</h3><span class="dash-panel-sub">${formatNum(studyData.classifications.filter(x=>x.level==='Forte').length)} registros</span></div><div class="dash-panel-body">${shortList('Forte')}</div></div><div class="dash-panel"><div class="dash-panel-head"><h3>Pontos fracos</h3><span class="dash-panel-sub">${formatNum(studyData.classifications.filter(x=>x.level==='Fraco').length)} registros</span></div><div class="dash-panel-body">${shortList('Fraco')}</div></div></div>
+ </section>
+ <div class="dash-section"><div class="dash-tools"><button class="quietbutton" type="button" data-dashboard-action="export">⇩ Exportar dados (.json)</button><button class="quietbutton" type="button" data-dashboard-action="import">⇧ Importar dados (.json)</button><input hidden type="file" id="dashboardImportFile" accept="application/json,.json"></div><p class="dash-note">Os indicadores refletem apenas os dados registrados neste navegador. Não há sincronização automática com o ChatGPT ou o TEC. O tópico DC 01 foi informado como concluído anteriormente, mas está fora da sequência atual de 227 tópicos; por isso não entra no percentual das 544 unidades planejadas.</p></div>`;
 }
+
 function formSubmit(form){
  const kind=form.dataset.formtype,fd=new FormData(form);
  const val=k=>String(fd.get(k)||'').trim();
@@ -341,9 +473,17 @@ async function importData(file){
    const data=JSON.parse(await file.text());
    if(data.format!=='central-estudos-registros-v1'||!['studies','reviews','attempts','classifications'].every(k=>Array.isArray(data[k])))throw Error('Formato incompatível');
    if(!window.confirm('Substituir TODOS os registros locais pelos dados deste arquivo?'))return;
-   studyData={studies:data.studies,reviews:data.reviews,attempts:data.attempts,classifications:data.classifications};writeData();renderWorkspace(workspaceById[activeView]);refreshOverview();toast('Dados importados.');
+   studyData={studies:data.studies,reviews:data.reviews,attempts:data.attempts,classifications:data.classifications};writeData();if(workspaceById[activeView])renderWorkspace(workspaceById[activeView]);refreshOverview();toast('Dados importados.');
  }catch(e){toast('Não foi possível importar: arquivo inválido ou incompatível.');}
 }
+// Navegação e backup da Visão Geral (os indicadores são derivados dos registros locais).
+g('dashboardRoot').addEventListener('click',e=>{
+ const btn=e.target.closest('button');if(!btn)return;
+ if(btn.dataset.dashboardView){showPage(btn.dataset.dashboardView);return}
+ if(btn.dataset.dashboardAction==='export'){exportData();return}
+ if(btn.dataset.dashboardAction==='import'){g('dashboardImportFile')?.click();return}
+});
+g('dashboardRoot').addEventListener('change',e=>{if(e.target.id==='dashboardImportFile'){importData(e.target.files?.[0]);e.target.value=''}});
 // Controles dinâmicos das telas de acompanhamento; preserva os eventos dos comandos originais.
 g('workspacePage').addEventListener('click',e=>{
  const btn=e.target.closest('button');if(!btn)return;
@@ -386,7 +526,7 @@ function buildLibraryUI(){
 function filtered(){return docs.filter(d=>(group==='Todos'||d.materia===group)&&(kind==='Todos'||(kind==='Questionário'?d.categoria.startsWith('Questionário'):d.categoria===kind))&&(!query||[d.titulo,d.categoria,d.materia,d.codigo,d.conteudo,String(d.numero)].some(t=>t.toLocaleLowerCase('pt-BR').includes(query))));}
 function draw(){const show=filtered(), target=g('tables');target.innerHTML='';for(let [id,full,description] of subjects){const sel=show.filter(d=>d.materia===id);if((group!=='Todos'&&group!==id)||!sel.length)continue;const section=document.createElement('section');section.className='section';section.id='subject-'+id;section.innerHTML=`<div class="secrow"><h2 class="sectitle"><span class="secnum">BLOCO ${subjects.findIndex(v=>v[0]===id)+1}</span>${escapeHtml(full)} <span style="font-size:12px;color:var(--muted);font-weight:500">${escapeHtml(description)}</span></h2><span class="countlabel">${sel.length} de ${docs.filter(d=>d.materia===id).length}</span></div><div class="tablebox"><table class="library"><thead><tr><th style="width:105px">Código</th><th>Comando</th><th>Modalidade</th><th style="width:98px">Ação</th></tr></thead><tbody>${sel.map(d=>`<tr data-id="${d.id}" tabindex="0" role="button" aria-label="Abrir ${escapeHtml(d.codigo)}: ${escapeHtml(d.titulo)}"><td><span class="idpill">${escapeHtml(d.codigo)}</span></td><td><div class="itemtitle">${escapeHtml(d.titulo)}</div><div class="itemdesc">${d.categoria.startsWith('Questionário')?'Avaliação e registro para o Planejamento Geral':'Aula, fixação e recuperação ativa'} · ${d.palavras.toLocaleString('pt-BR')} palavras</div></td><td><span class="typebadge">${escapeHtml(label(d.categoria))}</span></td><td><button class="openbtn" data-open="${d.id}">Abrir ↗</button></td></tr>`).join('')}</tbody></table></div>`;target.appendChild(section)}if(!target.children.length)target.innerHTML='<div class="noresults">Nenhum comando encontrado com os filtros atuais. Experimente outra busca.</div>';target.querySelectorAll('tr[data-id]').forEach(tr=>{tr.addEventListener('click',()=>openDoc(Number(tr.dataset.id)));tr.addEventListener('keydown',(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openDoc(Number(tr.dataset.id))}})});}
 function toast(msg){clearTimeout(toastTimer);g('toast').textContent=msg;g('toast').classList.add('visible');toastTimer=setTimeout(()=>g('toast').classList.remove('visible'),2200)}
-function openDoc(id,updateHash=true){const pos=docs.findIndex(x=>x.id===id);if(pos===-1)return;if(activeView!=='principal')showPage('principal',false);const d=docs[pos];current=id;setActiveNav(id);g('viewlabel').textContent=`${d.codigo} · COMANDO ${String(d.numero).padStart(2,'0')}`;g('viewtitle').textContent=d.titulo;g('viewmeta').textContent=`${label(d.categoria)} · ${d.palavras.toLocaleString('pt-BR')} palavras · pronto para copiar`;g('promptbody').innerHTML=d.html;g('copyFallback').hidden=true;g('manualCopyText').value='';g('viewbody').scrollTop=0;g('pagination').textContent=`${String(pos+1).padStart(2,'0')} / ${String(docs.length).padStart(2,'0')}`;g('prev').disabled=pos===0;g('next').disabled=pos===docs.length-1;if(!g('viewer').open)g('viewer').showModal();if(updateHash)try{history.replaceState(null,'','#comando-'+id)}catch(e){}}
+function openDoc(id,updateHash=true){const pos=docs.findIndex(x=>x.id===id);if(pos===-1)return;if(activeView!=='comandos')showPage('comandos',false);const d=docs[pos];current=id;setActiveNav(id);g('viewlabel').textContent=`${d.codigo} · COMANDO ${String(d.numero).padStart(2,'0')}`;g('viewtitle').textContent=d.titulo;g('viewmeta').textContent=`${label(d.categoria)} · ${d.palavras.toLocaleString('pt-BR')} palavras · pronto para copiar`;g('promptbody').innerHTML=d.html;g('copyFallback').hidden=true;g('manualCopyText').value='';g('viewbody').scrollTop=0;g('pagination').textContent=`${String(pos+1).padStart(2,'0')} / ${String(docs.length).padStart(2,'0')}`;g('prev').disabled=pos===0;g('next').disabled=pos===docs.length-1;if(!g('viewer').open)g('viewer').showModal();if(updateHash)try{history.replaceState(null,'','#comando-'+id)}catch(e){}}
 function openAdjacent(delta){const i=docs.findIndex(x=>x.id===current),next=docs[i+delta];if(next)openDoc(next.id)}
 function closeDoc(){g('viewer').close();if(/^#comando-\d+$/.test(location.hash))try{history.replaceState(null,'',(activeView==='principal'?location.pathname+location.search:'#'+activeView))}catch(e){}}
 function save(text,name,contentType='text/plain;charset=utf-8'){const blob=new Blob([text],{type:contentType});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=name;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(link.href),500)}
@@ -451,15 +591,17 @@ g('prev').addEventListener('click',()=>openAdjacent(-1));g('next').addEventListe
 g('query').addEventListener('input',e=>{query=e.target.value.trim().toLocaleLowerCase('pt-BR');draw()});
 buildLibraryUI();
 document.querySelectorAll('.workitem').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.view)));
-g('homeNav').addEventListener('click',()=>{group='Todos';document.querySelectorAll('#subjectNav details.menusubject').forEach(d=>d.open=false);draw();showPage('principal');setActiveNav(null)});
+g('homeNav').addEventListener('click',()=>{document.querySelectorAll('#subjectNav details.menusubject').forEach(d=>d.open=false);showPage('principal');setActiveNav(null)});
+document.querySelector('#subjectNav').closest('details.navgroup').querySelector('summary.navsummary').addEventListener('click',()=>{showPage('comandos')});
 document.querySelectorAll('#subjectNav .subitem').forEach(btn=>btn.addEventListener('click',()=>openDoc(Number(btn.dataset.openNav))));
 document.querySelectorAll('#subjectNav details.menusubject').forEach(section=>section.addEventListener('toggle',()=>{if(section.open)document.querySelectorAll('#subjectNav details.menusubject').forEach(other=>{if(other!==section)other.open=false})}));
 document.querySelectorAll('.chip').forEach(btn=>btn.addEventListener('click',()=>{kind=btn.dataset.kind;document.querySelectorAll('.chip').forEach(b=>b.classList.toggle('active',b===btn));draw()}));
-g('themeBtn').addEventListener('click',()=>{const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('cm-theme',t)}catch{}});
+const toggleTheme=()=>{const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('cm-theme',t)}catch{}};
+g('themeBtn').addEventListener('click',toggleTheme);g('dashboardThemeBtn').addEventListener('click',toggleTheme);
 try{let theme=localStorage.getItem('cm-theme');if(theme)document.documentElement.setAttribute('data-theme',theme)}catch{}
 document.addEventListener('keydown',e=>{if(g('viewer').open){if(e.key==='ArrowLeft'&&e.altKey)openAdjacent(-1);if(e.key==='ArrowRight'&&e.altKey)openAdjacent(1)}});
-window.addEventListener('hashchange',()=>{const match=location.hash.match(/^#comando-(\d+)$/);if(match){openDoc(Number(match[1]),false);return}const id=location.hash.replace(/^#/, '');if(!g('viewer').open)showPage(workspaceById[id]?id:'principal',false)});
-draw();refreshOverview();setActiveNav(null);const hash=location.hash.replace(/^#/,'');const match=location.hash.match(/^#comando-(\d+)$/);if(match)openDoc(Number(match[1]),false);else if(workspaceById[hash])showPage(hash,false);
+window.addEventListener('hashchange',()=>{const match=location.hash.match(/^#comando-(\d+)$/);if(match){openDoc(Number(match[1]),false);return}const id=location.hash.replace(/^#/, '');if(!g('viewer').open)showPage((workspaceById[id]||id==='comandos')?id:'principal',false)});
+draw();refreshOverview();setActiveNav(null);const hash=location.hash.replace(/^#/,'');const match=location.hash.match(/^#comando-(\d+)$/);if(match)openDoc(Number(match[1]),false);else if(workspaceById[hash]||hash==='comandos')showPage(hash,false);
 })();
 </script>
 </body>
