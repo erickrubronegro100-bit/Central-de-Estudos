@@ -875,7 +875,7 @@ function weeklyProgress(title,done,total,description=''){
 function weeklySnapshot(){
  const data=weeklyStudyState(),w=data.active;
  const pause=data.position.phase==='Pausa de estudos';
- return '<section class="weekly-panel"><div class="weekly-header"><div><h2>Meta da Semana '+w.number+' · '+weekRange(w)+'</h2><p>'+escapeHtml(data.position.phase)+(pause?' · nenhuma meta nova durante a pausa':'')+' · 50 tópicos planejados</p></div><button type="button" class="dash-link" data-jump-view="estudos-semanal">Abrir metas semanais</button></div>'+
+ return '<section class="weekly-panel"><div class="weekly-header"><div><h2>'+(pause?'Pausa · próxima meta: Semana ':'Meta da Semana ')+w.number+' · '+weekRange(w)+'</h2><p>'+escapeHtml(data.position.phase)+(pause?' · sem meta ativa de 22/11 a 27/11':'')+' · 50 tópicos da semana indicada</p></div><button type="button" class="dash-link" data-jump-view="estudos-semanal">Abrir metas semanais</button></div>'+
  '<div class="weekly-compact">'+weeklyProgress('Total da semana',w.done,w.units.length)+weeklyProgress('Aprofundamento',w.doneA,w.quotaA)+weeklyProgress('Questões',w.doneQ,w.quotaQ)+'</div>'+
  '<div class="weekly-meta"><span>Acumulado: <strong>'+formatNum(data.totalDone)+'/550 · '+formatPercent(data.totalPct)+'</strong></span><span>Pendências anteriores: <strong>'+formatNum(data.backlog.length)+'</strong></span><span>Saldo operacional: <strong>'+formatNum(data.remaining)+'</strong></span><span>Adiantamentos futuros: <strong>'+formatNum(data.ahead.length)+'</strong></span></div></section>';
 }
@@ -888,13 +888,13 @@ function weekListRow(u,data){
 }
 function weeklySelectedDetails(data,w){
  const done=data.completed;
- const late=data.backlog;
+ const late=studyWeeks.slice(0,w.index).flatMap(week=>week.units).filter(u=>!done.has(u.id));
  const pendingA=w.units.filter(u=>u.flow==='A'&&!done.has(u.id));
  const pendingQ=w.units.filter(u=>u.flow==='Q'&&!done.has(u.id));
  const backlogPreview=late.length?'<details class="weekly-group"><summary>Pendências acumuladas das semanas anteriores · '+late.length+'</summary>'+late.map(u=>weekListRow(u,data)).join('')+'</details>':'<p class="weekly-note">Não há tópicos pendentes de semanas anteriores.</p>';
  return '<section class="weekly-selected"><h2>Semana '+w.number+' · '+weekRange(w)+'</h2>'+
  '<p class="weekly-note">Meta fixa: '+w.quotaA+' de Aprofundamento e '+w.quotaQ+' de Questões. Créditos antecipados contam na semana de origem do tópico. Tópicos pendentes de semanas anteriores somam-se ao saldo operacional.</p>'+
- '<div class="weekly-kpi">'+metricCard('Meta semanal','50 tópicos')+metricCard('Concluídos nesta meta',formatNum(w.done),formatPercent(w.pct))+metricCard('Restantes desta meta',formatNum(w.remain))+metricCard('Concluídos antes do início',formatNum(w.preDone))+metricCard('Concluídos após o prazo',formatNum(w.lateDone))+metricCard('Pendências acumuladas agora',formatNum(data.backlog.length))+'</div>'+
+ '<div class="weekly-kpi">'+metricCard('Meta semanal','50 tópicos')+metricCard('Concluídos nesta meta',formatNum(w.done),formatPercent(w.pct))+metricCard('Restantes desta meta',formatNum(w.remain))+metricCard('Concluídos antes do início',formatNum(w.preDone))+metricCard('Concluídos após o prazo',formatNum(w.lateDone))+metricCard('Pendências anteriores à semana',formatNum(late.length))+'</div>'+
  backlogPreview+
  '<details class="weekly-group" open><summary>Aprofundamento · '+w.doneA+'/'+w.quotaA+' concluídos</summary>'+w.units.filter(u=>u.flow==='A').map(u=>weekListRow(u,data)).join('')+'</details>'+
  '<details class="weekly-group"><summary>Questões · '+w.doneQ+'/'+w.quotaQ+' concluídos</summary>'+w.units.filter(u=>u.flow==='Q').map(u=>weekListRow(u,data)).join('')+'</details>'+
