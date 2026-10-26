@@ -190,6 +190,45 @@ dialog.viewer{position:fixed;inset:0 0 0 auto;max-height:none;height:100vh;max-w
 .attempt-history summary{cursor:pointer;font-weight:650;color:var(--accent);margin-bottom:8px}
 .history-contact{display:block;font-size:11px;color:var(--muted)}
 .history-focus{font-size:11px;line-height:1.35;max-width:310px;margin-top:5px;color:var(--muted)}
+
+/* Metas semanais e painéis completos por setor. */
+.weekly-panel{margin:19px 0 22px;padding:20px;border:1px solid var(--line);border-radius:15px;background:var(--card);box-shadow:var(--shadow)}
+.weekly-header{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.weekly-header h2{margin:0 0 5px;font-size:18px;letter-spacing:-.3px}
+.weekly-header p{margin:0;color:var(--muted);font-size:12px}
+.weekly-compact{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin-top:16px}
+.weekly-line{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px}
+.weekly-line strong{font-weight:670}.weekly-line span{white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums}
+.weekly-track{width:100%;height:9px;border-radius:100px;background:var(--accent-soft);overflow:hidden;margin-top:8px}
+.weekly-track span{display:block;height:100%;border-radius:100px;background:var(--accent);transition:width .15s}
+.weekly-progress-item small{color:var(--muted);font-size:11px}
+.weekly-meta{display:flex;flex-wrap:wrap;gap:8px 19px;margin-top:15px;padding-top:13px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.weekly-meta strong{color:var(--text);font-variant-numeric:tabular-nums}
+.weekly-kpi{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:17px 0 22px}
+.weekly-kpi .workspace-stat{min-width:0}.weekly-kpi .workspace-stat strong{font-size:24px}
+.weekly-note{font-size:12px;color:var(--muted);line-height:1.6;margin:10px 0 15px}
+.weekly-pause{padding:12px 16px;border-radius:10px;border:1px solid var(--line);font-size:12px;color:var(--text);margin:0 0 12px}
+.weekly-select{background:none;border:0;color:var(--accent);font:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-weight:730}
+.weekly-table tr.weekly-current-row{background:var(--accent-soft)}
+.weekly-table th,.weekly-table td{white-space:nowrap}
+.weekly-selected{margin:24px 0}.weekly-selected h2{font-size:20px;margin-bottom:5px}
+.weekly-group{border:1px solid var(--line);border-radius:12px;background:var(--card);margin:13px 0;overflow:hidden}
+.weekly-group>summary{cursor:pointer;padding:14px 17px;font-size:13px;font-weight:750;border-bottom:1px solid var(--line)}
+.weekly-topic{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.weekly-topic:last-child{border:0}
+.weekly-topic>div:first-child{min-width:0;flex:1}
+.weekly-topic strong{color:var(--accent);font-size:12px;margin-right:8px}
+.weekly-topic span{font-size:12px;font-weight:650}
+.weekly-topic small{display:block;font-size:11px;color:var(--muted);line-height:1.5;margin-top:4px}
+.weekly-topic-done{background:rgba(20,126,85,.04)}
+.weekly-actions{flex-shrink:0;display:flex;gap:7px;flex-wrap:wrap}
+.sector-links{display:flex;flex-wrap:wrap;gap:9px;margin:14px 0 23px}
+.sector-minirow{display:flex;justify-content:space-between;align-items:center;gap:9px;padding:11px 15px;border-bottom:1px solid var(--line)}
+.sector-minirow:last-child{border:0}
+.sector-minirow span{min-width:0;font-size:12px}
+.sector-minirow small{display:block;font-size:11px;color:var(--muted);margin-top:4px}
+@media(max-width:900px){.weekly-kpi{grid-template-columns:repeat(2,minmax(0,1fr))}.weekly-compact{grid-template-columns:1fr}}
+@media(max-width:560px){.weekly-kpi{grid-template-columns:1fr}.weekly-topic{flex-direction:column;align-items:stretch}.weekly-actions{justify-content:flex-end}}
 </style>
 </head>
 <body>
@@ -201,6 +240,7 @@ dialog.viewer{position:fixed;inset:0 0 0 auto;max-height:none;height:100vh;max-w
     <button class="navitem workitem" type="button" data-view="estudos-geral"><span>Quadro Geral</span></button>
     <button class="navitem workitem" type="button" data-view="estudos-aprofundamento"><span>Estudos Iniciais – Aprofundamento</span></button>
     <button class="navitem workitem" type="button" data-view="estudos-questoes"><span>Estudos Iniciais – Questões</span></button>
+    <button class="navitem workitem" type="button" data-view="estudos-semanal"><span>Metas Semanais</span></button>
     </nav></details>
     <details class="navgroup" name="secao" data-navgroup="Revisões"><summary class="navsummary"><span><span class="navicon" aria-hidden="true">◷</span>Revisões</span><span class="groupcaret" aria-hidden="true">›</span></summary><nav class="subnav worknav" aria-label="Revisões">
     <button class="navitem workitem" type="button" data-view="revisoes-geral"><span>Quadro Geral</span></button>
@@ -279,7 +319,7 @@ const subjects=[...new Set(docs.map(d=>d.materia))].map(id=>[id,subjectLabel(id)
 const escapeHtml=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const label=(k)=>k==='Estudo inicial'?'Professor · estudo inicial':k==='Revisão'?'Professor · revisão D+1/D+7/D+30':k==='Relatório'?'Relatório de desempenho':k;
 
-const workspaceViews=[{"id":"estudos-geral","section":"Estudos","title":"Quadro Geral","description":"Panorama integrado das 317 unidades de aprofundamento e dos 233 tópicos de questões, com acompanhamento da execução."},{"id":"estudos-aprofundamento","section":"Estudos","title":"Estudos Iniciais – Aprofundamento","description":"Sequência integrada de 317 unidades de aprofundamento. Consulte, filtre e acompanhe a conclusão dos tópicos."},{"id":"estudos-questoes","section":"Estudos","title":"Estudos Iniciais – Questões","description":"Sequência integrada de 233 tópicos de questões, com os códigos de controle fornecidos e a situação de cada tópico."},{"id":"revisoes-geral","section":"Revisões","title":"Quadro Geral","description":"Visão consolidada do ciclo de revisões D+1, D+7 e D+30, com datas programadas e realizadas."},{"id":"revisoes-dia","section":"Revisões","title":"Revisões do dia","description":"Consulte as revisões programadas para hoje e acompanhe o cumprimento das atividades."},{"id":"revisoes-d1","section":"Revisões","title":"Revisões D+1","description":"Acompanhe as revisões D+1 vinculadas às datas efetivas dos estudos iniciais."},{"id":"revisoes-d7","section":"Revisões","title":"Revisões D+7","description":"Acompanhe as revisões D+7 vinculadas às datas efetivas dos estudos iniciais."},{"id":"revisoes-d30","section":"Revisões","title":"Revisões D+30","description":"Acompanhe as revisões D+30 vinculadas às datas efetivas dos estudos iniciais."},{"id":"desempenho-geral","section":"Desempenho","title":"Quadro Geral","description":"Acompanhe os resultados de todas as disciplinas e identifique evolução, inseguranças e pontos de reforço."},{"id":"desempenho-regimentos","section":"Desempenho","title":"Regimentos e Processo Legislativo (RICD/PL/RCCN)","description":"Acompanhamento integrado do desempenho em Regimento Interno da Câmara dos Deputados (RICD), Processo Legislativo (PL) e Regimento Comum do Congresso Nacional (RCCN), com resultados de questões e evolução das revisões."},{"id":"desempenho-lpling","section":"Desempenho","title":"Língua Portuguesa e Linguística (LP/LING)","description":"Acompanhamento do desempenho em Língua Portuguesa e Linguística (LP/LING), com resultados de questões e evolução das revisões."},{"id":"desempenho-rfia","section":"Desempenho","title":"Reconhecimento de Fala, Transcrição e Inteligência Artificial (RFIA)","description":"Acompanhamento do desempenho em Reconhecimento de Fala, Transcrição e Inteligência Artificial (RFIA), com resultados de questões e evolução das revisões."},{"id":"desempenho-cp","section":"Desempenho","title":"Ciência Política (CP)","description":"Acompanhamento do desempenho em Ciência Política (CP), com resultados de questões e evolução das revisões."},{"id":"desempenho-dc","section":"Desempenho","title":"Direito Constitucional (DC)","description":"Acompanhamento do desempenho em Direito Constitucional (DC), com resultados de questões e evolução das revisões."},{"id":"desempenho-da","section":"Desempenho","title":"Direito Administrativo (DA)","description":"Acompanhamento do desempenho em Direito Administrativo (DA), com resultados de questões e evolução das revisões."},{"id":"desempenho-adm","section":"Desempenho","title":"Administração Pública (AP)","description":"Acompanhamento do desempenho em Administração Pública (AP), com resultados de questões e evolução das revisões."},{"id":"desempenho-ti","section":"Desempenho","title":"Tecnologia da Informação (TI)","description":"Acompanhamento do desempenho em Tecnologia da Informação (TI), com resultados de questões e evolução das revisões."}];
+const workspaceViews=[{"id":"estudos-geral","section":"Estudos","title":"Quadro Geral","description":"Painel completo do planejamento: 550 unidades, metas semanais, avanço por modalidade, atrasos, adiantamentos e sequência de estudos."},{"id":"estudos-aprofundamento","section":"Estudos","title":"Estudos Iniciais – Aprofundamento","description":"Sequência integrada de 317 unidades de aprofundamento. Consulte, filtre e acompanhe a conclusão dos tópicos."},{"id":"estudos-questoes","section":"Estudos","title":"Estudos Iniciais – Questões","description":"Sequência integrada de 233 tópicos de questões, com os códigos de controle fornecidos e a situação de cada tópico."},{"id":"estudos-semanal","section":"Estudos","title":"Metas Semanais","description":"Plano de 11 semanas efetivas, com 50 tópicos por semana, saldos pendentes e créditos por adiantamento."},{"id":"revisoes-geral","section":"Revisões","title":"Quadro Geral","description":"Painel completo das revisões: D+1, D+7, D+30, cumprimento, vencimentos, agenda e histórico de execução."},{"id":"revisoes-dia","section":"Revisões","title":"Revisões do dia","description":"Consulte as revisões programadas para hoje e acompanhe o cumprimento das atividades."},{"id":"revisoes-d1","section":"Revisões","title":"Revisões D+1","description":"Acompanhe as revisões D+1 vinculadas às datas efetivas dos estudos iniciais."},{"id":"revisoes-d7","section":"Revisões","title":"Revisões D+7","description":"Acompanhe as revisões D+7 vinculadas às datas efetivas dos estudos iniciais."},{"id":"revisoes-d30","section":"Revisões","title":"Revisões D+30","description":"Acompanhe as revisões D+30 vinculadas às datas efetivas dos estudos iniciais."},{"id":"desempenho-geral","section":"Desempenho","title":"Quadro Geral","description":"Painel completo de resultados: questões, fontes, acertos, erros, segurança, evolução e indicadores por disciplina."},{"id":"desempenho-regimentos","section":"Desempenho","title":"Regimentos e Processo Legislativo (RICD/PL/RCCN)","description":"Acompanhamento integrado do desempenho em Regimento Interno da Câmara dos Deputados (RICD), Processo Legislativo (PL) e Regimento Comum do Congresso Nacional (RCCN), com resultados de questões e evolução das revisões."},{"id":"desempenho-lpling","section":"Desempenho","title":"Língua Portuguesa e Linguística (LP/LING)","description":"Acompanhamento do desempenho em Língua Portuguesa e Linguística (LP/LING), com resultados de questões e evolução das revisões."},{"id":"desempenho-rfia","section":"Desempenho","title":"Reconhecimento de Fala, Transcrição e Inteligência Artificial (RFIA)","description":"Acompanhamento do desempenho em Reconhecimento de Fala, Transcrição e Inteligência Artificial (RFIA), com resultados de questões e evolução das revisões."},{"id":"desempenho-cp","section":"Desempenho","title":"Ciência Política (CP)","description":"Acompanhamento do desempenho em Ciência Política (CP), com resultados de questões e evolução das revisões."},{"id":"desempenho-dc","section":"Desempenho","title":"Direito Constitucional (DC)","description":"Acompanhamento do desempenho em Direito Constitucional (DC), com resultados de questões e evolução das revisões."},{"id":"desempenho-da","section":"Desempenho","title":"Direito Administrativo (DA)","description":"Acompanhamento do desempenho em Direito Administrativo (DA), com resultados de questões e evolução das revisões."},{"id":"desempenho-adm","section":"Desempenho","title":"Administração Pública (AP)","description":"Acompanhamento do desempenho em Administração Pública (AP), com resultados de questões e evolução das revisões."},{"id":"desempenho-ti","section":"Desempenho","title":"Tecnologia da Informação (TI)","description":"Acompanhamento do desempenho em Tecnologia da Informação (TI), com resultados de questões e evolução das revisões."}];
 const workspaceById=Object.fromEntries(workspaceViews.map(v=>[v.id,v]));
 function showPage(view='principal', updateHash=true){
   showEntryForm='';
@@ -761,6 +801,173 @@ function entryForm(type,v){
 function actionsHtml(type,second=false){return `<div class="panel-actions"><button type="button" class="primary" data-action="toggle-form" data-formtype="${type}">${type==='study'?'+ Registrar estudo':type==='review'?'+ Registrar revisão':type==='attempt'?'+ Registrar resultado do tópico':'+ Classificar ponto'}</button>${!second?`<button type="button" class="smallbtn" data-action="export-data">Exportar dados (.json)</button><button type="button" class="smallbtn" data-action="import-data">Importar dados (.json)</button><input id="importDataFile" hidden type="file" accept="application/json,.json">`:''}</div>`}
 function getStudies(v){return v.id==='estudos-aprofundamento'?studyData.studies.filter(x=>x.activity==='Aprofundamento'):v.id==='estudos-questoes'?studyData.studies.filter(x=>x.activity==='Questões'):studyData.studies}
 const planQueries={},planSubjects={},planPages={};
+
+// Plano estável de 11 semanas; a pausa de 22/11 a 27/11 não gera meta.
+const WEEK_SCHEDULE=[
+ ['2026-10-25','2026-10-30',29,21],
+ ['2026-11-01','2026-11-06',29,21],
+ ['2026-11-08','2026-11-13',29,21],
+ ['2026-11-15','2026-11-20',29,21],
+ ['2026-11-29','2026-12-04',29,21],
+ ['2026-12-06','2026-12-11',29,21],
+ ['2026-12-13','2026-12-18',29,21],
+ ['2026-12-20','2026-12-25',28,22],
+ ['2026-12-27','2027-01-01',28,22],
+ ['2027-01-03','2027-01-08',29,21],
+ ['2027-01-10','2027-01-15',29,21]
+];
+function buildWeeklyPlan(){
+ const blocks={A:planUnits.filter(u=>u.flow==='A').sort((a,b)=>a.order-b.order),Q:planUnits.filter(u=>u.flow==='Q').sort((a,b)=>a.order-b.order)};
+ const offsets={A:0,Q:0};
+ const weeks=WEEK_SCHEDULE.map(([start,end,a,q],i)=>{
+  const units=[...blocks.A.slice(offsets.A,offsets.A+a),...blocks.Q.slice(offsets.Q,offsets.Q+q)];
+  offsets.A+=a;offsets.Q+=q;
+  return {index:i,number:i+1,start,end,quotaA:a,quotaQ:q,units};
+ });
+ return weeks;
+}
+const studyWeeks=buildWeeklyPlan();
+const weeklyUnitIndex=new Map(studyWeeks.flatMap(w=>w.units.map(u=>[u.id,w.index])));
+let selectedStudyWeek=null;
+function dateBetween(value,start,end){return Boolean(value)&&value>=start&&value<=end}
+function getWeekPosition(){
+ const now=todayISO();
+ const exact=studyWeeks.findIndex(w=>dateBetween(now,w.start,w.end));
+ if(exact>=0)return {index:exact,phase:'Em andamento'};
+ if(dateBetween(now,'2026-11-22','2026-11-27'))return {index:4,phase:'Pausa de estudos'};
+ if(now<studyWeeks[0].start)return {index:0,phase:'Planejamento ainda não iniciado'};
+ const later=studyWeeks.findIndex(w=>now<w.start);
+ return later>=0?{index:later,phase:'Entre semanas'}:{index:10,phase:'Período encerrado'};
+}
+function weeklyStudyState(){
+ const completedRows=studyData.studies.filter(r=>r.status==='Concluído'&&r.planId&&weeklyUnitIndex.has(r.planId));
+ const completed=new Map();
+ for(const r of completedRows){
+  const old=completed.get(r.planId);
+  if(!old||(r.date&&(!old.date||r.date<old.date)))completed.set(r.planId,r);
+ }
+ const weeks=studyWeeks.map(w=>{
+  const a=w.units.filter(u=>u.flow==='A');
+  const q=w.units.filter(u=>u.flow==='Q');
+  const doneA=a.filter(u=>completed.has(u.id)).length;
+  const doneQ=q.filter(u=>completed.has(u.id)).length;
+  const onTime=w.units.filter(u=>{const x=completed.get(u.id);return x&&x.date&&x.date<=w.end}).length;
+  const preDone=w.units.filter(u=>{const x=completed.get(u.id);return x&&x.date&&x.date<w.start}).length;
+  const lateDone=w.units.filter(u=>{const x=completed.get(u.id);return x&&x.date&&x.date>w.end}).length;
+  const done=doneA+doneQ;
+  return {...w,doneA,doneQ,done,onTime,preDone,lateDone,remain:w.units.length-done,pct:w.units.length?done/w.units.length:0};
+ });
+ const now=todayISO();
+ const pos=getWeekPosition();
+ const active=weeks[pos.index];
+ const preceding=weeks.slice(0,pos.index).flatMap(w=>w.units).filter(u=>!completed.has(u.id));
+ const ahead=weeks.slice(pos.index+1).flatMap(w=>w.units).filter(u=>{
+  const record=completed.get(u.id);return record&&record.date&&record.date<=now;
+ });
+ const completedNow=completed.size;
+ return {weeks,completed,position:pos,active,backlog:preceding,ahead,remaining:active.remain+preceding.length,totalDone:completedNow,totalPct:planUnits.length?completedNow/planUnits.length:0};
+}
+const weekRange=w=>dateBR(w.start)+' a '+dateBR(w.end);
+function weeklyProgress(title,done,total,description=''){
+ const ratio=total?Math.min(1,done/total):0;
+ return '<div class="weekly-progress-item"><div class="weekly-line"><strong>'+escapeHtml(title)+'</strong><span>'+formatNum(done)+'/'+formatNum(total)+' · '+formatPercent(total?done/total:0)+'</span></div><div class="weekly-track"><span style="width:'+(ratio*100).toFixed(2)+'%"></span></div>'+(description?'<small>'+escapeHtml(description)+'</small>':'')+'</div>';
+}
+function weeklySnapshot(){
+ const data=weeklyStudyState(),w=data.active;
+ const pause=data.position.phase==='Pausa de estudos';
+ return '<section class="weekly-panel"><div class="weekly-header"><div><h2>Meta da Semana '+w.number+' · '+weekRange(w)+'</h2><p>'+escapeHtml(data.position.phase)+(pause?' · nenhuma meta nova durante a pausa':'')+' · 50 tópicos planejados</p></div><button type="button" class="dash-link" data-jump-view="estudos-semanal">Abrir metas semanais</button></div>'+
+ '<div class="weekly-compact">'+weeklyProgress('Total da semana',w.done,w.units.length)+weeklyProgress('Aprofundamento',w.doneA,w.quotaA)+weeklyProgress('Questões',w.doneQ,w.quotaQ)+'</div>'+
+ '<div class="weekly-meta"><span>Acumulado: <strong>'+formatNum(data.totalDone)+'/550 · '+formatPercent(data.totalPct)+'</strong></span><span>Pendências anteriores: <strong>'+formatNum(data.backlog.length)+'</strong></span><span>Saldo operacional: <strong>'+formatNum(data.remaining)+'</strong></span><span>Adiantamentos futuros: <strong>'+formatNum(data.ahead.length)+'</strong></span></div></section>';
+}
+function weekListRow(u,data){
+ const record=data.completed.get(u.id);
+ const done=Boolean(record);
+ const assigned=studyWeeks[weeklyUnitIndex.get(u.id)];
+ const timing=done?(record.date&&record.date<assigned.start?' · adiantado':record.date&&record.date>assigned.end?' · concluído em atraso':''):'';
+ return '<div class="weekly-topic '+(done?'weekly-topic-done':'')+'"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span><small>'+escapeHtml(subjectLabel(u.subject))+' · '+(done?'Concluído'+(record.date?' em '+dateBR(record.date):'')+timing:'Pendente')+'</small></div><div class="weekly-actions"><button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="Estudo inicial">Abrir bloco</button><button type="button" class="smallbtn" data-plan-id="'+escapeHtml(u.id)+'" data-plan-done="'+(done?'0':'1')+'">'+(done?'↶ Reabrir':'✓ Concluir')+'</button></div></div>';
+}
+function weeklySelectedDetails(data,w){
+ const done=data.completed;
+ const late=data.backlog;
+ const pendingA=w.units.filter(u=>u.flow==='A'&&!done.has(u.id));
+ const pendingQ=w.units.filter(u=>u.flow==='Q'&&!done.has(u.id));
+ const backlogPreview=late.length?'<details class="weekly-group"><summary>Pendências acumuladas das semanas anteriores · '+late.length+'</summary>'+late.map(u=>weekListRow(u,data)).join('')+'</details>':'<p class="weekly-note">Não há tópicos pendentes de semanas anteriores.</p>';
+ return '<section class="weekly-selected"><h2>Semana '+w.number+' · '+weekRange(w)+'</h2>'+
+ '<p class="weekly-note">Meta fixa: '+w.quotaA+' de Aprofundamento e '+w.quotaQ+' de Questões. Créditos antecipados contam na semana de origem do tópico. Tópicos pendentes de semanas anteriores somam-se ao saldo operacional.</p>'+
+ '<div class="weekly-kpi">'+metricCard('Meta semanal','50 tópicos')+metricCard('Concluídos nesta meta',formatNum(w.done),formatPercent(w.pct))+metricCard('Restantes desta meta',formatNum(w.remain))+metricCard('Concluídos antes do início',formatNum(w.preDone))+metricCard('Concluídos após o prazo',formatNum(w.lateDone))+metricCard('Pendências acumuladas agora',formatNum(data.backlog.length))+'</div>'+
+ backlogPreview+
+ '<details class="weekly-group" open><summary>Aprofundamento · '+w.doneA+'/'+w.quotaA+' concluídos</summary>'+w.units.filter(u=>u.flow==='A').map(u=>weekListRow(u,data)).join('')+'</details>'+
+ '<details class="weekly-group"><summary>Questões · '+w.doneQ+'/'+w.quotaQ+' concluídos</summary>'+w.units.filter(u=>u.flow==='Q').map(u=>weekListRow(u,data)).join('')+'</details>'+
+ '</section>';
+}
+function renderWeeklyWorkspace(){
+ const d=weeklyStudyState();
+ const chosen=selectedStudyWeek===null?d.position.index:Math.max(0,Math.min(10,selectedStudyWeek));
+ const w=d.weeks[chosen];
+ const rows=d.weeks.map(t=>{
+  const isActive=t.index===d.position.index;
+  const status=t.done===50?'Meta alcançada':todayISO()>t.end?(t.onTime===50?'No prazo':'Prazo encerrado'):todayISO()<t.start?'Futura':'Em andamento';
+  return '<tr class="'+(isActive?'weekly-current-row':'')+'"><th scope="row"><button type="button" class="weekly-select" data-week-select="'+t.index+'" aria-pressed="'+(t.index===chosen)+'">Semana '+t.number+'</button></th><td>'+weekRange(t)+'</td><td>'+t.doneA+'/'+t.quotaA+'</td><td>'+t.doneQ+'/'+t.quotaQ+'</td><td>'+t.done+'/50</td><td>'+formatPercent(t.pct)+'</td><td>'+t.preDone+'</td><td>'+t.remain+'</td><td>'+escapeHtml(status)+'</td></tr>';
+ }).join('');
+ const pause='<p class="weekly-pause"><strong>Pausa programada:</strong> 22/11 a 27/11/2026 — sem nova meta de estudos. As revisões seguem agenda própria.</p>';
+ return weeklySnapshot()+pause+
+ '<div class="weekly-kpi">'+metricCard('Total planejado',formatNum(planUnits.length),'317 Aprofundamento · 233 Questões')+metricCard('Total concluído',formatNum(d.totalDone),formatPercent(d.totalPct))+metricCard('Faltam para concluir',formatNum(planUnits.length-d.totalDone))+metricCard('Pendências anteriores',formatNum(d.backlog.length))+metricCard('Saldo operacional',formatNum(d.remaining),'Semana ativa + atrasos')+metricCard('Tópicos adiantados',formatNum(d.ahead.length),'Sem duplicação')+'</div>'+
+ panel('Calendário de metas','11 semanas × 50 tópicos; a barra de cada semana usa suas unidades originalmente atribuídas.','<div class="platform-scroll"><table class="platform-table weekly-table"><thead><tr><th>Semana</th><th>Período</th><th>Aprof.</th><th>Questões</th><th>Total</th><th>Cumprimento</th><th>Adiantados</th><th>Restam</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><th colspan="2">Planejamento total</th><td>317</td><td>233</td><td>550</td><td>'+formatPercent(d.totalPct)+'</td><td>—</td><td>'+formatNum(550-d.totalDone)+'</td><td>11 semanas</td></tr></tfoot></table></div>')+
+ weeklySelectedDetails(d,w);
+}
+function renderStudyGeneralPanels(){
+ const d=weeklyStudyState(),doneSet=d.completed;
+ const A=planUnits.filter(x=>x.flow==='A'),Q=planUnits.filter(x=>x.flow==='Q');
+ const da=A.filter(u=>doneSet.has(u.id)).length,dq=Q.filter(u=>doneSet.has(u.id)).length;
+ const bySubject=[...new Set(planUnits.map(x=>x.subject))].map(subject=>{
+  const items=planUnits.filter(x=>x.subject===subject);
+  const value=items.filter(u=>doneSet.has(u.id)).length;
+  return {subject,total:items.length,done:value};
+ });
+ const subjectTable=bySubject.map(r=>'<tr><th scope="row">'+escapeHtml(subjectLabel(r.subject))+'</th><td>'+formatNum(r.done)+'</td><td>'+formatNum(r.total)+'</td><td>'+formatPercent(r.total?r.done/r.total:0)+'</td><td>'+formatNum(r.total-r.done)+'</td></tr>').join('');
+ return '<div class="weekly-kpi">'+metricCard('Total de unidades','550')+metricCard('Concluídas',formatNum(d.totalDone),formatPercent(d.totalPct))+metricCard('Ainda planejadas',formatNum(550-d.totalDone))+metricCard('Aprofundamento',da+'/'+A.length,formatPercent(da/A.length))+metricCard('Questões',dq+'/'+Q.length,formatPercent(dq/Q.length))+metricCard('Saldo operacional',formatNum(d.remaining),'Meta corrente + pendências')+'</div>'+
+ weeklySnapshot()+
+ panel('Avanço por disciplina','Cobertura do planejamento e saldo de tópicos ainda não concluídos.','<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Disciplina</th><th>Concluídos</th><th>Total</th><th>Progresso</th><th>Faltam</th></tr></thead><tbody>'+subjectTable+'</tbody></table></div>')+
+ '<div class="sector-links"><button type="button" class="dash-link" data-jump-view="estudos-aprofundamento">Sequência de Aprofundamento</button><button type="button" class="dash-link" data-jump-view="estudos-questoes">Sequência de Questões</button><button type="button" class="dash-link" data-jump-view="estudos-semanal">Metas Semanais</button></div>';
+}
+function renderReviewGeneralPanels(){
+ const stages=['D+1','D+7','D+30'];
+ const today=todayISO();
+ const rows=stages.map(stage=>{
+  const items=studyData.reviews.filter(r=>r.stage===stage);
+  const done=items.filter(r=>r.status==='Realizada').length;
+  const pending=items.filter(r=>statusReview(r)==='Pendentes').length;
+  const scheduled=items.filter(r=>statusReview(r)==='Programadas').length;
+  return '<tr><th scope="row">'+stage+'</th><td>'+formatNum(items.length)+'</td><td>'+formatNum(done)+'</td><td>'+formatNum(scheduled)+'</td><td>'+formatNum(pending)+'</td><td>'+formatPercent(items.length?done/items.length:0)+'</td></tr>';
+ }).join('');
+ const todayDue=studyData.reviews.filter(r=>r.plannedDate===today&&r.status!=='Realizada');
+ const todayDone=studyData.reviews.filter(r=>r.doneDate===today&&r.status==='Realizada');
+ const late=studyData.reviews.filter(r=>statusReview(r)==='Pendentes');
+ const upcoming=studyData.reviews.filter(r=>r.status!=='Realizada'&&r.plannedDate>=today).slice().sort((a,b)=>a.plannedDate.localeCompare(b.plannedDate)).slice(0,10);
+ const upcomingBody=upcoming.length?'<div class="log-list">'+upcoming.map(r=>'<div class="sector-minirow"><span><strong>'+escapeHtml(r.stage)+'</strong> · '+escapeHtml(r.topic)+'<small>'+dateBR(r.plannedDate)+'</small></span><button type="button" class="dash-link" data-jump-view="revisoes-dia">Agenda</button></div>').join('')+'</div>':'<p class="weekly-note">Não há revisões futuras registradas.</p>';
+ return '<div class="weekly-kpi">'+metricCard('Revisões cadastradas',formatNum(studyData.reviews.length))+metricCard('Realizadas',formatNum(studyData.reviews.filter(x=>x.status==='Realizada').length))+metricCard('Programadas',formatNum(studyData.reviews.filter(x=>statusReview(x)==='Programadas').length))+metricCard('Pendentes',formatNum(late.length))+metricCard('Previstas para hoje',formatNum(todayDue.length))+metricCard('Realizadas hoje',formatNum(todayDone.length))+'</div>'+
+ panel('Cobertura por etapa','D+1, D+7 e D+30, considerando somente as situações registradas.','<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Etapa</th><th>Total</th><th>Realizadas</th><th>Programadas</th><th>Pendentes</th><th>Cumprimento</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
+ panel('Próximas revisões','As próximas dez revisões programadas, ordenadas pela data.',upcomingBody)+
+ '<div class="sector-links"><button class="dash-link" type="button" data-jump-view="revisoes-dia">Revisões do dia</button><button class="dash-link" type="button" data-jump-view="revisoes-d1">D+1</button><button class="dash-link" type="button" data-jump-view="revisoes-d7">D+7</button><button class="dash-link" type="button" data-jump-view="revisoes-d30">D+30</button></div>';
+}
+function renderPerformanceGeneralPanels(){
+ const bySubject=[...new Set(studyData.attempts.map(x=>canonicalSubject(x.subject)))].map(code=>{
+  const attempts=studyData.attempts.filter(x=>canonicalSubject(x.subject)===code);
+  return {code,metric:metricsAttempt(attempts),topics:topicResults(attempts).length};
+ });
+ const totals=metricsAttempt(studyData.attempts);
+ const insecurity=totals.all?(totals.cu+totals.wu)/totals.all:0;
+ const rows=bySubject.map(({code,metric:m,topics})=>'<tr><th scope="row">'+escapeHtml(subjectLabel(code))+'</th><td>'+formatNum(topics)+'</td><td>'+formatNum(m.all)+'</td><td>'+formatNum(m.correct)+'</td><td>'+formatNum(m.all-m.correct)+'</td><td>'+formatPercent(m.overall)+'</td><td>'+formatPercent(m.all?(m.cu+m.wu)/m.all:0)+'</td></tr>').join('');
+ const latest=studyData.attempts.map(a=>a.date).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x||'')).sort().at(-1);
+ const latestRows=latest?studyData.attempts.filter(a=>a.date===latest):[];
+ const recent=metricsAttempt(latestRows);
+ const lastLabel=latest?dateBR(latest):'Sem data';
+ return '<div class="weekly-kpi">'+metricCard('Questões acumuladas',formatNum(totals.all))+metricCard('Acertos totais',formatNum(totals.correct))+metricCard('Erros totais',formatNum(totals.all-totals.correct))+metricCard('Aproveitamento',formatPercent(totals.overall))+metricCard('Insegurança declarada',formatPercent(insecurity))+metricCard('Tópicos avaliados',formatNum(topicResults(studyData.attempts).length))+'</div>'+
+ panel('Resultados por disciplina','Total de questões e segurança a partir de sessões distintas, sem duplicação.','<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Disciplina</th><th>Tópicos</th><th>Questões</th><th>Acertos</th><th>Erros</th><th>Aproveitamento</th><th>Insegurança</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
+ '<div class="weekly-kpi">'+metricCard('Último dia com resultados',lastLabel)+metricCard('Questões nesse dia',formatNum(recent.all))+metricCard('Aproveitamento do dia',formatPercent(recent.overall))+metricCard('ChatGPT',formatNum(totals.chat)+' questões')+metricCard('TEC',formatNum(totals.tec)+' questões')+metricCard('Respostas inseguras',formatNum(totals.cu+totals.wu),'AI + EI')+'</div>'+
+ '<p class="weekly-note">Aproveitamento bruto = (acertos seguros + inseguros + acertos sem classificação) ÷ questões válidas. Insegurança = (AI + EI) ÷ questões. Estes indicadores não são pontuação líquida CEBRASPE.</p>';
+}
+
 function planOverlays(){return new Map(studyData.studies.filter(x=>x.planId&&planById.has(x.planId)).map(x=>[x.planId,x]))}
 function planEntries(v){
  const flow=v.id==='estudos-aprofundamento'?'A':v.id==='estudos-questoes'?'Q':null;
@@ -795,7 +1002,7 @@ function renderStudyWorkspace(v){
  const unique=[...new Set(rows.map(x=>x.subject))];const opts=['Todos',...unique].map(key=>`<option value="${escapeHtml(key)}" ${key===(planSubjects[v.id]||'Todos')?'selected':''}>${key==='Todos'?'Todas as matérias':escapeHtml(subjectLabel(key))}</option>`).join('');
  const counter=rows.length?`${rows.filter(x=>x.status==='Concluído').length} de ${rows.length} concluídas`:'Sem unidades cadastradas';
  const note=v.id==='estudos-questoes'||v.id==='estudos-geral'?'<p class="plan-note"><strong>Observação de Direito Constitucional (DC):</strong> DC 01 integra a sequência como unidade 233 de questões. Os nomes dos tópicos de Direito Administrativo (DA) e Tecnologia da Informação (TI) seguem a sequência fornecida. Administração Pública (AP) é a identificação padronizada.</p>':'';
- return `<div class="workspace-metrics">${metricCard('Planejados',formatNum(p))}${metricCard('Concluídos',formatNum(c))}${metricCard('Total cadastrado',formatNum(rows.length+extras.length))}</div><div class="plan-legend">${escapeHtml(type)} · ${counter} · os números seguem a ordem original dos arquivos enviados.</div><div class="plan-progress" aria-label="Progresso dos estudos"><div class="plan-progress-fill" style="width:${rows.length?(100*rows.filter(x=>x.status==='Concluído').length/rows.length).toFixed(2):0}%"></div></div>${choiceBar(v.id,['Planejados','Concluídos'])}${note}<div class="plan-controls"><input id="planSearch" type="search" placeholder="Buscar código, matéria ou nome do tópico…" aria-label="Buscar nas unidades de estudo" value="${escapeHtml(planQueries[v.id]||'')}"><select id="planSubjectFilter" aria-label="Filtrar matérias">${opts}</select></div>${panel('Sequência integrada · '+filt,'Selecione um item para registrar sua conclusão. Ao concluir o estudo inicial, as revisões D+1, D+7 e D+30 são programadas automaticamente a partir da data do estudo.','<div id="planList"></div><div class="plan-pager" id="planPagination"></div>')}${extras.length?`<div style="margin-top:19px">${panel('Registros avulsos · '+filt,'Registros cadastrados manualmente antes ou depois da importação do planejamento.',listFor(relevant,'study'))}</div>`:''}<p class="statusnote">Para atualizar o estudo inicial, marque somente as unidades concluídas. O resultado consolidado de cada tópico é registrado em Desempenho e aparece aqui automaticamente quando vinculado ao estudo.</p>`;
+ return `${v.id==='estudos-geral'?'':`<div class="workspace-metrics">${metricCard('Planejados',formatNum(p))}${metricCard('Concluídos',formatNum(c))}${metricCard('Total cadastrado',formatNum(rows.length+extras.length))}</div>`}<div class="plan-legend">${escapeHtml(type)} · ${counter} · os números seguem a ordem original dos arquivos enviados.</div><div class="plan-progress" aria-label="Progresso dos estudos"><div class="plan-progress-fill" style="width:${rows.length?(100*rows.filter(x=>x.status==='Concluído').length/rows.length).toFixed(2):0}%"></div></div>${choiceBar(v.id,['Planejados','Concluídos'])}${note}<div class="plan-controls"><input id="planSearch" type="search" placeholder="Buscar código, matéria ou nome do tópico…" aria-label="Buscar nas unidades de estudo" value="${escapeHtml(planQueries[v.id]||'')}"><select id="planSubjectFilter" aria-label="Filtrar matérias">${opts}</select></div>${panel('Sequência integrada · '+filt,'Selecione um item para registrar sua conclusão. Ao concluir o estudo inicial, as revisões D+1, D+7 e D+30 são programadas automaticamente a partir da data do estudo.','<div id="planList"></div><div class="plan-pager" id="planPagination"></div>')}${extras.length?`<div style="margin-top:19px">${panel('Registros avulsos · '+filt,'Registros cadastrados manualmente antes ou depois da importação do planejamento.',listFor(relevant,'study'))}</div>`:''}<p class="statusnote">Para atualizar o estudo inicial, marque somente as unidades concluídas. O resultado consolidado de cada tópico é registrado em Desempenho e aparece aqui automaticamente quando vinculado ao estudo.</p>`;
 }
 function setPlanDone(id,done){
  const unit=planById.get(id);if(!unit)return;
@@ -808,13 +1015,13 @@ function renderWorkspace(v){
  const esc=escapeHtml;
  let body='';
  if(v.section==='Estudos'){
-   body=renderStudyWorkspace(v);
+   body=v.id==='estudos-semanal'?renderWeeklyWorkspace():v.id==='estudos-geral'?renderStudyGeneralPanels()+renderStudyWorkspace(v):renderStudyWorkspace(v);
  }else if(v.section==='Revisões'){
    const stage=v.id==='revisoes-d1'?'D+1':v.id==='revisoes-d7'?'D+7':v.id==='revisoes-d30'?'D+30':null;
    const all=studyData.reviews.filter(x=>(!stage||x.stage===stage)&&(v.id!=='revisoes-dia'||x.plannedDate===todayISO()||x.doneDate===todayISO()));
    const counts=['Programadas','Realizadas','Pendentes'].map(a=>all.filter(x=>statusReview(x)===a).length);
    const filt=viewFilters[v.id]||'Programadas',selected=all.filter(x=>statusReview(x)===filt).slice().reverse();
-   body=`<div class="workspace-metrics">${metricCard('Programadas',formatNum(counts[0]))}${metricCard('Realizadas',formatNum(counts[1]))}${metricCard('Pendentes',formatNum(counts[2]))}</div>${choiceBar(v.id,['Programadas','Realizadas','Pendentes'])}${actionsHtml('review')}${entryForm('review',v)}${panel((stage||'Revisões')+' · '+filt,'Datas previstas, realizadas e atrasos calculados conforme os registros.',listFor(selected,'review'))}`;
+   body=`${v.id==='revisoes-geral'?renderReviewGeneralPanels():''}<div class="workspace-metrics">${metricCard('Programadas',formatNum(counts[0]))}${metricCard('Realizadas',formatNum(counts[1]))}${metricCard('Pendentes',formatNum(counts[2]))}</div>${choiceBar(v.id,['Programadas','Realizadas','Pendentes'])}${actionsHtml('review')}${entryForm('review',v)}${panel((stage||'Revisões')+' · '+filt,'Datas previstas, realizadas e atrasos calculados conforme os registros.',listFor(selected,'review'))}`;
  }else{
    const rawAttempts=subsetByView(v,studyData.attempts);
    const allAttempts=topicResults(rawAttempts);
@@ -824,12 +1031,12 @@ function renderWorkspace(v){
    const choices=['Todos','Pontos fortes','Pontos fracos'];
    const filt=viewFilters[v.id]||'Todos';
    const displayed=allAttempts.filter(x=>filt==='Todos'||(filt==='Pontos fortes'?domainCategory(x)==='Forte':domainCategory(x)==='Fraco')).slice().reverse();
-   body=`<div class="workspace-metrics performance-metrics">${metrics.map(([a,b])=>metricCard(a,b)).join('')}</div><p class="statusnote">Resultados por tópico acumulados a partir das sessões registradas por data, sem repetir questões de dias anteriores. Origem ausente permanece não informada. O domínio pertence ao tópico; pontos fortes e fracos são apenas filtros.</p>${panel('Resultados por plataforma','Quantitativos separados, vinculados aos mesmos tópicos. AS = acerto seguro; AI = acerto inseguro; ES = erro seguro; EI = erro inseguro; NC = sem classificação de segurança.',platformTable(m))}${actionsHtml('attempt')}${entryForm('attempt',v)}${choiceBar(v.id,choices)}${panel('Resultados por tópico · '+filt,'Domínio: Seguro, Parcial, Fraco ou Não avaliado. Pontos fortes filtram Seguro e pontos fracos filtram Fraco.',listFor(displayed,'attempt'))}`;
+   body=`${v.id==='desempenho-geral'?renderPerformanceGeneralPanels():''}<div class="workspace-metrics performance-metrics">${metrics.map(([a,b])=>metricCard(a,b)).join('')}</div><p class="statusnote">Resultados por tópico acumulados a partir das sessões registradas por data, sem repetir questões de dias anteriores. Origem ausente permanece não informada. O domínio pertence ao tópico; pontos fortes e fracos são apenas filtros.</p>${panel('Resultados por plataforma','Quantitativos separados, vinculados aos mesmos tópicos. AS = acerto seguro; AI = acerto inseguro; ES = erro seguro; EI = erro inseguro; NC = sem classificação de segurança.',platformTable(m))}${actionsHtml('attempt')}${entryForm('attempt',v)}${choiceBar(v.id,choices)}${panel('Resultados por tópico · '+filt,'Domínio: Seguro, Parcial, Fraco ou Não avaliado. Pontos fortes filtram Seguro e pontos fracos filtram Fraco.',listFor(displayed,'attempt'))}`;
 
  }
  const note='<p class="workspace-note">Os dados inseridos aqui ficam salvos neste navegador, não são sincronizados entre aparelhos e não são lidos automaticamente do ChatGPT ou do TEC. Use <strong>Exportar dados</strong> para manter uma cópia e <strong>Importar dados</strong> para restaurá-la. Nenhuma atividade ou nota foi presumida.</p>';
  g('workspacePage').innerHTML=`<div class="workspace-eyebrow">${esc(v.section)} / ${esc(v.title)}</div><h1 id="workspaceTitle">${esc(v.title)}</h1><p class="workspace-summary">${esc(v.description)}</p>${body}${note}`;
- if(v.section==='Estudos')refreshPlanList(v);
+ if(v.section==='Estudos'&&v.id!=='estudos-semanal')refreshPlanList(v);
 }
 function refreshOverview(){
  const root=g('dashboardRoot');if(!root)return;
@@ -894,6 +1101,7 @@ function refreshOverview(){
 
  root.innerHTML=`
  ${recentDayPanel}
+ ${weeklySnapshot()}
  <div class="dash-hero">
   <div class="dash-hero-main"><div class="dash-hero-kicker">PROGRESSO TOTAL DOS ESTUDOS INICIAIS</div><div class="dash-hero-value"><strong>${formatPercent(pct)}</strong><span>${formatNum(done)} de ${formatNum(total)} tópicos concluídos</span></div>${bar(pct)}<div class="dash-hero-foot"><span>${formatNum(total-done)} planejados</span><span>317 de aprofundamento + 233 de questões${manual.length?' + '+manual.length+' registros avulsos':''}</span></div></div>
   <div class="dash-hero-side">${mini('Estudo inicial · Aprofundamento',flowData.A)}${mini('Estudo inicial · Questões',flowData.Q)}</div>
@@ -988,6 +1196,7 @@ async function importData(file){
 g('dashboardRoot').addEventListener('click',e=>{
  const btn=e.target.closest('button');if(!btn)return;
  if(btn.dataset.dashboardView){showPage(btn.dataset.dashboardView);return}
+ if(btn.dataset.jumpView){showPage(btn.dataset.jumpView);return}
  if(btn.dataset.dashboardAction==='export'){exportData();return}
  if(btn.dataset.dashboardAction==='import'){g('dashboardImportFile')?.click();return}
 });
@@ -995,6 +1204,8 @@ g('dashboardRoot').addEventListener('change',e=>{if(e.target.id==='dashboardImpo
 // Controles dinâmicos das telas de acompanhamento; preserva os eventos dos comandos originais.
 g('workspacePage').addEventListener('click',e=>{
  const btn=e.target.closest('button');if(!btn)return;
+ if(btn.dataset.jumpView){showPage(btn.dataset.jumpView);return}
+ if(btn.hasAttribute('data-week-select')){selectedStudyWeek=Number(btn.dataset.weekSelect);renderWorkspace(workspaceById[activeView]);return}
  if(btn.dataset.filter){viewFilters[activeView]=btn.dataset.filter;planPages[activeView]=0;renderWorkspace(workspaceById[activeView]);return}
  if(btn.dataset.openTopic){openTopicBlock(btn.dataset.openTopic,btn.dataset.openStage||'Estudo inicial');return}
  if(btn.dataset.planId){setPlanDone(btn.dataset.planId,btn.dataset.planDone==='1');return}
