@@ -1444,7 +1444,11 @@ document.querySelectorAll('.workitem').forEach(btn=>btn.addEventListener('click'
 for(const [sector,route] of [['Estudos','estudos-geral'],['Revisões','revisoes-geral'],['Desempenho','desempenho-geral']]){
  const sum=document.querySelector('[data-navgroup="'+sector+'"] > summary.navsummary');
  if(sum)sum.addEventListener('click',event=>{
-  event.preventDefault();sum.parentElement.open=true;showPage(route);
+  event.preventDefault();
+  const group=sum.parentElement;
+  if(group.open){group.open=false;return}
+  group.open=true;
+  showPage(route);
  });
 }
 g('homeNav').addEventListener('click',()=>{document.querySelectorAll('#subjectNav details.menusubject').forEach(d=>d.open=false);showPage('principal');setActiveNav(null)});
