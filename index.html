@@ -229,6 +229,13 @@ dialog.viewer{position:fixed;inset:0 0 0 auto;max-height:none;height:100vh;max-w
 .sector-minirow small{display:block;font-size:11px;color:var(--muted);margin-top:4px}
 @media(max-width:900px){.weekly-kpi{grid-template-columns:repeat(2,minmax(0,1fr))}.weekly-compact{grid-template-columns:1fr}}
 @media(max-width:560px){.weekly-kpi{grid-template-columns:1fr}.weekly-topic{flex-direction:column;align-items:stretch}.weekly-actions{justify-content:flex-end}}
+
+.weekly-filter{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:15px 17px;margin:16px 0}
+.weekly-filter-heading{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:13px}
+.weekly-filter-heading span{font-size:12px;color:var(--muted)}
+.weekly-filter .statusbar{margin:12px 0 0}
+.weekly-filter .weekly-note{margin-bottom:0}
+.weekly-empty{color:var(--muted);font-size:12px;margin:0;padding:15px 17px}
 </style>
 </head>
 <body>
@@ -888,16 +895,26 @@ function weekListRow(u,data){
 }
 function weeklySelectedDetails(data,w){
  const done=data.completed;
- const late=studyWeeks.slice(0,w.index).flatMap(week=>week.units).filter(u=>!done.has(u.id));
- const pendingA=w.units.filter(u=>u.flow==='A'&&!done.has(u.id));
- const pendingQ=w.units.filter(u=>u.flow==='Q'&&!done.has(u.id));
- const backlogPreview=late.length?'<details class="weekly-group"><summary>Pendências acumuladas das semanas anteriores · '+late.length+'</summary>'+late.map(u=>weekListRow(u,data)).join('')+'</details>':'<p class="weekly-note">Não há tópicos pendentes de semanas anteriores.</p>';
+ const mode=['Todos','Pendentes','Concluídos'].includes(viewFilters['estudos-semanal'])?viewFilters['estudos-semanal']:'Todos';
+ const matches=(u)=>mode==='Todos'||(mode==='Concluídos'?done.has(u.id):!done.has(u.id));
+ const previous=studyWeeks.slice(0,w.index).flatMap(week=>week.units).filter(u=>!done.has(u.id));
+ const shownA=w.units.filter(u=>u.flow==='A'&&matches(u));
+ const shownQ=w.units.filter(u=>u.flow==='Q'&&matches(u));
+ const empty='<p class="weekly-empty">Nenhum tópico '+(mode==='Concluídos'?'concluído':mode==='Pendentes'?'pendente':'disponível')+' nesta modalidade e semana.</p>';
+ const visibleCount=shownA.length+shownQ.length+(mode==='Concluídos'?0:previous.length);
+ const list=(items)=>items.length?items.map(u=>weekListRow(u,data)).join(''):empty;
+ const backlogPreview=mode==='Concluídos'?'':previous.length?
+   '<details class="weekly-group" open><summary>Pendências acumuladas de semanas anteriores · '+previous.length+'</summary>'+list(previous)+'</details>':
+   '<p class="weekly-note">Não há tópicos pendentes de semanas anteriores.</p>';
  return '<section class="weekly-selected"><h2>Semana '+w.number+' · '+weekRange(w)+'</h2>'+
  '<p class="weekly-note">Meta fixa: '+w.quotaA+' de Aprofundamento e '+w.quotaQ+' de Questões. Créditos antecipados contam na semana de origem do tópico. Tópicos pendentes de semanas anteriores somam-se ao saldo operacional.</p>'+
- '<div class="weekly-kpi">'+metricCard('Meta semanal','50 tópicos')+metricCard('Concluídos nesta meta',formatNum(w.done),formatPercent(w.pct))+metricCard('Restantes desta meta',formatNum(w.remain))+metricCard('Concluídos antes do início',formatNum(w.preDone))+metricCard('Concluídos após o prazo',formatNum(w.lateDone))+metricCard('Pendências anteriores à semana',formatNum(late.length))+'</div>'+
+ '<div class="weekly-kpi">'+metricCard('Meta semanal','50 tópicos')+metricCard('Concluídos nesta meta',formatNum(w.done),formatPercent(w.pct))+metricCard('Restantes desta meta',formatNum(w.remain))+metricCard('Concluídos antes do início',formatNum(w.preDone))+metricCard('Concluídos após o prazo',formatNum(w.lateDone))+metricCard('Pendências anteriores à semana',formatNum(previous.length))+'</div>'+
+ '<div class="weekly-filter"><div class="weekly-filter-heading"><strong>Filtrar tópicos por situação</strong><span>'+formatNum(visibleCount)+' '+(visibleCount===1?'tópico exibido':'tópicos exibidos')+'</span></div>'+
+ choiceBar('estudos-semanal',['Todos','Pendentes','Concluídos'])+
+ '<p class="weekly-note">O filtro altera somente as listas abaixo. Os indicadores de progresso e as metas permanecem calculados com todos os registros.</p></div>'+
  backlogPreview+
- '<details class="weekly-group" open><summary>Aprofundamento · '+w.doneA+'/'+w.quotaA+' concluídos</summary>'+w.units.filter(u=>u.flow==='A').map(u=>weekListRow(u,data)).join('')+'</details>'+
- '<details class="weekly-group"><summary>Questões · '+w.doneQ+'/'+w.quotaQ+' concluídos</summary>'+w.units.filter(u=>u.flow==='Q').map(u=>weekListRow(u,data)).join('')+'</details>'+
+ '<details class="weekly-group" open><summary>Aprofundamento · '+shownA.length+' '+(shownA.length===1?'tópico exibido':'tópicos exibidos')+' · '+w.doneA+'/'+w.quotaA+' concluídos</summary>'+list(shownA)+'</details>'+
+ '<details class="weekly-group" open><summary>Questões · '+shownQ.length+' '+(shownQ.length===1?'tópico exibido':'tópicos exibidos')+' · '+w.doneQ+'/'+w.quotaQ+' concluídos</summary>'+list(shownQ)+'</details>'+
  '</section>';
 }
 function renderWeeklyWorkspace(){
