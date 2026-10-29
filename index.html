@@ -1398,6 +1398,20 @@ function findTopicUnit(subject,topic){
  const code=m[1].toUpperCase()+' '+Number(m[2]);
  return planUnits.find(x=>x.subject===subject&&x.code.toUpperCase()===code)||null;
 }
+function nextLpQuestionsStage(unit){
+ if(!unit||unit.subject!=='LP/LING'||unit.flow!=='A')return null;
+ const study=studyData.studies.find(x=>x.status==='Concluído'&&(x.planId===unit.id||findTopicUnit(x.subject,x.topic)?.id===unit.id));
+ if(!study)return 'Estudo inicial';
+ for(const stage of ['D+1','D+7','D+30']){
+  const finished=studyData.reviews.some(r=>r.stage===stage&&r.status==='Realizada'&&(r.studyId===study.id||findTopicUnit(r.subject,r.topic)?.id===unit.id));
+  if(!finished)return stage;
+ }
+ return null;
+}
+function currentLpQuestionsPdf(unit,stage){
+ if(stage!==nextLpQuestionsStage(unit))return null;
+ return pdfLinks.questionPdfs?.[unit.id]||null;
+}
 function personalizedPrompt(doc,unit,stage){
  const header=unit.code+' — '+unit.title;
  let p=doc.conteudo;
@@ -1407,7 +1421,9 @@ function personalizedPrompt(doc,unit,stage){
   'DISCIPLINA: '+subjectLabel(unit.subject)+'\n'+
   'TÓPICO: '+header+'\n'+
   'ETAPA: '+stage+'\n\n';
- return prefix+p;
+ const questionPdf=currentLpQuestionsPdf(unit,stage);
+ const questionHeader=questionPdf?'PDF DE QUESTÕES TEC VINCULADO A ESTE PRÓXIMO CONTATO:\n'+questionPdf.name+'\n'+questionPdf.url+'\nO link não anexa automaticamente o PDF ao ChatGPT. Abra o documento no Drive e forneça seu conteúdo quando for necessário.\n\n':'';
+ return prefix+questionHeader+p;
 }
 function openTopicBlock(unitId,stage='Estudo inicial'){
  const u=planById.get(unitId);
@@ -1426,12 +1442,14 @@ function renderTopicBlock(){
  const docLink=f=>`<div class="block-pdf"><span>📄 ${escapeHtml(f.name)}</span><a href="${escapeHtml(f.url)}" target="_blank" rel="noopener noreferrer">Abrir PDF no Drive ↗</a></div>`;
  const fileBody=files.length?files.map(docLink).join(''):(pdfLinksLoaded?'<p>Nenhum PDF fornecido para este tópico.</p>':'<p>Os links dos PDFs estão sendo carregados. Se não aparecerem, atualize a página e verifique a conexão.</p>');
  const extraBody=shared.length?'<h3 style="margin-top:16px">Materiais complementares</h3>'+shared.map(docLink).join(''):'';
+ const nextQuestionPdf=currentLpQuestionsPdf(u,currentBlockStage);
+ const questionPdfBody=nextQuestionPdf?'<section class="block-section"><h3>3. PDF de questões TEC · próximo contato</h3><p>Material correspondente a '+escapeHtml(u.code)+' para o próximo contato pendente ('+escapeHtml(currentBlockStage)+'). O link abre o PDF no Google Drive, sem anexá-lo automaticamente ao ChatGPT.</p>'+docLink(nextQuestionPdf)+'</section>':'';
  const initial=currentBlockStage==='Estudo inicial';
  const docStudy=u.flow==='Q'?null:(initial?docs.find(d=>d.materia===u.subject&&d.categoria==='Estudo inicial'):docs.find(d=>d.materia===u.subject&&d.categoria==='Revisão'&&d.etapa===currentBlockStage)||docs.find(d=>d.materia===u.subject&&d.categoria==='Revisão'&&!d.etapa));
  const docQuest=docs.find(d=>d.materia===(u.flow==='Q'?'Estudo – Questões':u.subject)&&d.categoria===(initial?'Questionário de estudo inicial':'Questionário de revisão'));
  const reviews=studyData.reviews.filter(r=>findTopicUnit(r.subject,r.topic)?.id===u.id&&r.stage===currentBlockStage);
  const reviewStatus=!initial?(reviews.length?'<p>Revisão registrada: '+escapeHtml(reviews.at(-1).status)+(reviews.at(-1).plannedDate?' · '+dateBR(reviews.at(-1).plannedDate):'')+'</p>':'<p>Revisão ainda não registrada. Acesse Revisões para registrar a realização.</p>'):'';
- g('blockContent').innerHTML=`<section class="block-section"><h3>1. Documentos-base</h3><p>Os arquivos vinculados a ${escapeHtml(u.code)} ficam disponíveis em todas as etapas. O Google Drive exige permissão de acesso.</p>${fileBody}${extraBody}</section><section class="block-section"><h3>2. ${escapeHtml(currentBlockStage)} · comandos personalizados</h3><p>O nome e o código deste bloco já estão preenchidos. Campos pedagógicos não informados permanecem identificados nos comandos-base.</p><div class="block-actions">${docStudy?`<button type="button" class="block-action" data-block-prompt="${docStudy.id}"><strong>📖 ${initial?'Comando de estudo inicial':'Comando da revisão '+currentBlockStage}</strong><span>Abrir, conferir e copiar o comando completo</span></button>`:''}${docQuest?`<button type="button" class="block-action" data-block-prompt="${docQuest.id}"><strong>▤ Questionário de avaliação</strong><span>Questionário correspondente à etapa, pronto para copiar</span></button>`:''}</div></section><section class="block-section"><h3>3. Acompanhamento</h3><p>Os resultados permanecem vinculados a um único tópico na área Desempenho, com números separados de ChatGPT e TEC. As revisões têm controle próprio de execução.</p>${reviewStatus}</section>`;
+ g('blockContent').innerHTML=`<section class="block-section"><h3>1. Documentos-base</h3><p>Os arquivos vinculados a ${escapeHtml(u.code)} ficam disponíveis em todas as etapas. O Google Drive exige permissão de acesso.</p>${fileBody}${extraBody}</section><section class="block-section"><h3>2. ${escapeHtml(currentBlockStage)} · comandos personalizados</h3><p>O nome e o código deste bloco já estão preenchidos. Campos pedagógicos não informados permanecem identificados nos comandos-base.</p><div class="block-actions">${docStudy?`<button type="button" class="block-action" data-block-prompt="${docStudy.id}"><strong>📖 ${initial?'Comando de estudo inicial':'Comando da revisão '+currentBlockStage}</strong><span>Abrir, conferir e copiar o comando completo</span></button>`:''}${docQuest?`<button type="button" class="block-action" data-block-prompt="${docQuest.id}"><strong>▤ Questionário de avaliação</strong><span>Questionário correspondente à etapa, pronto para copiar</span></button>`:''}</div></section>${questionPdfBody}<section class="block-section"><h3>${nextQuestionPdf?'4':'3'}. Acompanhamento</h3><p>Os resultados permanecem vinculados a um único tópico na área Desempenho, com números separados de ChatGPT e TEC. As revisões têm controle próprio de execução.</p>${reviewStatus}</section>`;
 }
 function renderTopicPrompt(){
  const d=docs.find(x=>x.id===currentBlockPrompt),u=currentBlockUnit;
