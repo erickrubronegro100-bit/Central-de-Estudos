@@ -1400,8 +1400,12 @@ function findTopicUnit(subject,topic){
 }
 function nextLpQuestionsStage(unit){
  if(!unit||unit.subject!=='LP/LING'||unit.flow!=='A')return null;
+ const number=Number(unit.code.match(/^LP\/LING\s+(\d+)$/)?.[1]);
+ // LP/LING 4–12: pular o primeiro contato (estudo inicial) para o PDF TEC.
+ // O PDF passa a ser disponibilizado na primeira revisão pendente após esse estudo.
+ const skipFirstContact=number>=4&&number<=12;
  const study=studyData.studies.find(x=>x.status==='Concluído'&&(x.planId===unit.id||findTopicUnit(x.subject,x.topic)?.id===unit.id));
- if(!study)return 'Estudo inicial';
+ if(!study)return skipFirstContact?null:'Estudo inicial';
  for(const stage of ['D+1','D+7','D+30']){
   const finished=studyData.reviews.some(r=>r.stage===stage&&r.status==='Realizada'&&(r.studyId===study.id||findTopicUnit(r.subject,r.topic)?.id===unit.id));
   if(!finished)return stage;
