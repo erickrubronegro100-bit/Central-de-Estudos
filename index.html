@@ -947,6 +947,25 @@ function metricsAttempt(list){
  out.overall=out.all?out.correct/out.all:null;out.chatPct=out.chat?out.chatCorrect/out.chat:null;out.tecPct=out.tec?out.tecCorrect/out.tec:null;
  return out;
 }
+// O tempo líquido deve ser somado a partir de cada sessão, sem descartar durações
+// conhecidas quando houver sessões com tempo não informado. Estudos e revisões
+// não são somados novamente, pois já estão representados pelas sessões.
+function knownDurationStats(entries){
+ let minutes=0,unknown=0,known=0;
+ for(const item of entries){
+  if(Number.isFinite(item.durationMinutes)&&item.durationMinutes>=0){
+   minutes+=item.durationMinutes;known++;
+  }else unknown++;
+ }
+ return {minutes,unknown,known};
+}
+function clockMinutes(minutes){
+ const n=Math.max(0,Math.trunc(minutes));
+ return Math.floor(n/60)+'h'+String(n%60).padStart(2,'0')+'min';
+}
+function durationLabel(stats){
+ return stats.known?formatNum(stats.minutes)+' min'+(stats.unknown?' (+'+stats.unknown+' N/I)':''):'N/I';
+}
 function platformTable(metrics){
  const rows=PLATFORM_NAMES.filter(p=>p!=='Não informada'||metrics.unknown).map(p=>{
   const r=metrics.platforms[p],n=counted(r),correct=correctCount(r);
@@ -1287,9 +1306,10 @@ function renderDailyStudyWorkspace(){
   return '<div class="daily-review-item"><div><strong>'+escapeHtml(unit.code)+'</strong><span>'+escapeHtml(unit.title)+'</span><small>'+escapeHtml(subjectLabel(unit.subject))+' · '+(completed?'Concluído':'Resultado registrado; conclusão formal não informada')+' · '+dateBR(selected)+'</small></div><button type="button" class="smallbtn" data-open-topic="'+escapeHtml(unit.id)+'" data-open-stage="Estudo inicial">Abrir bloco</button></div>';
  }).join('');
  const planTotals=d.studies.length,dueReviews=d.reviews.length;
+ const timeSessions=studyData.attempts.filter(at=>at.date===selected),timeInfo=knownDurationStats(timeSessions);
  return '<div class="daily-controls"><label for="dailyDate">Data da agenda</label><button type="button" data-daily-step="-1" aria-label="Dia anterior">‹ Anterior</button><input type="date" id="dailyDate" value="'+selected+'" min="2026-10-25" max="2027-01-15"><button type="button" data-daily-step="1" aria-label="Próximo dia">Próximo ›</button><button type="button" data-daily-date="'+today+'">Hoje</button><button type="button" data-daily-date="2026-11-01">Início da Semana 2</button></div>'+
  dayMarkup+
- '<div class="weekly-kpi">'+metricCard('Tópicos novos previstos',a.configured?formatNum(planTotals):'—',a.configured?'Aprofundamento + Questões':'Sem distribuição diária')+metricCard('Aprofundamento',a.configured?formatNum(countsA):'—')+metricCard('Questões',a.configured?formatNum(countsQ):'—')+metricCard('Tópicos concluídos',a.configured?formatNum(d.studyDone)+'/'+planTotals:'—',a.configured?formatPercent(planTotals?d.studyDone/planTotals:0):'')+metricCard('Revisões do dia',formatNum(dueReviews))+metricCard('Revisões realizadas',formatNum(d.reviewDone),dueReviews?formatPercent(d.reviewDone/dueReviews):'Sem revisões')+'</div>'+
+ '<div class="weekly-kpi">'+metricCard('Tópicos novos previstos',a.configured?formatNum(planTotals):'—',a.configured?'Aprofundamento + Questões':'Sem distribuição diária')+metricCard('Aprofundamento',a.configured?formatNum(countsA):'—')+metricCard('Questões',a.configured?formatNum(countsQ):'—')+metricCard('Tópicos concluídos',a.configured?formatNum(d.studyDone)+'/'+planTotals:'—',a.configured?formatPercent(planTotals?d.studyDone/planTotals:0):'')+metricCard('Revisões do dia',formatNum(dueReviews))+metricCard('Revisões realizadas',formatNum(d.reviewDone),dueReviews?formatPercent(d.reviewDone/dueReviews):'Sem revisões')+metricCard('Tempo líquido conhecido',timeInfo.known?clockMinutes(timeInfo.minutes):'N/I',timeInfo.unknown?timeInfo.unknown+' atividade(s) sem duração':'ChatGPT + TEC')+'</div>'+
  '<p class="daily-note">'+escapeHtml(dailyExplanation)+'</p>'+
  panel('Estudos iniciais · Aprofundamento',a.configured?countsA+' tópico(s) na data escolhida.':'Sem divisão diária cadastrada.',initialA.length?'<div class="daily-topic-list">'+initialA.map(dailyRow).join('')+'</div>':empty)+
  panel('Estudos iniciais · Questões',a.configured?countsQ+' tópico(s) na data escolhida.':'Sem divisão diária cadastrada.',initialQ.length?'<div class="daily-topic-list">'+initialQ.map(dailyRow).join('')+'</div>':empty)+
@@ -1359,11 +1379,20 @@ function renderPerformanceGeneralPanels(){
  const latest=studyData.attempts.map(a=>a.date).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x||'')).sort().at(-1);
  const latestRows=latest?studyData.attempts.filter(a=>a.date===latest):[];
  const recent=metricsAttempt(latestRows);
+ const time=knownDurationStats(latestRows);
+ const chatTime=knownDurationStats(latestRows.filter(a=>a.source==='ChatGPT'));
+ const tecTime=knownDurationStats(latestRows.filter(a=>a.source==='TEC'));
  const lastLabel=latest?dateBR(latest):'Sem data';
+ const lastSubjects=[...new Set(latestRows.map(a=>canonicalSubject(a.subject)))].map(code=>{
+  const rows=latestRows.filter(a=>canonicalSubject(a.subject)===code),m=metricsAttempt(rows),duration=knownDurationStats(rows);
+  return '<tr><th scope="row">'+escapeHtml(subjectLabel(code))+'</th><td>'+formatNum(rows.length)+'</td><td>'+formatNum(m.all)+'</td><td>'+formatPercent(m.overall)+'</td><td>'+durationLabel(duration)+'</td></tr>';
+ }).join('');
  return '<div class="weekly-kpi">'+metricCard('Questões acumuladas',formatNum(totals.all))+metricCard('Acertos totais',formatNum(totals.correct))+metricCard('Erros totais',formatNum(totals.all-totals.correct))+metricCard('Aproveitamento',formatPercent(totals.overall))+metricCard('Insegurança declarada',formatPercent(insecurity))+metricCard('Tópicos avaliados',formatNum(topicResults(studyData.attempts).length))+'</div>'+
  panel('Resultados por disciplina','Total de questões e segurança a partir de sessões distintas, sem duplicação.','<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Disciplina</th><th>Tópicos</th><th>Questões</th><th>Acertos</th><th>Erros</th><th>Aproveitamento</th><th>Insegurança</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
  '<div class="weekly-kpi">'+metricCard('Último dia com resultados',lastLabel)+metricCard('Questões nesse dia',formatNum(recent.all))+metricCard('Aproveitamento do dia',formatPercent(recent.overall))+metricCard('ChatGPT',formatNum(totals.chat)+' questões')+metricCard('TEC',formatNum(totals.tec)+' questões')+metricCard('Respostas inseguras',formatNum(totals.cu+totals.wu),'AI + EI')+'</div>'+
- '<p class="weekly-note">Aproveitamento bruto = (acertos seguros + inseguros + acertos sem classificação) ÷ questões válidas. Insegurança = (AI + EI) ÷ questões. Estes indicadores não são pontuação líquida CEBRASPE.</p>';
+ '<div class="weekly-kpi">'+metricCard('Tempo líquido conhecido · '+lastLabel,time.known?clockMinutes(time.minutes):'N/I',formatNum(time.known)+' atividades com tempo'+(time.unknown?' · '+time.unknown+' N/I':''))+metricCard('Tempo ChatGPT · '+lastLabel,chatTime.known?clockMinutes(chatTime.minutes):'N/I')+metricCard('Tempo TEC · '+lastLabel,tecTime.known?clockMinutes(tecTime.minutes):'N/I')+'</div>'+
+ (lastSubjects?panel('Último dia · tempo por disciplina','Somente durações efetivamente informadas; N/I significa que uma ou mais sessões não possuem tempo conhecido.','<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Disciplina</th><th>Atividades</th><th>Questões</th><th>Aproveitamento</th><th>Tempo conhecido</th></tr></thead><tbody>'+lastSubjects+'</tbody></table></div>'):'')+
+ '<p class="weekly-note">Aproveitamento bruto = (acertos seguros + inseguros + acertos sem classificação) ÷ questões válidas. Insegurança = (AI + EI) ÷ questões. Os minutos são somados por sessão, sem duplicar estudos/revisões e sem converter N/I em zero. Estes indicadores não são pontuação líquida CEBRASPE.</p>';
 }
 
 function planOverlays(){return new Map(studyData.studies.filter(x=>x.planId&&planById.has(x.planId)).map(x=>[x.planId,x]))}
@@ -1480,19 +1509,19 @@ function refreshOverview(){
  const recentAttempts=latestStudyDate?studyData.attempts.filter(x=>x.date===latestStudyDate):[];
  const recentRevisions=latestStudyDate?studyData.reviews.filter(r=>r.status==='Realizada'&&r.doneDate===latestStudyDate):[];
  const recentMetrics=metricsAttempt(recentAttempts);
- const attemptTimesComplete=recentAttempts.length>0&&recentAttempts.every(a=>Number.isFinite(a.durationMinutes));
- const recentTime=attemptTimesComplete?recentAttempts.reduce((sum,x)=>sum+x.durationMinutes,0):recentStudies.reduce((sum,x)=>sum+(Number.isFinite(x.durationMinutes)?x.durationMinutes:0),0);
+ const recentTimeInfo=recentAttempts.length?knownDurationStats(recentAttempts):knownDurationStats(recentStudies);
+ const recentTime=recentTimeInfo.minutes;
  const recentSubjectRows=[...new Set(recentAttempts.map(x=>canonicalSubject(x.subject)))].map(code=>{
   const rows=recentAttempts.filter(a=>canonicalSubject(a.subject)===code);
-  const subtotal=metricsAttempt(rows);
-  const time=attemptTimesComplete?rows.reduce((sum,x)=>sum+x.durationMinutes,0):recentStudies.filter(s=>canonicalSubject(s.subject)===code).reduce((sum,x)=>sum+(Number.isFinite(x.durationMinutes)?x.durationMinutes:0),0);
-  return '<tr><th scope="row">'+escapeHtml(subjectLabel(code))+'</th><td>'+formatNum(rows.length)+'</td><td>'+formatNum(subtotal.all)+'</td><td>'+formatNum(subtotal.correct)+'</td><td>'+formatNum(subtotal.all-subtotal.correct)+'</td><td>'+formatPercent(subtotal.overall)+'</td><td>'+formatNum(time)+' min</td></tr>';
+  const subtotal=metricsAttempt(rows),time=knownDurationStats(rows);
+  return '<tr><th scope="row">'+escapeHtml(subjectLabel(code))+'</th><td>'+formatNum(rows.length)+'</td><td>'+formatNum(subtotal.all)+'</td><td>'+formatNum(subtotal.correct)+'</td><td>'+formatNum(subtotal.all-subtotal.correct)+'</td><td>'+formatPercent(subtotal.overall)+'</td><td>'+durationLabel(time)+'</td></tr>';
  }).join('');
- const recentSubjectTable=recentSubjectRows?'<div class="platform-scroll" role="region" tabindex="0" aria-label="Consolidado das disciplinas do último dia"><table class="platform-table"><thead><tr><th>Disciplina</th><th>Atividades</th><th>Questões</th><th>Acertos</th><th>Erros</th><th>Aproveitamento</th><th>Tempo</th></tr></thead><tbody>'+recentSubjectRows+'</tbody></table></div>':'';
- const dailyTimeWarning=recentAttempts.some(a=>a.timeUncertain)?'<p class="dash-note">Tempo informado: existe atividade com 0 minuto declarado (DA 010). O total representa apenas o tempo registrado; a duração real pode ser maior.</p>':'';
+ const recentSubjectTable=recentSubjectRows?'<div class="platform-scroll" role="region" tabindex="0" aria-label="Consolidado das disciplinas do último dia"><table class="platform-table"><thead><tr><th>Disciplina</th><th>Atividades</th><th>Questões</th><th>Acertos</th><th>Erros</th><th>Aproveitamento</th><th>Tempo conhecido</th></tr></thead><tbody>'+recentSubjectRows+'</tbody></table></div>':'';
+ const dailyTimeWarning=(recentTimeInfo.unknown?'<p class="dash-note"><strong>Tempo líquido parcial:</strong> '+formatNum(recentTimeInfo.unknown)+' '+(recentTimeInfo.unknown===1?'atividade sem duração informada':'atividades sem duração informada')+'. O total de '+clockMinutes(recentTime)+' considera todas as durações conhecidas e não considera valores ausentes como zero.</p>':'')+
+ (recentAttempts.some(a=>a.timeUncertain)?'<p class="dash-note">Há registro de tempo informado como 0 minuto ou incerto; a duração real pode ser maior.</p>':'');
  const recentDayPanel=latestStudyDate?'<section class="dash-section"><div class="dash-titlebar"><div><h2>Último dia de estudos · '+dateBR(latestStudyDate)+'</h2><p>Resultados registrados para esta data, sem misturar com o desempenho acumulado.</p></div></div><div class="dash-kpi-grid">'+
   stat('Atividades concluídas',formatNum(recentAttempts.length||recentStudies.length),formatNum(recentStudies.length)+' estudos iniciais · '+formatNum(recentRevisions.filter(r=>r.stage==='D+1').length)+' D+1 · '+formatNum(recentRevisions.filter(r=>r.stage==='D+7').length)+' D+7 · '+formatNum(recentRevisions.filter(r=>r.stage==='D+30').length)+' D+30')+
-  stat('Tempo líquido registrado',recentTime?Math.floor(recentTime/60)+'h'+String(recentTime%60).padStart(2,'0')+'min':'—','Somente tempos informados')+
+  stat('Tempo líquido conhecido',recentTimeInfo.known?clockMinutes(recentTime):'N/I',formatNum(recentTimeInfo.known)+' durações informadas'+(recentTimeInfo.unknown?' · '+recentTimeInfo.unknown+' N/I':''))+
   stat('Questões respondidas',formatNum(recentMetrics.all),'ChatGPT: '+formatNum(recentMetrics.chat)+' · TEC: '+formatNum(recentMetrics.tec))+
   stat('Aproveitamento',formatPercent(recentMetrics.overall),formatNum(recentMetrics.cs)+' acertos seguros')+
   '</div>'+recentSubjectTable+dailyTimeWarning+'</section>':'';
