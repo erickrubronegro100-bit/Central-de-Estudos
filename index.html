@@ -1261,6 +1261,23 @@ function dailyScheduleState(date){
  return {date,assignment,studies,reviews,studyDone:studies.filter(x=>x.done).length,
   reviewDone:reviews.filter(x=>x.status==='Realizada').length};
 }
+
+function reviewInitialStudyFlow(review){
+ // Modalidade da revisão = modalidade do estudo inicial ao qual pertence.
+ // A origem (ChatGPT/TEC) da revisão não altera a modalidade do tópico.
+ let unit=planById.get(review.studyId);
+ if(!unit){
+  const study=studyData.studies.find(x=>x.id===review.studyId);
+  if(study){
+   unit=planById.get(study.planId);
+   if(!unit&&study.activity==='Aprofundamento')return 'A';
+   if(!unit&&study.activity==='Questões')return 'Q';
+  }
+ }
+ if(!unit)unit=findTopicUnit(review.subject,review.topic);
+ return unit?.flow==='A'?'A':unit?.flow==='Q'?'Q':null;
+}
+
 function renderDailyStudyWorkspace(){
  const today=todayISO(),selected=dailySelectedDate||today;
  const d=dailyScheduleState(selected),a=d.assignment;
@@ -1288,6 +1305,11 @@ function renderDailyStudyWorkspace(){
  const empty='<div class="emptytable">Nenhuma atividade nesta seleção.</div>';
  const initialA=d.studies.filter(x=>x.unit.flow==='A');
  const initialQ=d.studies.filter(x=>x.unit.flow==='Q');
+ const reviewA=d.reviews.filter(r=>reviewInitialStudyFlow(r)==='A');
+ const reviewQ=d.reviews.filter(r=>reviewInitialStudyFlow(r)==='Q');
+ const reviewUnclassified=d.reviews.filter(r=>!reviewInitialStudyFlow(r));
+ const reviewDoneCount=items=>items.filter(r=>r.status==='Realizada').length;
+ const reviewCountLabel=items=>items.length+' revisão(ões) · '+reviewDoneCount(items)+' realizada(s) · '+(items.length-reviewDoneCount(items))+' não realizada(s)';
  const dailyExplanation=!a.week?
   'Esta data não pertence a uma semana de novos estudos. As revisões registradas para o dia continuam visíveis.':
   !a.configured?'A distribuição diária dos novos estudos desta semana ainda não foi informada. As revisões continuam disponíveis, e a meta semanal permanece em Metas Semanais.':
@@ -1309,11 +1331,13 @@ function renderDailyStudyWorkspace(){
  const timeSessions=studyData.attempts.filter(at=>at.date===selected),timeInfo=knownDurationStats(timeSessions);
  return '<div class="daily-controls"><label for="dailyDate">Data da agenda</label><button type="button" data-daily-step="-1" aria-label="Dia anterior">‹ Anterior</button><input type="date" id="dailyDate" value="'+selected+'" min="2026-10-25" max="2027-01-15"><button type="button" data-daily-step="1" aria-label="Próximo dia">Próximo ›</button><button type="button" data-daily-date="'+today+'">Hoje</button><button type="button" data-daily-date="2026-11-01">Início da Semana 2</button></div>'+
  dayMarkup+
- '<div class="weekly-kpi">'+metricCard('Tópicos novos previstos',a.configured?formatNum(planTotals):'—',a.configured?'Aprofundamento + Questões':'Sem distribuição diária')+metricCard('Aprofundamento',a.configured?formatNum(countsA):'—')+metricCard('Questões',a.configured?formatNum(countsQ):'—')+metricCard('Tópicos concluídos',a.configured?formatNum(d.studyDone)+'/'+planTotals:'—',a.configured?formatPercent(planTotals?d.studyDone/planTotals:0):'')+metricCard('Revisões do dia',formatNum(dueReviews))+metricCard('Revisões realizadas',formatNum(d.reviewDone),dueReviews?formatPercent(d.reviewDone/dueReviews):'Sem revisões')+metricCard('Tempo líquido conhecido',timeInfo.known?clockMinutes(timeInfo.minutes):'N/I',timeInfo.unknown?timeInfo.unknown+' atividade(s) sem duração':'ChatGPT + TEC')+'</div>'+
+ '<div class="weekly-kpi">'+metricCard('Tópicos novos previstos',a.configured?formatNum(planTotals):'—',a.configured?'Aprofundamento + Questões':'Sem distribuição diária')+metricCard('Aprofundamento',a.configured?formatNum(countsA):'—')+metricCard('Questões',a.configured?formatNum(countsQ):'—')+metricCard('Tópicos concluídos',a.configured?formatNum(d.studyDone)+'/'+planTotals:'—',a.configured?formatPercent(planTotals?d.studyDone/planTotals:0):'')+metricCard('Revisões do dia',formatNum(dueReviews))+metricCard('Revisões realizadas',formatNum(d.reviewDone),dueReviews?formatPercent(d.reviewDone/dueReviews):'Sem revisões')+metricCard('Revisões · Aprofundamento',formatNum(reviewA.length),reviewDoneCount(reviewA)+' realizadas')+metricCard('Revisões · Questões',formatNum(reviewQ.length),reviewDoneCount(reviewQ)+' realizadas')+metricCard('Tempo líquido conhecido',timeInfo.known?clockMinutes(timeInfo.minutes):'N/I',timeInfo.unknown?timeInfo.unknown+' atividade(s) sem duração':'ChatGPT + TEC')+'</div>'+
  '<p class="daily-note">'+escapeHtml(dailyExplanation)+'</p>'+
  panel('Estudos iniciais · Aprofundamento',a.configured?countsA+' tópico(s) na data escolhida.':'Sem divisão diária cadastrada.',initialA.length?'<div class="daily-topic-list">'+initialA.map(dailyRow).join('')+'</div>':empty)+
  panel('Estudos iniciais · Questões',a.configured?countsQ+' tópico(s) na data escolhida.':'Sem divisão diária cadastrada.',initialQ.length?'<div class="daily-topic-list">'+initialQ.map(dailyRow).join('')+'</div>':empty)+
- panel('Revisões programadas e realizadas',dueReviews+' revisão(ões) vinculada(s) à data escolhida, inclusive conclusões registradas neste dia.',dueReviews?'<div class="daily-topic-list">'+d.reviews.map(reviewRow).join('')+'</div>':empty)+
+ panel('Revisões de Aprofundamento',reviewCountLabel(reviewA)+' · D+1, D+7 e D+30, conforme estudo inicial de Aprofundamento.',reviewA.length?'<div class="daily-topic-list">'+reviewA.map(reviewRow).join('')+'</div>':empty)+
+ panel('Revisões de Questões',reviewCountLabel(reviewQ)+' · D+1, D+7 e D+30, conforme estudo inicial por Questões.',reviewQ.length?'<div class="daily-topic-list">'+reviewQ.map(reviewRow).join('')+'</div>':empty)+
+ (reviewUnclassified.length?panel('Revisões sem modalidade identificada',reviewCountLabel(reviewUnclassified)+' · Confira o vínculo com o estudo inicial.', '<div class="daily-topic-list">'+reviewUnclassified.map(reviewRow).join('')+'</div>'):'')+
  (pedagogy.length?panel('Reforços pedagógicos pendentes','Atividades específicas não contabilizadas como novos estudos ou revisões.','<div class="daily-topic-list">'+pedagogyHtml+'</div>'):'')+
  (extraMarkup?panel('Estudos executados fora da distribuição diária','Resultados nesta data, relativos a tópicos previstos originalmente para outros dias; não contam em duplicidade.','<div class="daily-topic-list">'+extraMarkup+'</div>'):'');
 }
