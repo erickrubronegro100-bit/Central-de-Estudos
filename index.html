@@ -261,6 +261,17 @@ dialog.viewer{position:fixed;inset:0 0 0 auto;max-height:none;height:100vh;max-w
 .daily-review-item button{flex-shrink:0}
 .daily-note{padding:12px 15px;border:1px solid var(--line);background:var(--card);border-radius:10px;color:var(--muted);font-size:12px;line-height:1.6}
 @media(max-width:650px){.daily-review-item,.weekly-topic{align-items:flex-start;flex-direction:column}.daily-weekstrip button{flex:1;min-width:93px}.weekly-subject-row select{width:100%}}
+
+.dash-expected-row{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;font-size:11px;color:var(--muted);margin:13px 0 6px}
+.dash-expected-row strong{font-size:12px;color:var(--text)}
+.dash-track.dash-expected-track{height:7px}
+.dash-track.dash-expected-track>span{background:var(--muted);opacity:.75}
+.dash-pace{font-size:11px;color:var(--muted);margin-top:7px;line-height:1.5}
+.dash-days-remaining{display:flex;align-items:center;gap:13px;flex-wrap:wrap;margin-top:18px;padding:13px 14px;background:var(--bg);border-radius:11px;border:1px solid var(--line)}
+.dash-days-remaining>strong{font-size:30px;letter-spacing:-1px;line-height:1.1}
+.dash-days-remaining span{display:block;font-size:12px;font-weight:780}
+.dash-days-remaining small{display:block;color:var(--muted);font-size:11px;line-height:1.45;margin-top:3px}
+.dash-mini .dash-expected-row{margin-top:10px}
 </style>
 </head>
 <body>
@@ -1489,6 +1500,29 @@ function renderWorkspace(v){
  g('workspacePage').innerHTML=`<div class="workspace-eyebrow">${esc(v.section)} / ${esc(v.title)}</div><h1 id="workspaceTitle">${esc(v.title)}</h1><p class="workspace-summary">${esc(v.description)}</p>${body}${note}`;
  if(v.section==='Estudos'&&v.id!=='estudos-semanal')refreshPlanList(v);
 }
+
+function expectedInitialProgressForDay(day){
+ // Referência: meta completa da semana atual, independentemente do dia.
+ const idx=studyWeeks.reduce((old,w,i)=>day>=w.start?i:old,-1);
+ const result={weekNumber:idx+1,weekEnd:idx>=0?studyWeeks[idx].end:null,A:0,Q:0,total:0};
+ for(let i=0;i<=idx;i++){result.A+=studyWeeks[i].quotaA;result.Q+=studyWeeks[i].quotaQ;}
+ result.total=result.A+result.Q;
+ return result;
+}
+function studyDaysRemaining(day,limit='2027-01-15'){
+ // Contagem inclusiva: apenas dias contidos nas semanas do planejamento.
+ const start=day>studyWeeks[0].start?day:studyWeeks[0].start;
+ if(start>limit)return 0;
+ let total=0;
+ for(let current=start;current<=limit;){
+  const date=new Date(current+'T12:00:00Z');
+  if(date.getUTCDay()!==6&&studyWeeks.some(w=>current>=w.start&&current<=w.end))total++;
+  date.setUTCDate(date.getUTCDate()+1);
+  current=date.toISOString().slice(0,10);
+ }
+ return total;
+}
+
 function refreshOverview(){
  const root=g('dashboardRoot');if(!root)return;
  const overrides=planOverlays();
@@ -1498,6 +1532,9 @@ function refreshOverview(){
  const manualDone=manual.filter(x=>statusStudy(x)==='Concluídos').length;
  const total=planUnits.length+manual.length,done=planDone+manualDone;
  const pct=total?done/total:0;
+ const expected=expectedInitialProgressForDay(todayISO());
+ const expectedPct=total?expected.total/total:0;
+ const studyDaysLeft=studyDaysRemaining(todayISO());
  const flowData={};
  for(const [flow,name] of [['A','Aprofundamento'],['Q','Questões']]){
    const base=planUnits.filter(x=>x.flow===flow);
@@ -1525,7 +1562,24 @@ function refreshOverview(){
  const stat=(name,value,info)=>`<div class="dash-kpi"><span class="dash-kpi-label">${escapeHtml(name)}</span><strong>${escapeHtml(String(value))}</strong><small>${escapeHtml(info)}</small></div>`;
  const bar=p=>`<div class="dash-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(p*100)}"><span style="width:${(p*100).toFixed(2)}%"></span></div>`;
  const nav=(view,label)=>`<button class="dash-link" type="button" data-dashboard-view="${view}">${escapeHtml(label)}</button>`;
- const mini=(name,data,view)=>`<div class="dash-mini"><div class="dash-mini-head"><span>${escapeHtml(name)}</span><strong>${formatPercent(data.pct)}</strong></div><div class="dash-mini-caption">${formatNum(data.completed)} de ${formatNum(data.total)} concluídos · ${formatNum(data.total-data.completed)} planejados</div>${bar(data.pct)}</div>`;
+
+ const expectedBar=(v,title)=>'<div class="dash-track dash-expected-track" role="progressbar" aria-label="'+escapeHtml(title)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+Math.round(Math.min(1,Math.max(0,v))*100)+'"><span style="width:'+(100*Math.min(1,Math.max(0,v))).toFixed(2)+'%"></span></div>';
+ const pace=(actual,goal,total)=>{
+  const diff=actual-goal,abs=formatNum(Math.abs(diff));
+  const label=diff===0?'Meta esperada atingida':diff>0?abs+' tópico(s) acima da meta':abs+' tópico(s) abaixo da meta';
+  const pp=total?(100*diff/total).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'0,00';
+  return label+' · '+(diff>0?'+':'')+pp+' p.p.';
+ };
+ const expectedHeader=expected.weekEnd?'Semana '+expected.weekNumber+' · até '+dateBR(expected.weekEnd):'Planejamento não iniciado';
+ const mini=(name,data,flow)=>{
+  const goal=flow==='A'?expected.A:expected.Q;
+  const fraction=data.total?goal/data.total:0;
+  return '<div class="dash-mini"><div class="dash-mini-head"><span>'+escapeHtml(name)+'</span><strong>'+formatPercent(data.pct)+'</strong></div>'+
+   '<div class="dash-mini-caption">'+formatNum(data.completed)+' de '+formatNum(data.total)+' concluídos · '+formatNum(data.total-data.completed)+' planejados</div>'+bar(data.pct)+
+   '<div class="dash-expected-row"><span>Esperado · '+escapeHtml(expectedHeader)+'</span><strong>'+formatNum(goal)+'/'+formatNum(data.total)+' · '+formatPercent(fraction)+'</strong></div>'+
+   expectedBar(fraction,'Meta esperada de '+name)+'<div class="dash-pace">'+escapeHtml(pace(data.completed,goal,data.total))+'</div></div>';
+ };
+
  const miniBreak=(stage)=>`<div class="dash-stage"><div><strong>Revisão ${stage.stage}</strong><p class="dash-stage-meta">${formatNum(stage.Programadas)} programadas · ${formatNum(stage.Realizadas)} realizadas · ${formatNum(stage.Pendentes)} pendentes</p></div>${nav(stage.stage==='D+1'?'revisoes-d1':stage.stage==='D+7'?'revisoes-d7':'revisoes-d30','Ver')}</div>`;
 
  const latestStudyDate=[...studyData.attempts.map(x=>x.date),...studyData.studies.filter(x=>x.status==='Concluído').map(x=>x.date)].filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x||'')).sort().at(-1);
@@ -1554,8 +1608,13 @@ function refreshOverview(){
  ${recentDayPanel}
  ${weeklySnapshot()}
  <div class="dash-hero">
-  <div class="dash-hero-main"><div class="dash-hero-kicker">PROGRESSO TOTAL DOS ESTUDOS INICIAIS</div><div class="dash-hero-value"><strong>${formatPercent(pct)}</strong><span>${formatNum(done)} de ${formatNum(total)} tópicos concluídos</span></div>${bar(pct)}<div class="dash-hero-foot"><span>${formatNum(total-done)} planejados</span><span>317 de aprofundamento + 233 de questões${manual.length?' + '+manual.length+' registros avulsos':''}</span></div></div>
-  <div class="dash-hero-side">${mini('Estudo inicial · Aprofundamento',flowData.A)}${mini('Estudo inicial · Questões',flowData.Q)}</div>
+  <div class="dash-hero-main"><div class="dash-hero-kicker">PROGRESSO TOTAL DOS ESTUDOS INICIAIS</div><div class="dash-hero-value"><strong>${formatPercent(pct)}</strong><span>${formatNum(done)} de ${formatNum(total)} tópicos concluídos</span></div>${bar(pct)}
+  <div class="dash-expected-row"><span>Esperado · ${escapeHtml(expectedHeader)}</span><strong>${formatNum(expected.total)}/${formatNum(total)} · ${formatPercent(expectedPct)}</strong></div>
+  ${expectedBar(expectedPct,"Meta geral esperada até o fim da semana")}
+  <div class="dash-pace">${escapeHtml(pace(done,expected.total,total))}</div>
+  <div class="dash-days-remaining"><strong>${formatNum(studyDaysLeft)}</strong><div><span>Dias de estudo restantes até 15/01/2027</span><small>Inclui hoje se for dia de estudo e 15/01; exclui todos os sábados e a pausa de 22 a 27/11. Considera somente as semanas cadastradas.</small></div></div>
+  <div class="dash-hero-foot"><span>${formatNum(total-done)} planejados</span><span>317 de aprofundamento + 233 de questões${manual.length?' + '+manual.length+' registros avulsos':''}</span></div></div>
+  <div class="dash-hero-side">${mini('Estudo inicial · Aprofundamento',flowData.A,'A')}${mini('Estudo inicial · Questões',flowData.Q,'Q')}</div>
  </div>
  <div class="dash-kpi-grid">
  ${stat('Tópicos concluídos',formatNum(done),'De '+formatNum(total)+' cadastrados')}
