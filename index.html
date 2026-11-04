@@ -2615,7 +2615,7 @@ function renderCumulativeStudyTime(){
 }
 function refreshOverview(){
  const root=g('dashboardRoot');if(!root)return;
- const prog=centralProgressModel(),reviews=studyData.reviews.filter(r=>!r.resetForRedo);
+ const prog=centralProgressModel(),history=weeklyHistoricalComparison(),reviews=studyData.reviews.filter(r=>!r.resetForRedo);
  const metrics=metricsAttempt(studyData.attempts.filter(a=>!a.resetForRedo));
  const today=todayISO();
  const stages=['D+1','D+7','D+30'].map(stage=>{
@@ -2625,12 +2625,16 @@ function refreshOverview(){
  const nav=(id,label)=>'<button class="dash-link" type="button" data-dashboard-view="'+id+'">'+escapeHtml(label)+'</button>';
  const stats=(name,val,desc)=>'<div class="dash-kpi"><span class="dash-kpi-label">'+escapeHtml(name)+'</span><strong>'+escapeHtml(String(val))+'</strong><small>'+escapeHtml(desc)+'</small></div>';
  root.innerHTML=renderCumulativeStudyTime()+
- '<section class="dash-section"><div class="dash-titlebar"><div><h2>Estudos — Visão Geral</h2><p>Meta proporcional e progresso realizado das quatro visões. Complementação (TEC) cresce apenas com a liberação de tópicos.</p></div>'+nav('estudos-geral','Abrir Visão Geral')+'</div>'+
+ '<section class="dash-section"><div class="dash-titlebar"><div><h2>Estudos — Visão Geral</h2><p>Metas da programação semanal comparadas ao realizado, com ideal histórico A/Q/C. Complementações entram conforme sua liberação e programação.</p></div>'+nav('estudos-geral','Abrir Visão Geral')+'</div>'+
  centralProgressCards()+
  '<div class="dash-kpi-grid">'+stats('UNIDADES CADASTRADAS',prog.all.total,'Distribuição por modalidade de estudo')+
  stats('UNIDADES CONCLUÍDAS',prog.all.done,'Execução efetiva')+
- stats('META ESPERADA',prog.all.expected,'A/Q proporcionais + Complementações liberadas')+
- stats('SALDO REALIZADO − ESPERADO',(prog.all.done-prog.all.expected>0?'+':'')+(prog.all.done-prog.all.expected),'Atraso negativo · adiantamento positivo')+'</div>'+
+ stats('PREVISTO ATÉ HOJE',prog.all.expected,'Ideal histórico A/Q/C + metas semanais e TEC programados')+
+ stats('SALDO REALIZADO − PREVISTO',(prog.all.done-prog.all.expected>0?'+':'')+(prog.all.done-prog.all.expected),'Atraso negativo · adiantamento positivo')+'</div>'+
+ '<div class="dash-kpi-grid">'+
+ stats('IDEAL HISTÓRICO A/Q/C',history.ideal,'Semanas 1 e 2 · '+history.idealA+' A + '+history.idealQ+' Q + '+history.idealC+' C')+
+ stats('REALIZADO HISTÓRICO A/Q/C',history.done,'Semanas 1 e 2 · '+history.doneA+' A + '+history.doneQ+' Q + '+history.doneC+' C')+
+ stats('DIFERENÇA HISTÓRICA A/Q/C',(history.diff>0?'+':'')+history.diff,'Realizado menos ideal histórico')+'</div>'+
  weeklySnapshot()+'</section>'+
  '<section class="dash-section"><div class="dash-titlebar"><div><h2>Revisões</h2><p>Histórico e datas por etapa D+1, D+7 e D+30.</p></div>'+nav('revisoes-dia','Revisões do dia')+'</div>'+
  '<div class="dash-kpi-grid">'+stats('REVISÕES REGISTRADAS',reviews.length,'Todas as etapas')+
@@ -2647,14 +2651,41 @@ function refreshOverview(){
 }
 
 // QUATRO PAINÉIS DE PROGRESSO — metas proporcionais (A/Q), complementações por liberação.
+
+function weeklyExpectedProgressForDay(day=todayISO()){
+ const weeks=weeklyStudyState().weeks,result={A:0,Q:0,C:0};
+ for(const w of weeks){
+  if(day<w.start)continue;
+  const days=plannedStudyDates(w.start,w.end);
+  const fraction=day>=w.end?1:(days.length?days.filter(d=>d<=day).length/days.length:0);
+  result.A+=(w.historical?w.idealA:w.quotaA)*fraction;
+  result.Q+=(w.historical?w.idealQ:w.quotaQ)*fraction;
+  result.C+=w.complements.filter(u=>{
+   const gate=complementGate(u),rec=completionOf(u);
+   const planned=gate?.scheduled||gate?.releasedAt||rec?.plannedDate||rec?.date;
+   return Boolean(planned&&planned<=day);
+  }).length;
+ }
+ for(const flow of ['A','Q'])result[flow]=Math.min(planUnits.filter(u=>u.flow===flow).length,Math.round(result[flow]));
+ result.C=Math.min(planUnits.filter(u=>u.flow==='C').length,result.C);
+ result.total=result.A+result.Q+result.C;
+ return result;
+}
+function weeklyHistoricalComparison(data=weeklyStudyState()){
+ const weeks=data.weeks.filter(w=>w.historical),sum=k=>weeks.reduce((n,w)=>n+w[k],0);
+ const idealA=sum('idealA'),idealQ=sum('idealQ'),idealC=sum('quotaC');
+ const doneA=sum('doneA'),doneQ=sum('doneQ'),doneC=sum('doneC');
+ const ideal=idealA+idealQ+idealC,done=doneA+doneQ+doneC;
+ return {idealA,idealQ,idealC,doneA,doneQ,doneC,ideal,done,diff:done-ideal};
+}
 function centralProgressModel(day=todayISO()){
  const kinds=['A','C','Q'].map(flow=>{
   const units=planUnits.filter(u=>u.flow===flow);
   return {flow,total:units.length,done:units.filter(u=>{const x=completionOf(u);return x&&(!x.date||x.date<=day);}).length};
  });
- const ideal=expectedInitialProgressForDay(day),complement=cpComplementProgress(day);
+ const ideal=weeklyExpectedProgressForDay(day),complement=cpComplementProgress(day);
  const A=kinds.find(u=>u.flow==='A'),C=kinds.find(u=>u.flow==='C'),Q=kinds.find(u=>u.flow==='Q');
- A.expected=ideal.A;Q.expected=ideal.Q;C.expected=complement.expected;
+ A.expected=ideal.A;Q.expected=ideal.Q;C.expected=ideal.C;
  const all={flow:'ALL',total:A.total+C.total+Q.total,done:A.done+C.done+Q.done,expected:A.expected+C.expected+Q.expected};
  return {all,A,C,Q,complement,ideal};
 }
@@ -2663,7 +2694,7 @@ function centralProgressCards(day=todayISO()){
  const bars=[['PROGRESSO GERAL',d.all],['APROFUNDAMENTO',d.A],['COMPLEMENTAÇÃO (TEC)',d.C],['QUESTÕES',d.Q]];
  return '<div class="study-progress-grid">'+bars.map(([title,data])=>{
   const done=data.done,goal=data.expected,total=data.total,diff=done-goal;
-  const isC=data.flow==='C',note=isC?'Meta = cadernos liberados até a data':'Meta proporcional acumulada até a data';
+  const isC=data.flow==='C',note=isC?'Previsto = cadernos programados até a data após liberação':'Previsto = ideal histórico nas semanas 1 e 2; depois, metas atribuídas até a data';
   const pct=x=>total?Math.min(100,Math.max(0,x/total*100)):0;
   const balance=diff<0?formatNum(-diff)+' unidade(s) atrás da meta':diff>0?formatNum(diff)+' unidade(s) adiantada(s)':'Meta atingida';
   return '<article class="study-progress-card"><h3>'+title+'</h3>'+
@@ -2675,18 +2706,14 @@ function centralProgressCards(day=todayISO()){
 }
 function weeklySnapshot(){
  const d=weeklyStudyState(),w=d.active,pause=d.position.phase==='Pausa de estudos';
- const before=d.weeks.slice(0,w.index),historical=w.index<=1;
- const actualA=before.reduce((n,x)=>n+x.doneA,0)+w.doneA;
- const actualQ=before.reduce((n,x)=>n+x.doneQ,0)+w.doneQ;
- const idealA=before.reduce((n,x)=>n+x.idealA,0)+w.idealA;
- const idealQ=before.reduce((n,x)=>n+x.idealQ,0)+w.idealQ;
+ const history=weeklyHistoricalComparison(d);
  return '<section class="weekly-panel"><div class="weekly-header"><div><h2>'+(pause?'Pausa · próxima meta: ':'Semana ')+w.number+' · '+weekRange(w)+'</h2><p>Metas atribuídas à semana · Complementação (TEC) por liberação</p></div><button type="button" class="dash-link" data-jump-view="estudos-semanal">Metas Semanais</button></div>'+
  '<div class="weekly-compact">'+
  weeklyProgress('TOTAL DA SEMANA',w.totalDoneWeek,w.quotaTotal)+
  weeklyProgress('APROFUNDAMENTO',w.doneA,w.quotaA)+
  weeklyProgress('QUESTÕES',w.doneQ,w.quotaQ)+
  weeklyProgress('COMPLEMENTAÇÃO (TEC)',w.doneC,w.quotaC)+'</div>'+
- '<div class="weekly-meta"><span>Referência ideal A/Q acumulada: <strong>'+formatNum(idealA+idealQ)+' unidades</strong></span><span>Realizadas A/Q nas semanas: <strong>'+formatNum(actualA+actualQ)+'</strong></span><span>Complementações programadas na semana: <strong>'+formatNum(w.quotaC)+'</strong></span><span>Pendências anteriores: <strong>'+formatNum(d.backlog.length)+'</strong></span></div></section>';
+ '<div class="weekly-meta"><span>Ideal histórico A/Q/C (semanas 1 e 2): <strong>'+formatNum(history.ideal)+'</strong></span><span>Realizado histórico A/Q/C: <strong>'+formatNum(history.done)+'</strong></span><span>Diferença histórica: <strong>'+(history.diff>0?'+':'')+formatNum(history.diff)+'</strong></span><span>Complementações programadas na semana: <strong>'+formatNum(w.quotaC)+'</strong></span><span>Pendências anteriores: <strong>'+formatNum(d.backlog.length)+'</strong></span></div></section>';
 }
 function weeklySelectedDetails(data,w){
  const mode=['Todos','Pendentes','Concluídos'].includes(viewFilters['estudos-semanal'])?viewFilters['estudos-semanal']:'Todos';
@@ -2718,24 +2745,24 @@ function renderWeeklyWorkspace(){
  const d=weeklyStudyState(),chosen=selectedStudyWeek===null?d.position.index:Math.max(0,Math.min(d.weeks.length-1,selectedStudyWeek));
  const selected=d.weeks[chosen],A=planUnits.filter(u=>u.flow==='A'),Q=planUnits.filter(u=>u.flow==='Q'),C=planUnits.filter(u=>u.flow==='C');
  const rows=d.weeks.map(w=>{
-  const ideal=w.index<=1?w.idealA+' A + '+w.idealQ+' Q':'—';
+  const ideal=w.historical?w.idealA+' A + '+w.idealQ+' Q + '+w.quotaC+' C':'—';
   const status=w.totalPending===0?'Meta concluída':todayISO()>w.end?'Prazo encerrado':todayISO()<w.start?'Futura':'Em andamento';
   return '<tr class="'+(w.index===chosen?'weekly-current-row':'')+'"><th><button type="button" class="weekly-select" data-week-select="'+w.index+'">Semana '+w.number+'</button></th>'+
   '<td>'+weekRange(w)+'</td><td>'+w.quotaA+'</td><td>'+w.doneA+'</td><td>'+w.quotaQ+'</td><td>'+w.doneQ+'</td>'+
   '<td>'+w.quotaC+'</td><td>'+w.doneC+'</td><td>'+w.quotaTotal+'</td><td>'+w.totalDoneWeek+'</td><td>'+w.totalPending+'</td><td>'+ideal+'</td><td>'+escapeHtml(status)+'</td></tr>';
  }).join('');
- const history=d.weeks.slice(0,2),historicalDone=history.reduce((n,w)=>n+w.doneA+w.doneQ,0),historicalIdeal=history.reduce((n,w)=>n+w.idealA+w.idealQ,0);
+ const history=weeklyHistoricalComparison(d),historicalDone=history.done,historicalIdeal=history.ideal;
  return weeklySnapshot()+
  '<p class="weekly-pause">As metas e os resultados da tabela correspondem às unidades atribuídas a cada semana. A referência ideal das semanas históricas é exibida separadamente. As Complementações (TEC) entram automaticamente na semana de sua programação após liberação, sem alterar as metas originais de Aprofundamento e Questões.</p>'+
- '<div class="weekly-kpi">'+metricCard('Referência ideal A/Q — Semanas 1 e 2',historicalIdeal)+metricCard('Realizado A/Q — Semanas 1 e 2',historicalDone)+metricCard('Diferença histórica A/Q',(historicalDone-historicalIdeal>0?'+':'')+(historicalDone-historicalIdeal))+metricCard('Total de Aprofundamento',A.length)+metricCard('Total de Questões',Q.length)+metricCard('Complementação cadastrada',C.length)+'</div>'+
- panel('Metas Semanais — Previsto × Realizado','Os valores de meta são os tópicos programados na semana; os complementares são incluídos conforme liberação. A referência ideal histórica permanece apenas para comparação.','<div class="platform-scroll"><table class="platform-table weekly-table"><thead><tr><th>Semana</th><th>Período</th><th>Meta A</th><th>Feito A</th><th>Meta Q</th><th>Feito Q</th><th>Meta C</th><th>Feito C</th><th>Meta Total</th><th>Feito Total</th><th>Pendentes</th><th>Ideal histórico A/Q</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
+ '<div class="weekly-kpi">'+metricCard('Ideal histórico A/Q/C — Semanas 1 e 2',historicalIdeal)+metricCard('Realizado histórico A/Q/C — Semanas 1 e 2',historicalDone)+metricCard('Diferença histórica A/Q/C',(historicalDone-historicalIdeal>0?'+':'')+(historicalDone-historicalIdeal))+metricCard('Total de Aprofundamento',A.length)+metricCard('Total de Questões',Q.length)+metricCard('Complementação cadastrada',C.length)+'</div>'+
+ panel('Metas Semanais — Previsto × Realizado','Os valores de meta são os tópicos programados na semana; os complementares são incluídos conforme liberação. A referência ideal histórica permanece apenas para comparação.','<div class="platform-scroll"><table class="platform-table weekly-table"><thead><tr><th>Semana</th><th>Período</th><th>Meta A</th><th>Feito A</th><th>Meta Q</th><th>Feito Q</th><th>Meta C</th><th>Feito C</th><th>Meta Total</th><th>Feito Total</th><th>Pendentes</th><th>Ideal histórico A/Q/C</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
  weeklySelectedDetails(d,selected);
 }
 function renderStudyGeneralPanels(){
  const d=centralProgressModel(),byFlow=[['Aprofundamento',d.A],['Complementação (TEC)',d.C],['Questões',d.Q]];
  const rows=byFlow.map(([n,v])=>'<tr><th>'+n+'</th><td>'+v.total+'</td><td>'+v.done+'</td><td>'+v.expected+'</td><td>'+(v.done-v.expected>0?'+':'')+(v.done-v.expected)+'</td></tr>').join('');
  return centralProgressCards()+weeklySnapshot()+
- panel('Consolidação das Modalidades','Meta de Complementação = liberados; demais metas = referência proporcional da semana.','<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Modalidade</th><th>Total</th><th>Concluídos</th><th>Esperados</th><th>Diferença</th></tr></thead><tbody>'+rows+'<tr><th>GERAL</th><td>'+d.all.total+'</td><td>'+d.all.done+'</td><td>'+d.all.expected+'</td><td>'+ (d.all.done-d.all.expected)+'</td></tr></tbody></table></div>')+
+ panel('Consolidação das Modalidades','Previsto conforme as metas semanais: referência ideal A/Q/C histórica, metas A/Q das semanas seguintes e TEC programados.','<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Modalidade</th><th>Total</th><th>Concluídos</th><th>Esperados</th><th>Diferença</th></tr></thead><tbody>'+rows+'<tr><th>GERAL</th><td>'+d.all.total+'</td><td>'+d.all.done+'</td><td>'+d.all.expected+'</td><td>'+ (d.all.done-d.all.expected)+'</td></tr></tbody></table></div>')+
  '<div class="sector-links"><button class="dash-link" data-jump-view="estudos-semanal">Metas Semanais</button><button class="dash-link" data-jump-view="estudos-cronograma-dia">Cronograma diário</button><button class="dash-link" data-jump-view="estudos-geral">Sequência Integrada</button></div>';
 }
 function renderContinuousWorkspace(){
