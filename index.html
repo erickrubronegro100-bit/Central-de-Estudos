@@ -2681,12 +2681,12 @@ function renderWeeklyWorkspace(){
  const rows=d.weeks.map(w=>{
   const historical=w.index<=1,expectedA=historical?w.idealA:w.quotaA,expectedQ=historical?w.idealQ:w.quotaQ;
   const balance=(w.doneA-expectedA)+(w.doneQ-expectedQ);
-  const status=w.done===w.units.length?'Todos atribuídos concluídos':todayISO()>w.end?'Prazo encerrado':todayISO()<w.start?'Futura':'Em andamento';
+  const status=w.remain===0?'Todos atribuídos concluídos':todayISO()>w.end?'Prazo encerrado':todayISO()<w.start?'Futura':'Em andamento';
   return '<tr class="'+(w.index===chosen?'weekly-current-row':'')+'"><th><button type="button" class="weekly-select" data-week-select="'+w.index+'">Semana '+w.number+'</button></th><td>'+weekRange(w)+'</td><td>'+expectedA+'</td><td>'+w.doneA+'</td><td>'+expectedQ+'</td><td>'+w.doneQ+'</td><td>'+(balance>0?'+':'')+balance+'</td><td>'+w.quotaA+' A + '+w.quotaQ+' Q</td><td>'+escapeHtml(status)+'</td></tr>';
  }).join('');
  const base=d.weeks.slice(0,2),historicalDone=base.reduce((n,w)=>n+w.done,0),historicalIdeal=base.reduce((n,w)=>n+w.idealA+w.idealQ,0);
  return weeklySnapshot()+
- '<p class="weekly-pause"><strong>Referência proporcional:</strong> 321 tópicos teóricos e 233 de Questões distribuídos idealmente por 11 semanas, com metas inteiras e diferença máxima de uma unidade. As semanas 1 e 2 mostram o ideal e a execução histórica (incluindo 1 conclusão anterior creditada à semana 1). <strong>Agenda futura:</strong> mantém a distribuição operacional definida, acrescida apenas dos quatro tópicos novos de CP na posição pedagógica. Pausa de 22 a 27/11; Complementação (TEC) tem meta dinâmica por liberação.</p>'+
+ '<p class="weekly-pause"><strong>Referência proporcional:</strong> 321 tópicos teóricos e 233 de Questões distribuídos idealmente por 11 semanas, com metas inteiras e diferença máxima de uma unidade. As semanas 1 e 2 mostram o ideal e a execução histórica (uma conclusão anterior a 25/10 permanece no total geral, mas não é tratada como realizada na semana 1). <strong>Agenda futura:</strong> mantém a distribuição operacional definida, acrescida apenas dos quatro tópicos novos de CP na posição pedagógica. Pausa de 22 a 27/11; Complementação (TEC) tem meta dinâmica por liberação.</p>'+
  '<div class="weekly-kpi">'+metricCard('Ideal nas semanas 1 e 2',historicalIdeal)+metricCard('Concluídos nas semanas 1 e 2',historicalDone)+metricCard('Diferença histórica',(historicalDone-historicalIdeal>0?'+':'')+(historicalDone-historicalIdeal))+metricCard('Total de Aprofundamento',A.length)+metricCard('Total de Questões',Q.length)+metricCard('Data final','15/01/2027')+'</div>'+
  panel('Metas Semanais — esperado × realizado','Para as semanas 1 e 2, referência ideal proporcional. Nas posteriores, a coluna esperado indica as metas operacionais já distribuídas. As duas referências não são somadas uma à outra.','<div class="platform-scroll"><table class="platform-table weekly-table"><thead><tr><th>Semana</th><th>Período</th><th>A esperado</th><th>A feito</th><th>Q esperado</th><th>Q feito</th><th>Saldo</th><th>Unidades atribuídas</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
  weeklySelectedDetails(d,selected);
@@ -2853,12 +2853,16 @@ function weeklyStudyState(){
  }
  const weeks=studyWeeks.map(w=>{
   const a=w.units.filter(u=>u.flow==='A'),q=w.units.filter(u=>u.flow==='Q');
-  const doneA=a.filter(u=>completed.has(u.id)).length,doneQ=q.filter(u=>completed.has(u.id)).length;
+  // Nas semanas históricas, contabilizar no realizado somente estudos com data efetiva no período.
+  // Um estudo anterior a 25/10 permanece concluído no total geral, mas não entra na Semana 1.
+  const inPeriod=u=>{const d=completed.get(u.id)?.date;return Boolean(d&&(w.index>1||dateBetween(d,w.start,w.end)));};
+  const doneA=a.filter(inPeriod).length,doneQ=q.filter(inPeriod).length;
+  const allocatedDone=w.units.filter(u=>completed.has(u.id)).length;
   const preDone=w.units.filter(u=>completed.get(u.id)?.date<w.start).length;
   const onTime=w.units.filter(u=>{const d=completed.get(u.id)?.date;return d&&d<=w.end;}).length;
   const lateDone=w.units.filter(u=>{const d=completed.get(u.id)?.date;return d&&d>w.end;}).length;
   return {...w,doneA,doneQ,done:doneA+doneQ,onTime,preDone,lateDone,
-   remain:w.units.length-doneA-doneQ,pct:w.units.length?(doneA+doneQ)/w.units.length:0};
+   remain:w.units.length-allocatedDone,pct:w.units.length?allocatedDone/w.units.length:0};
  });
  const now=todayISO(),pos=getWeekPosition(),active=weeks[pos.index];
  const preceding=weeks.slice(0,pos.index).flatMap(w=>w.units).filter(u=>!completed.has(u.id));
