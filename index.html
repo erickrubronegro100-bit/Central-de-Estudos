@@ -577,6 +577,28 @@ function shiftReviewDate(date,days){
  dt.setDate(dt.getDate()+days);
  return [dt.getFullYear(),String(dt.getMonth()+1).padStart(2,'0'),String(dt.getDate()).padStart(2,'0')].join('-');
 }
+// Sábado livre: revisões futuras previstas para sábado passam ao domingo.
+// A data original fica preservada para auditoria do ciclo D+1/D+7/D+30.
+function nextPermittedReviewDate(day){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(day||''))return day;
+ const date=new Date(day+'T12:00:00Z');
+ if(date.getUTCDay()!==6)return day;
+ date.setUTCDate(date.getUTCDate()+1);
+ return date.toISOString().slice(0,10);
+}
+function reschedulePendingSaturdayReviews(){
+ let changed=false;
+ for(const r of studyData.reviews){
+  if(r.status==='Realizada'||!r.plannedDate||r.plannedDate<'2026-11-04')continue;
+  const planned=nextPermittedReviewDate(r.plannedDate);
+  if(planned===r.plannedDate)continue;
+  if(!r.originalPlannedDate)r.originalPlannedDate=r.plannedDate;
+  r.plannedDate=planned;
+  r.rescheduledReason='Sábado sem estudos: revisão transferida para domingo.';
+  changed=true;
+ }
+ if(changed)writeData();
+}
 function reviewMatchesStudy(r,study){
  if(r.subject!==study.subject)return false;
  if(r.studyId===study.id||study.planId&&r.studyId===study.planId)return true;
@@ -587,7 +609,8 @@ function ensureScheduledReviews(study){
  let modified=false;
  for(const [stage,offset] of [['D+1',1],['D+7',7],['D+30',30]]){
   if(study.planId==='Q-038'&&(stage==='D+7'||stage==='D+30'))continue;
-  const plannedDate=shiftReviewDate(study.date,offset);
+  const originalReviewDate=shiftReviewDate(study.date,offset);
+  const plannedDate=nextPermittedReviewDate(originalReviewDate);
   if(!plannedDate)continue;
   const matches=studyData.reviews.filter(r=>r.stage===stage&&reviewMatchesStudy(r,study));
   if(matches.length){
@@ -601,7 +624,8 @@ function ensureScheduledReviews(study){
   }
   studyData.reviews.push({
    id:freshId(),studyId:study.id,subject:study.subject,topic:study.topic,
-   stage,status:'Programada',plannedDate,doneDate:'',autoScheduled:true
+   stage,status:'Programada',plannedDate,doneDate:'',autoScheduled:true,
+   ...(originalReviewDate!==plannedDate?{originalPlannedDate:originalReviewDate,rescheduledReason:'Sábado sem estudos: revisão transferida para domingo.'}:{})
   });
   modified=true;
  }
@@ -1255,13 +1279,13 @@ let weeklySubjectFilter='Todos';
 let dailySelectedDate=null;
 
 // Metas aprovadas em 04/11/2026: histórico até 04/11 e 10 semanas de metas até 15/01/2027.
-// Complementação (TEC) não recebe cota semanal. De 22 a 27/11 não há meta.
+// Complementação (TEC) não recebe cota semanal. A Semana 4 vai até 22/11; a pausa de novos estudos fica de 23 a 28/11.
 const PLAN_BASELINE_DATE='2026-11-04';
 const PLAN_BASELINE_STORAGE='central-estudos-metas-baseline-20261104-v1';
 const PLANNED_RANGES=[
  ['2026-11-05','2026-11-06'],
  ['2026-11-08','2026-11-13'],
- ['2026-11-15','2026-11-20'],
+ ['2026-11-14','2026-11-22'],
  ['2026-11-29','2026-12-04'],
  ['2026-12-06','2026-12-11'],
  ['2026-12-13','2026-12-18'],
@@ -1315,24 +1339,12 @@ function rebuildWeeklyPlan(){
 function plannedStudyDates(start,end){
  const days=[];
  for(let d=start;d<=end;d=shiftAgendaDate(d,1)){
-  if(new Date(d+'T12:00:00Z').getUTCDay()!==6&&!dateBetween(d,'2026-11-22','2026-11-27'))days.push(d);
+  const dow=new Date(d+'T12:00:00Z').getUTCDay();
+  if(dow!==5&&dow!==6&&!dateBetween(d,'2026-11-23','2026-11-28'))days.push(d);
  }
  return days;
 }
-function dailyStudyAssignments(date){
- const week=studyWeeks.find(w=>!w.history&&dateBetween(date,w.start,w.end));
- if(!week)return {week:null,configured:false,units:[]};
- const days=plannedStudyDates(week.start,week.end),index=days.indexOf(date);
- if(index<0)return {week,configured:false,units:[]};
- const a=week.units.filter(x=>x.flow==='A'),q=week.units.filter(x=>x.flow==='Q');
- function fromFlow(items){
-  if(week.number===1)return date==='2026-11-05'?items:[];
-  const counts=evenQuotas(items.length,days.length);
-  const offset=counts.slice(0,index).reduce((acc,n)=>acc+n,0);
-  return items.slice(offset,offset+counts[index]);
- }
- return {week,configured:true,units:[...fromFlow(a),...fromFlow(q)],day:index,carriedCount:0};
-}
+// A distribuição diária operacional é definida na rotina unificada abaixo.
 
 let selectedStudyWeek=null;
 function dateBetween(value,start,end){return Boolean(value)&&value>=start&&value<=end}
@@ -1341,7 +1353,7 @@ function getWeekPosition(){
  const exact=studyWeeks.findIndex(w=>dateBetween(now,w.start,w.end));
  if(exact===0)return {index:1,phase:'Histórico consolidado até 04/11 · próxima meta'};
  if(exact>=0)return {index:exact,phase:'Em andamento'};
- if(dateBetween(now,'2026-11-22','2026-11-27'))return {index:4,phase:'Pausa de estudos'};
+ if(dateBetween(now,'2026-11-23','2026-11-28'))return {index:4,phase:'Pausa de estudos'};
  if(now<studyWeeks[0].start)return {index:0,phase:'Planejamento ainda não iniciado'};
  const later=studyWeeks.findIndex(w=>now<w.start);
  return later>=0?{index:later,phase:'Entre semanas'}:{index:10,phase:'Período encerrado'};
@@ -1382,7 +1394,7 @@ function weeklyProgress(title,done,total,description=''){
 function weeklySnapshot(){
  const data=weeklyStudyState(),w=data.active;
  const pause=data.position.phase==='Pausa de estudos';
- return '<section class="weekly-panel"><div class="weekly-header"><div><h2>'+(pause?'Pausa · próxima meta: Semana ':'Meta da Semana ')+w.number+' · '+weekRange(w)+'</h2><p>'+escapeHtml(data.position.phase)+(pause?' · sem meta ativa de 22/11 a 27/11':'')+' · '+w.units.length+' tópicos da semana indicada</p></div><button type="button" class="dash-link" data-jump-view="estudos-semanal">Abrir metas semanais</button></div>'+
+ return '<section class="weekly-panel"><div class="weekly-header"><div><h2>'+(pause?'Pausa · próxima meta: Semana ':'Meta da Semana ')+w.number+' · '+weekRange(w)+'</h2><p>'+escapeHtml(data.position.phase)+(pause?' · sem meta ativa de 23/11 a 28/11':'')+' · '+w.units.length+' tópicos da semana indicada</p></div><button type="button" class="dash-link" data-jump-view="estudos-semanal">Abrir metas semanais</button></div>'+
  '<div class="weekly-compact">'+weeklyProgress('Total da semana',w.done,w.units.length)+weeklyProgress('Aprofundamento',w.doneA,w.quotaA)+weeklyProgress('Questões',w.doneQ,w.quotaQ)+'</div>'+
  '<div class="weekly-meta"><span>Acumulado: <strong>'+formatNum(data.totalDone)+'/550 · '+formatPercent(data.totalPct)+'</strong></span><span>Pendências anteriores: <strong>'+formatNum(data.backlog.length)+'</strong></span><span>Saldo operacional: <strong>'+formatNum(data.remaining)+'</strong></span><span>Adiantamentos futuros: <strong>'+formatNum(data.ahead.length)+'</strong></span></div></section>';
 }
@@ -1529,7 +1541,7 @@ function renderWeeklyWorkspace(){
   const status=t.index===0&&todayISO()>='2026-10-29'?'Encerrada (31 créditos)':t.done===t.units.length?'Meta alcançada':todayISO()>t.end?(t.onTime===t.units.length?'No prazo':'Prazo encerrado'):todayISO()<t.start?'Futura':'Em andamento';
   return '<tr class="'+(isActive?'weekly-current-row':'')+'"><th scope="row"><button type="button" class="weekly-select" data-week-select="'+t.index+'" aria-pressed="'+(t.index===chosen)+'">Semana '+t.number+'</button></th><td>'+weekRange(t)+'</td><td>'+t.doneA+'/'+t.quotaA+'</td><td>'+t.doneQ+'/'+t.quotaQ+'</td><td>'+t.done+'/'+t.units.length+'</td><td>'+formatPercent(t.pct)+'</td><td>'+t.preDone+'</td><td>'+t.remain+'</td><td>'+escapeHtml(status)+'</td></tr>';
  }).join('');
- const pause='<p class="weekly-pause"><strong>Semana 1 encerrada em 29/10:</strong> 31 tópicos creditados (9 de Aprofundamento e 22 de Questões), incluindo adiantamentos e um estudo anterior ao ciclo. <strong>Restantes:</strong> 519 tópicos distribuídos entre 01/11 e 15/01. <strong>Pausa:</strong> 22/11 a 27/11/2026.</p>';
+ const pause='<p class="weekly-pause"><strong>Semana 1 encerrada em 29/10:</strong> 31 tópicos creditados (9 de Aprofundamento e 22 de Questões), incluindo adiantamentos e um estudo anterior ao ciclo. <strong>Restantes:</strong> 519 tópicos distribuídos entre 01/11 e 15/01. <strong>Pausa:</strong> 23/11 a 28/11/2026.</p>';
  return weeklySnapshot()+pause+
  '<div class="weekly-kpi">'+metricCard('Total planejado',formatNum(planUnits.length),'317 Aprofundamento · 233 Questões')+metricCard('Total concluído',formatNum(d.totalDone),formatPercent(d.totalPct))+metricCard('Faltam para concluir',formatNum(planUnits.length-d.totalDone))+metricCard('Pendências anteriores',formatNum(d.backlog.length))+metricCard('Saldo operacional',formatNum(d.remaining),'Semana ativa + atrasos')+metricCard('Tópicos adiantados',formatNum(d.ahead.length),'Sem duplicação')+'</div>'+
  panel('Calendário de metas','Semana 1 encerrada em 29/10 com 31 tópicos creditados; 519 unidades redistribuídas entre as semanas 2 e 11, preservando a pausa de novembro.','<div class="platform-scroll"><table class="platform-table weekly-table"><thead><tr><th>Semana</th><th>Período</th><th>Aprof.</th><th>Questões</th><th>Total</th><th>Cumprimento</th><th>Adiantados</th><th>Restam</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><th colspan="2">Planejamento total</th><td>317</td><td>233</td><td>550</td><td>'+formatPercent(d.totalPct)+'</td><td>—</td><td>'+formatNum(550-d.totalDone)+'</td><td>11 semanas</td></tr></tfoot></table></div>')+
@@ -1694,7 +1706,7 @@ function studyDaysRemaining(day,limit='2027-01-15'){
  let total=0;
  for(let current=start;current<=limit;){
   const date=new Date(current+'T12:00:00Z');
-  if(date.getUTCDay()!==6&&studyWeeks.some(w=>current>=w.start&&current<=w.end))total++;
+  if(date.getUTCDay()!==5&&date.getUTCDay()!==6&&studyWeeks.some(w=>current>=w.start&&current<=w.end)&&!dateBetween(current,'2026-11-23','2026-11-28'))total++;
   date.setUTCDate(date.getUTCDate()+1);
   current=date.toISOString().slice(0,10);
  }
@@ -1811,7 +1823,7 @@ function refreshOverview(){
   <div class="dash-expected-row"><span>Esperado · ${escapeHtml(expectedHeader)}</span><strong>${formatNum(expected.total)}/${formatNum(total)} · ${formatPercent(expectedPct)}</strong></div>
   ${expectedBar(expectedPct,"Meta geral esperada até o fim da semana")}
   <div class="dash-pace">${escapeHtml(pace(done,expected.total,total))}</div>
-  <div class="dash-days-remaining"><strong>${formatNum(studyDaysLeft)}</strong><div><span>Dias de estudo restantes até 15/01/2027</span><small>Inclui hoje se for dia de estudo e 15/01; exclui todos os sábados e a pausa de 22 a 27/11. Considera somente as semanas cadastradas.</small></div></div>
+  <div class="dash-days-remaining"><strong>${formatNum(studyDaysLeft)}</strong><div><span>Dias de estudo restantes até 15/01/2027</span><small>Inclui hoje se for dia de estudo e 15/01; exclui sextas, sábados e a pausa de 23 a 28/11. Considera somente as semanas cadastradas.</small></div></div>
   <div class="dash-hero-foot"><span>${formatNum(total-done)} planejados</span><span>317 de aprofundamento + 233 de questões${manual.length?' + '+manual.length+' registros avulsos':''}</span></div></div>
   <div class="dash-hero-side">${mini('Estudo inicial · Aprofundamento',flowData.A,'A')}${mini('Estudo inicial · Questões',flowData.Q,'Q')}</div>
  </div>
@@ -2182,7 +2194,7 @@ function nextValidStudyDate(day){
  for(let i=0;i<8;i++){
   t=shiftAgendaDate(t,1);
   const dow=new Date(t+"T12:00:00Z").getUTCDay();
-  if(dow!==6&&!dateBetween(t,"2026-11-22","2026-11-27"))return t; // Pular sábado e a pausa extraordinária.
+  if(dow!==5&&dow!==6&&!dateBetween(t,"2026-11-23","2026-11-28"))return t; // Sexta somente revisões; sábado sem estudos novos; respeitar pausa.
  }
  return null;
 }
@@ -2343,7 +2355,7 @@ function renderWeeklyWorkspace(){
  }).join('');
  const h=d.weeks[0],A=planUnits.filter(x=>x.flow==='A'),Q=planUnits.filter(x=>x.flow==='Q');
  return weeklySnapshot()+
- '<p class="weekly-pause"><strong>Histórico até 04/11:</strong> '+h.quotaA+' aprofundamentos e '+h.quotaQ+' tópicos de questões fora das novas metas. <strong>05/11:</strong> 4 aprofundamentos. <strong>Questões:</strong> começam em 08/11. <strong>Pausa:</strong> 22 a 27/11. Complementações entram no dia da liberação, sem cota fixa.</p>'+
+ '<p class="weekly-pause"><strong>Histórico até 04/11:</strong> '+h.quotaA+' aprofundamentos e '+h.quotaQ+' tópicos de questões fora das novas metas. <strong>05/11:</strong> 4 aprofundamentos. <strong>Questões:</strong> começam em 08/11. <strong>Pausa:</strong> 23 a 28/11. Complementações entram no dia da liberação, sem cota fixa.</p>'+
  '<div class="weekly-kpi">'+metricCard('Aprofundamento pendente em 04/11',A.length-h.quotaA)+metricCard('Questões pendentes em 04/11',Q.length-h.quotaQ)+metricCard('Aprofundamento concluído',A.filter(completionOf).length+'/'+A.length)+metricCard('Questões concluídas',Q.filter(completionOf).length+'/'+Q.length)+metricCard('Meta semanal atual',w.quotaA+' A + '+w.quotaQ+' Q')+metricCard('Prazo final','15/01/2027')+'</div>'+
  panel('Calendário de Metas Semanais','Somente Aprofundamento e Questões; datas e quantitativos distribuídos até 15/01/2027.','<div class="platform-scroll"><table class="platform-table weekly-table"><thead><tr><th>Semana</th><th>Período</th><th>Aprofundamento</th><th>Questões</th><th>Total</th><th>Cumprimento</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
  weeklySelectedDetails(d,w);
@@ -2369,7 +2381,7 @@ function renderDailyStudyWorkspace(){
  const A=entries.filter(x=>x.u.flow==='A'),Q=entries.filter(x=>x.u.flow==='Q');
  const empty='<div class="emptytable">Nenhuma atividade programada nesta data.</div>';
  return '<div class="daily-controls"><label for="dailyDate">Data da agenda</label><button type="button" data-daily-step="-1">‹ Anterior</button><input id="dailyDate" type="date" value="'+date+'"><button type="button" data-daily-step="1">Próximo ›</button><button type="button" data-daily-date="'+todayISO()+'">Hoje</button></div>'+
- '<div class="daily-weekstrip">'+dayStrip+'</div><p class="daily-note">Quatro aprofundamentos em 05/11; tópicos iniciais de Questões a partir de 08/11. Pausa sem novas metas de 22 a 27/11. Complementações entram no dia de estudo seguinte à liberação; revisões continuam em dias corridos.</p>'+
+ '<div class="daily-weekstrip">'+dayStrip+'</div><p class="daily-note">Quatro aprofundamentos em 05/11; tópicos iniciais de Questões a partir de 08/11. Pausa sem novas metas de 23 a 28/11. Complementações entram no dia de estudo seguinte à liberação; revisões continuam em dias corridos.</p>'+
  '<div class="weekly-kpi">'+metricCard('Aprofundamento do dia',A.length)+metricCard('Questões do dia',Q.length)+metricCard('Complementações liberadas para hoje',scheduled.length)+metricCard('Revisões desta data',reviews.length)+metricCard('Estudos iniciais concluídos',entries.filter(x=>x.record).length+'/'+entries.length)+metricCard('Tempo líquido conhecido',timeInfo.known?clockMinutes(timeInfo.minutes):'N/I')+'</div>'+
  panel('Estudos Iniciais — Aprofundamento',A.length+' tópico(s) previstos para a data.',A.length?A.map(row).join(''):empty)+
  panel('Estudos Iniciais — Questões',Q.length+' tópico(s) previstos para a data.',Q.length?Q.map(row).join(''):empty)+
@@ -2686,7 +2698,7 @@ function weeklySelectedDetails(data,w){
  const shownA=rows.filter(u=>u.flow==='A'),shownQ=rows.filter(u=>u.flow==='Q'),shownC=rows.filter(u=>u.flow==='C');
  const empty='<p class="weekly-empty">Nenhum tópico nesta categoria.</p>';
  return '<section class="weekly-selected"><h2>Semana '+w.number+' · '+weekRange(w)+'</h2>'+
- '<p class="weekly-note">Programação da semana: '+w.quotaA+' Aprofundamento, '+w.quotaQ+' Questões e '+w.quotaC+' Complementação (TEC) liberada. A meta de Complementação é dinâmica, sem cota fixa. Pendências continuam vinculadas à semana original.</p>'+
+ '<p class="weekly-note">Programação da semana: '+w.quotaA+' Aprofundamento, '+w.quotaQ+' Questões e '+w.quotaC+' Complementação (TEC) liberada. A meta de Complementação é dinâmica, sem cota fixa. Pendências continuam vinculadas à semana original.'+(w.number===4?' Semana 4: 9 dias corridos, com dois sábados sem estudos e sexta-feira reservada às revisões; são 6 dias de novos estudos.':' Sexta-feira é dedicada às revisões; sábado fica sem estudos novos.')+'</p>'+
  '<div class="weekly-kpi">'+
  metricCard('Aprofundamento realizado',w.doneA)+
  metricCard('Questões realizadas',w.doneQ)+
@@ -2758,7 +2770,7 @@ function renderDailyStudyWorkspace(){
  const blank='<div class="emptytable">Nenhuma atividade programada para a data.</div>';
  const time=dailyRegisteredStudyMinutes(date);
  return '<div class="daily-controls"><label for="dailyDate">Data</label><button type="button" data-daily-step="-1">‹ Anterior</button><input type="date" id="dailyDate" value="'+date+'"><button type="button" data-daily-step="1">Próximo ›</button><button type="button" data-daily-date="'+today+'">Hoje</button></div>'+
- '<div class="daily-weekstrip">'+days+'</div><p class="daily-note">A agenda reúne os estudos previstos para a data selecionada. Aprofundamento e Questões seguem as metas semanais; Complementação é liberada conforme seus pré-requisitos.</p>'+
+ '<div class="daily-weekstrip">'+days+'</div><p class="daily-note">Os estudos iniciais são distribuídos de domingo a quinta-feira, equilibrando a carga total de Aprofundamento e Questões. Sexta-feira é reservada às revisões; sábado não recebe estudos novos. Complementação (TEC) é liberada conforme os pré-requisitos.</p>'+
  '<div class="weekly-kpi">'+metricCard('Aprofundamentos do dia',A.length)+metricCard('Tópicos de Questões do dia',Q.length)+metricCard('Complementações liberadas para hoje',scheduled.length)+metricCard('Revisões na data',revs.length)+metricCard('Tempo líquido',time.known?clockMinutes(time.minutes):'N/I')+'</div>'+
  panel('Estudos Iniciais — Aprofundamento',A.length+' nesta data.',A.length?A.map(row).join(''):blank)+
  panel('Estudos Iniciais — Questões',Q.length+' nesta data.',Q.length?Q.map(row).join(''):blank)+
@@ -2847,15 +2859,18 @@ function getWeekPosition(){
  const day=todayISO();
  const current=studyWeeks.findIndex(w=>dateBetween(day,w.start,w.end));
  if(current>=0)return {index:current,phase:studyWeeks[current].historical?'Semana histórica / corrente':'Em andamento'};
- if(dateBetween(day,'2026-11-22','2026-11-27'))return {index:4,phase:'Pausa de estudos'};
+ if(dateBetween(day,'2026-11-23','2026-11-28'))return {index:4,phase:'Pausa de estudos'};
  if(day<studyWeeks[0].start)return {index:0,phase:'Antes do planejamento'};
  const next=studyWeeks.findIndex(w=>day<w.start);
  return next>=0?{index:next,phase:'Entre semanas'}:{index:10,phase:'Planejamento encerrado'};
 }
 function dailyStudyAssignments(date){
  const week=studyWeeks.find(w=>dateBetween(date,w.start,w.end));
- if(!week||new Date(date+'T12:00:00Z').getUTCDay()===6)return {week,configured:false,units:[]};
+ if(!week)return {week:null,configured:false,units:[]};
+ const dow=new Date(date+'T12:00:00Z').getUTCDay();
+ if(dow===5||dow===6||dateBetween(date,'2026-11-23','2026-11-28'))return {week,configured:false,units:[]};
  if(week.index===0||week.index===1){
+  // Histórico anterior não é redistribuído. Os quatro A pendentes da segunda semana permanecem em 05/11.
   const historical=week.units.filter(u=>{
    const rec=studyData.studies.find(r=>r.planId===u.id&&!r.resetForRedo&&r.status==='Concluído');
    return rec?.date===date;
@@ -2865,13 +2880,16 @@ function dailyStudyAssignments(date){
  }
  const days=plannedStudyDates(week.start,week.end),ix=days.indexOf(date);
  if(ix<0)return {week,configured:false,units:[]};
- const list=[];
- for(const flow of ['A','Q']){
-  const units=week.units.filter(u=>u.flow===flow),quotas=evenQuotas(units.length,days.length);
-  const offset=quotas.slice(0,ix).reduce((a,b)=>a+b,0);
-  list.push(...units.slice(offset,offset+quotas[ix]));
- }
- return {week,configured:true,units:list,day:ix,carriedCount:0};
+ const a=week.units.filter(u=>u.flow==='A'),q=week.units.filter(u=>u.flow==='Q');
+ // Primeiro dividir a carga total; depois distribuir os dois fluxos dentro da meta diária.
+ // Isso evita sobrecarregar os primeiros dias quando A e Q são arredondados separadamente.
+ const totalQuotas=evenQuotas(a.length+q.length,days.length);
+ const aQuotas=evenQuotas(a.length,days.length);
+ const qQuotas=totalQuotas.map((n,i)=>n-aQuotas[i]);
+ if(qQuotas.some(n=>n<0)||qQuotas.reduce((n,x)=>n+x,0)!==q.length)throw Error('Distribuição diária de Questões inconsistente.');
+ const take=(units,quotas)=>units.slice(quotas.slice(0,ix).reduce((n,x)=>n+x,0),
+                                       quotas.slice(0,ix+1).reduce((n,x)=>n+x,0));
+ return {week,configured:true,units:[...take(a,aQuotas),...take(q,qQuotas)],day:ix,carriedCount:0};
 }
 function weeklyStudyState(){
  // A/Q permanecem na alocação fixa; complementações ingressam na semana de sua programação após liberação.
@@ -2999,6 +3017,7 @@ applyCentralMigrationOnce();
 migrateKnownTecContactOnce();
 migrateCP36Once();
 applyNov04Records();
+reschedulePendingSaturdayReviews();
 rebuildWeeklyPlan();
 installComplementationEvents();
 draw();refreshOverview();setActiveNav(null);const hash=location.hash.replace(/^#/,'');const match=location.hash.match(/^#comando-(\d+)$/);if(match)openDoc(Number(match[1]),false);else if(workspaceById[hash]||hash==='comandos')showPage(hash,false);
