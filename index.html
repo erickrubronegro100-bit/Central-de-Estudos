@@ -2604,16 +2604,18 @@ function migrateKnownTecContactOnce(){
 
 function renderCumulativeStudyTime(){
  const data=totalRegisteredStudyMinutes(),dates=data.rows.filter(r=>r.minutes!==null||r.date>'2026-11-03').length;
+ const averageMinutes=dates>0?data.total/dates:null;
  const last=data.rows.at(-1)||null;
  const history=data.rows.map(r=>'<tr><th>'+dateBR(r.date)+'</th><td>'+(r.minutes===null?'N/I':clockMinutes(r.minutes))+'</td><td>'+escapeHtml(r.source||'Registro')+(r.unknown?' · '+r.unknown+' sem duração':'')+'</td></tr>').join('');
  return '<section class="dash-section" aria-label="Tempo Líquido Acumulado de Estudo"><div class="dash-titlebar"><div><h2>Tempo Líquido Acumulado de Estudo</h2><p>O tempo líquido é calculado com base nas durações informadas nas atividades registradas, sem estimativas nem duplicações.</p></div></div>'+
  '<div class="dash-kpi-grid">'+
  '<div class="dash-kpi"><span class="dash-kpi-label">TOTAL LÍQUIDO</span><strong>'+clockMinutes(data.total)+'</strong><small>'+formatNum(data.total)+' minutos conhecidos, acumulados até o registro mais recente</small></div>'+
  '<div class="dash-kpi"><span class="dash-kpi-label">ÚLTIMO DIA REGISTRADO</span><strong>'+(last?(last.minutes===null?'N/I':clockMinutes(last.minutes)):'N/I')+'</strong><small>'+(last?dateBR(last.date):'Nenhuma atividade')+'</small></div>'+
- '<div class="dash-kpi"><span class="dash-kpi-label">DIAS DE ESTUDO</span><strong>'+formatNum(dates)+'</strong><small>Dias com atividade registrada, inclusive quando o tempo é N/I</small></div></div>'+
+ '<div class="dash-kpi"><span class="dash-kpi-label">DIAS DE ESTUDO</span><strong>'+formatNum(dates)+'</strong><small>Dias com atividade registrada, inclusive quando o tempo é N/I</small></div>'+
+ '<div class="dash-kpi"><span class="dash-kpi-label">MÉDIA LÍQUIDA POR DIA DE ESTUDO</span><strong>'+(averageMinutes===null?'N/I':clockMinutes(Math.round(averageMinutes)))+'</strong><small>'+formatNum(data.total)+' min ÷ '+formatNum(dates)+' dia(s) de estudo</small></div></div>'+
  '<details class="dash-panel" style="margin-top:12px"><summary style="cursor:pointer;padding:14px 18px;font-weight:700;font-size:13px">HISTÓRICO DIÁRIO DO TEMPO LÍQUIDO</summary><div class="platform-scroll"><table class="platform-table"><thead><tr><th>DATA</th><th>TEMPO LÍQUIDO</th><th>ORIGEM</th></tr></thead><tbody>'+history+
  '<tr><th>TOTAL</th><td><strong>'+clockMinutes(data.total)+'</strong></td><td>'+formatNum(data.total)+' minutos válidos</td></tr></tbody></table></div></details>'+
- '<p class="dash-note">O tempo líquido acumulado considera os registros com duração informada, sem duplicações. Atividades sem duração permanecem identificadas como N/I.</p></section>';
+ '<p class="dash-note">O tempo líquido acumulado considera os registros com duração informada, sem duplicações. A média é calculada pelo total de minutos conhecidos dividido pelos dias de estudo do painel, incluindo no divisor dias registrados com duração N/I. Atividades sem duração permanecem identificadas como N/I e não recebem tempo presumido.</p></section>';
 }
 function refreshOverview(){
  const root=g('dashboardRoot');if(!root)return;
