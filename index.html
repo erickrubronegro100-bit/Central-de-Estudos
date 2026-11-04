@@ -1564,11 +1564,11 @@ function refreshPlanList(v){
 function renderStudyWorkspace(v){
  const rows=planEntries(v),extras=manualStudyEntries(v),p=rows.filter(x=>x.status==='Planejado').length+extras.filter(x=>statusStudy(x)==='Planejados').length,c=rows.filter(x=>x.status==='Concluído').length+extras.filter(x=>statusStudy(x)==='Concluídos').length;
  const filt=viewFilters[v.id]||'Planejados';const relevant=extras.filter(x=>statusStudy(x)===filt).slice().reverse();
- const type=v.id==='estudos-aprofundamento'?'Aprofundamento':v.id==='estudos-questoes'?'Questões':'Todas as modalidades';
+ const type=v.id==='estudos-aprofundamento'?'Aprofundamento':v.id==='estudos-complementacao'?'Complementação (TEC)':v.id==='estudos-questoes'?'Questões':'Todas as modalidades';
  const unique=[...new Set(rows.map(x=>x.subject))];const opts=['Todos',...unique].map(key=>`<option value="${escapeHtml(key)}" ${key===(planSubjects[v.id]||'Todos')?'selected':''}>${key==='Todos'?'Todas as matérias':escapeHtml(subjectLabel(key))}</option>`).join('');
  const counter=rows.length?`${rows.filter(x=>x.status==='Concluído').length} de ${rows.length} concluídas`:'Sem unidades cadastradas';
  const note=v.id==='estudos-questoes'||v.id==='estudos-geral'?'<p class="plan-note"><strong>Observação de Direito Constitucional (DC):</strong> DC 01 integra a sequência como unidade 233 de questões. Os nomes dos tópicos de Direito Administrativo (DA) e Tecnologia da Informação (TI) seguem a sequência fornecida. Administração Pública (AP) é a identificação padronizada.</p>':'';
- return `${v.id==='estudos-geral'?'':`<div class="workspace-metrics">${metricCard('Planejados',formatNum(p))}${metricCard('Concluídos',formatNum(c))}${metricCard('Total cadastrado',formatNum(rows.length+extras.length))}</div>`}<div class="plan-legend">${escapeHtml(type)} · ${counter} · os números seguem a ordem original dos arquivos enviados.</div><div class="plan-progress" aria-label="Progresso dos estudos"><div class="plan-progress-fill" style="width:${rows.length?(100*rows.filter(x=>x.status==='Concluído').length/rows.length).toFixed(2):0}%"></div></div>${choiceBar(v.id,['Planejados','Concluídos'])}${note}<div class="plan-controls"><input id="planSearch" type="search" placeholder="Buscar código, matéria ou nome do tópico…" aria-label="Buscar nas unidades de estudo" value="${escapeHtml(planQueries[v.id]||'')}"><select id="planSubjectFilter" aria-label="Filtrar matérias">${opts}</select></div>${panel('Sequência integrada · '+filt,'Selecione um item para registrar sua conclusão. Ao concluir o estudo inicial, as revisões D+1, D+7 e D+30 são programadas automaticamente a partir da data do estudo.','<div id="planList"></div><div class="plan-pager" id="planPagination"></div>')}${extras.length?`<div style="margin-top:19px">${panel('Registros avulsos · '+filt,'Registros cadastrados manualmente antes ou depois da importação do planejamento.',listFor(relevant,'study'))}</div>`:''}<p class="statusnote">Para atualizar o estudo inicial, marque somente as unidades concluídas. O resultado consolidado de cada tópico é registrado em Desempenho e aparece aqui automaticamente quando vinculado ao estudo.</p>`;
+ return `${v.id==='estudos-geral'?'':`<div class="workspace-metrics">${metricCard('Planejados',formatNum(p))}${metricCard('Concluídos',formatNum(c))}${metricCard('Total cadastrado',formatNum(rows.length+extras.length))}</div>`}<div class="plan-legend">${escapeHtml(type)} · ${counter} · os números seguem a ordem original dos arquivos enviados.</div><div class="plan-progress" aria-label="Progresso dos estudos"><div class="plan-progress-fill" style="width:${rows.length?(100*rows.filter(x=>x.status==='Concluído').length/rows.length).toFixed(2):0}%"></div></div>${choiceBar(v.id,['Planejados','Concluídos'])}${note}<div class="plan-controls"><input id="planSearch" type="search" placeholder="Buscar código, matéria ou nome do tópico…" aria-label="Buscar nas unidades de estudo" value="${escapeHtml(planQueries[v.id]||'')}"><select id="planSubjectFilter" aria-label="Filtrar matérias">${opts}</select></div>${panel('Sequência integrada · '+filt,'Selecione um item para registrar sua conclusão. Ao concluir o estudo inicial, as revisões D+1, D+7 e D+30 são programadas automaticamente a partir da data do estudo.','<div id="planList"></div><div class="plan-pager" id="planPagination"></div>')}${extras.length?`<div style="margin-top:19px">${panel('Registros avulsos · '+filt,'Registros cadastrados manualmente antes ou depois da importação do planejamento.',listFor(relevant,'study'))}</div>`:''}<p class="statusnote">Aprofundamento e Questões: conclua apenas atividades efetivamente realizadas. Complementação (TEC): abra a unidade, registre a sessão e finalize a etapa para atualizar a conclusão e agendar revisões.</p>`;
 }
 function setPlanDone(id,done){
  const unit=planById.get(id);if(!unit)return;
@@ -2433,7 +2433,37 @@ function applyCentralMigrationOnce(){
  if(changed)writeData();
  try{localStorage.setItem(KEY,"1");}catch(e){}
 }
+function migrateKnownTecContactOnce(){
+ const KEY="central-estudos-conciliacao-rccn-tec1-20261102-v1";
+ try{if(localStorage.getItem(KEY)==="1")return;}catch(e){}
+ const target=planById.get("C-RCCN-001");
+ if(!target)return;
+ let changed=false;
+ const matching=studyData.attempts.filter(a=>a.source==="TEC"&&a.subject==="RCCN"&&a.date==="2026-11-02"&&
+  (a.id==="central-20261102-rccn-5-tec-complementar"||
+   (a.planId==="A-011"&&/Direção,\s*Objeto e Convocação/i.test(a.topic||"")&&counted(a)===6)));
+ for(const a of matching){
+  if(a.planId===target.id)continue;
+  a.legacyPlanId=a.planId;a.legacyTopic=a.topic;a.legacyStage=a.stage;
+  a.planId=target.id;a.topic=target.code+" — "+target.title;a.stage="Estudo inicial";
+  a.activity="Complementação (TEC)";
+  a.migrationNote="Contato TEC de 02/11/2026, 6 acertos seguros; originalmente classificado como complementar, sem ordinal. Migrado para a unidade RCCN/TEC 1, sem duplicar questões e sem atribuir tempo.";
+  changed=true;
+ }
+ if(matching.length){
+  let study=studyData.studies.find(st=>st.planId===target.id&&st.status==="Concluído");
+  if(!study){
+   study={id:"central-20261102-rccn-tec1-estudo-inicial-migrado",planId:target.id,subject:"RCCN",topic:target.code+" — "+target.title,activity:"Complementação (TEC)",date:"2026-11-02",status:"Concluído",legacyContact:true,note:"Caderno de 6 questões já realizado em 02/11/2026 (6 acertos seguros). Tempo líquido não informado. Migração do histórico sem questões adicionais."};
+   studyData.studies.push(study);changed=true;
+  }
+  for(const a of matching)if(a.studyId!==study.id){a.studyId=study.id;changed=true;}
+  if(ensureScheduledReviews(study))changed=true;
+ }
+ if(changed)writeData();
+ try{localStorage.setItem(KEY,"1");}catch(e){}
+}
 applyCentralMigrationOnce();
+migrateKnownTecContactOnce();
 installComplementationEvents();
 draw();refreshOverview();setActiveNav(null);const hash=location.hash.replace(/^#/,'');const match=location.hash.match(/^#comando-(\d+)$/);if(match)openDoc(Number(match[1]),false);else if(workspaceById[hash]||hash==='comandos')showPage(hash,false);
 })();
