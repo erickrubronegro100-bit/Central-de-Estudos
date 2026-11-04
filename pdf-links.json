@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-25",
+  "version": "2026-11-04",
   "storage": "Google Drive — acesso restrito",
   "topics": {
     "A-001": [
@@ -2346,5 +2346,12 @@
       "name": "LP-LING_100_Questoes_TEC.pdf",
       "url": "https://drive.google.com/file/d/1J28LF2JC-_dfbh9awHgP0VXoOgPLtal6/view?usp=drivesdk"
     }
+  },
+  "verifiedCpLinks": {
+    "verifiedOn": "2026-11-04",
+    "count": 32,
+    "changed": 0,
+    "source": "Google Drive metadata",
+    "status": "Todos os 32 links de Ciência Política conferidos; PDFs CP_033 a CP_036 não são tópicos do planejamento CP 1–32."
   }
 }
