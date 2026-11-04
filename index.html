@@ -284,12 +284,11 @@ dialog.viewer{position:fixed;inset:0 0 0 auto;max-height:none;height:100vh;max-w
     <button class="navitem workitem" type="button" data-view="estudos-aprofundamento"><span>Estudos Iniciais – Aprofundamento</span></button>
     <button class="navitem workitem" type="button" data-view="estudos-complementacao"><span>Estudos Iniciais – Complementação (TEC)</span></button>
     <button class="navitem workitem" type="button" data-view="estudos-questoes"><span>Estudos Iniciais – Questões</span></button>
-    <button class="navitem workitem" type="button" data-view="estudos-semanal"><span>Percurso contínuo</span></button>
+    <button class="navitem workitem" type="button" data-view="estudos-semanal"><span>Metas Semanais</span></button>
+    <button class="navitem workitem" type="button" data-view="estudos-percurso"><span>Percurso contínuo</span></button>
     </nav></details>
     <details class="navgroup" name="secao" data-navgroup="Revisões"><summary class="navsummary"><span><span class="navicon" aria-hidden="true">◷</span>Revisões</span><span class="groupcaret" aria-hidden="true">›</span></summary><nav class="subnav worknav" aria-label="Revisões">
     <button class="navitem workitem" type="button" data-view="revisoes-dia"><span>Revisões do dia</span></button>
-    <button class="navitem workitem" type="button" data-view="revisoes-aprofundamento"><span>Revisões — Aprofundamento</span></button>
-    <button class="navitem workitem" type="button" data-view="revisoes-complementacao"><span>Revisões — Complementação (TEC)</span></button>
     <button class="navitem workitem" type="button" data-view="revisoes-d1"><span>Revisões D+1</span></button>
     <button class="navitem workitem" type="button" data-view="revisoes-d7"><span>Revisões D+7</span></button>
     <button class="navitem workitem" type="button" data-view="revisoes-d30"><span>Revisões D+30</span></button>
@@ -373,7 +372,7 @@ const subjects=[...new Set(docs.map(d=>d.materia))].map(id=>[id,subjectLabel(id)
 const escapeHtml=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const label=(k)=>k==='Estudo inicial'?'Professor · estudo inicial':k==='Revisão'?'Professor · revisão':k==='Relatório'?'Relatório de desempenho':k;
 
-const workspaceViews=[{"id":"estudos-geral","section":"Estudos","title":"Quadro Geral","description":"Quadro geral do percurso contínuo por disciplina, Aprofundamento, Complementação (TEC) e Questões, sem metas semanais obrigatórias."},{"id":"estudos-cronograma-dia","section":"Estudos","title":"Cronograma de Estudos do Dia","description":"Agenda por data: Complementações liberadas para o dia de estudo subsequente ao gatilho, revisões e próximas unidades, incluindo domingo."},{"id":"estudos-aprofundamento","section":"Estudos","title":"Estudos Iniciais – Aprofundamento","description":"Sequência integrada de 317 unidades de aprofundamento. Consulte, filtre e acompanhe a conclusão dos tópicos."},{"id":"estudos-questoes","section":"Estudos","title":"Estudos Iniciais — Questões (DC/DA/AP/TI)","description":"Unidades de resolução exclusiva no TEC para DC, DA, AP e TI; modalidade distinta da Complementação integrada."},{"id":"estudos-semanal","section":"Estudos","title":"Percurso contínuo","description":"Sequência de aprendizagem contínua e intercalada de Aprofundamento e Complementação (TEC), sem divisão em metas semanais."},{"id":"revisoes-geral","section":"Revisões","title":"Quadro Geral","description":"Painel completo das revisões: D+1, D+7, D+30, cumprimento, vencimentos, agenda e histórico de execução."},{"id":"revisoes-dia","section":"Revisões","title":"Revisões do dia","description":"Consulte as revisões programadas para hoje e acompanhe o cumprimento das atividades."},{"id":"revisoes-d1","section":"Revisões","title":"Revisões D+1","description":"Acompanhe as revisões D+1 vinculadas às datas efetivas dos estudos iniciais."},{"id":"revisoes-d7","section":"Revisões","title":"Revisões D+7","description":"Acompanhe as revisões D+7 vinculadas às datas efetivas dos estudos iniciais."},{"id":"revisoes-d30","section":"Revisões","title":"Revisões D+30","description":"Acompanhe as revisões D+30 vinculadas às datas efetivas dos estudos iniciais."},{"id":"desempenho-geral","section":"Desempenho","title":"Quadro Geral","description":"Painel completo de resultados: questões, fontes, acertos, erros, segurança, evolução e indicadores por disciplina."},{"id":"desempenho-regimentos","section":"Desempenho","title":"Regimentos e Processo Legislativo (RICD/PL/RCCN)","description":"Acompanhamento integrado do desempenho em Regimento Interno da Câmara dos Deputados (RICD), Processo Legislativo (PL) e Regimento Comum do Congresso Nacional (RCCN), com resultados de questões e evolução das revisões."},{"id":"desempenho-lpling","section":"Desempenho","title":"Língua Portuguesa e Linguística (LP/LING)","description":"Acompanhamento do desempenho em Língua Portuguesa e Linguística (LP/LING), com resultados de questões e evolução das revisões."},{"id":"desempenho-rfia","section":"Desempenho","title":"Reconhecimento de Fala, Transcrição e Inteligência Artificial (RFIA)","description":"Acompanhamento do desempenho em Reconhecimento de Fala, Transcrição e Inteligência Artificial (RFIA), com resultados de questões e evolução das revisões."},{"id":"desempenho-cp","section":"Desempenho","title":"Ciência Política (CP)","description":"Acompanhamento do desempenho em Ciência Política (CP), com resultados de questões e evolução das revisões."},{"id":"desempenho-dc","section":"Desempenho","title":"Direito Constitucional (DC)","description":"Acompanhamento do desempenho em Direito Constitucional (DC), com resultados de questões e evolução das revisões."},{"id":"desempenho-da","section":"Desempenho","title":"Direito Administrativo (DA)","description":"Acompanhamento do desempenho em Direito Administrativo (DA), com resultados de questões e evolução das revisões."},{"id":"desempenho-adm","section":"Desempenho","title":"Administração Pública (AP)","description":"Acompanhamento do desempenho em Administração Pública (AP), com resultados de questões e evolução das revisões."},{"id":"desempenho-ti","section":"Desempenho","title":"Tecnologia da Informação (TI)","description":"Acompanhamento do desempenho em Tecnologia da Informação (TI), com resultados de questões e evolução das revisões."},{"id":"estudos-complementacao","section":"Estudos","title":"Estudos Iniciais — Complementação (TEC)","description":"98 cadernos de RICD, PL, RCCN e LP/LING, acionados por gatilhos de Aprofundamento e com ciclos independentes."},{"id":"revisoes-complementacao","section":"Revisões","title":"Revisões — Complementação (TEC)","description":"D+1, D+7 e D+30 dos cadernos TEC, com questões não repetidas e progresso separado das revisões teóricas."},{"id":"revisoes-aprofundamento","section":"Revisões","title":"Revisões — Aprofundamento","description":"Revisões teóricas D+1, D+7 e D+30 e resultados ChatGPT."}];
+const workspaceViews=[{"id":"estudos-geral","section":"Estudos","title":"Quadro Geral","description":"Visão integrada das 3 modalidades de estudo, das metas semanais de Aprofundamento e Questões e dos tópicos complementares sem meta fixa."},{"id":"estudos-cronograma-dia","section":"Estudos","title":"Cronograma de Estudos do Dia","description":"Agenda por data: Complementações liberadas para o dia de estudo subsequente ao gatilho, revisões e próximas unidades, incluindo domingo."},{"id":"estudos-aprofundamento","section":"Estudos","title":"Estudos Iniciais – Aprofundamento","description":"Sequência integrada de 317 unidades de aprofundamento. Consulte, filtre e acompanhe a conclusão dos tópicos."},{"id":"estudos-questoes","section":"Estudos","title":"Estudos Iniciais — Questões (DC/DA/AP/TI)","description":"Unidades de resolução exclusiva no TEC para DC, DA, AP e TI; modalidade distinta da Complementação integrada."},{"id":"estudos-semanal","section":"Estudos","title":"Metas Semanais","description":"Metas configuradas para Aprofundamento e Questões até 15/01/2027. Complementações permanecem variáveis e entram no dia posterior à liberação."},{"id":"estudos-percurso","section":"Estudos","title":"Percurso contínuo","description":"Sequência pedagógica contínua e intercalada de Aprofundamento e Complementação (TEC), preservada independentemente das metas semanais."},{"id":"revisoes-geral","section":"Revisões","title":"Quadro Geral","description":"Painel completo das revisões: D+1, D+7, D+30, cumprimento, vencimentos, agenda e histórico de execução."},{"id":"revisoes-dia","section":"Revisões","title":"Revisões do dia","description":"Consulte as revisões programadas para hoje e acompanhe o cumprimento das atividades."},{"id":"revisoes-d1","section":"Revisões","title":"Revisões D+1","description":"Acompanhe as revisões D+1 vinculadas às datas efetivas dos estudos iniciais."},{"id":"revisoes-d7","section":"Revisões","title":"Revisões D+7","description":"Acompanhe as revisões D+7 vinculadas às datas efetivas dos estudos iniciais."},{"id":"revisoes-d30","section":"Revisões","title":"Revisões D+30","description":"Acompanhe as revisões D+30 vinculadas às datas efetivas dos estudos iniciais."},{"id":"desempenho-geral","section":"Desempenho","title":"Quadro Geral","description":"Painel completo de resultados: questões, fontes, acertos, erros, segurança, evolução e indicadores por disciplina."},{"id":"desempenho-regimentos","section":"Desempenho","title":"Regimentos e Processo Legislativo (RICD/PL/RCCN)","description":"Acompanhamento integrado do desempenho em Regimento Interno da Câmara dos Deputados (RICD), Processo Legislativo (PL) e Regimento Comum do Congresso Nacional (RCCN), com resultados de questões e evolução das revisões."},{"id":"desempenho-lpling","section":"Desempenho","title":"Língua Portuguesa e Linguística (LP/LING)","description":"Acompanhamento do desempenho em Língua Portuguesa e Linguística (LP/LING), com resultados de questões e evolução das revisões."},{"id":"desempenho-rfia","section":"Desempenho","title":"Reconhecimento de Fala, Transcrição e Inteligência Artificial (RFIA)","description":"Acompanhamento do desempenho em Reconhecimento de Fala, Transcrição e Inteligência Artificial (RFIA), com resultados de questões e evolução das revisões."},{"id":"desempenho-cp","section":"Desempenho","title":"Ciência Política (CP)","description":"Acompanhamento do desempenho em Ciência Política (CP), com resultados de questões e evolução das revisões."},{"id":"desempenho-dc","section":"Desempenho","title":"Direito Constitucional (DC)","description":"Acompanhamento do desempenho em Direito Constitucional (DC), com resultados de questões e evolução das revisões."},{"id":"desempenho-da","section":"Desempenho","title":"Direito Administrativo (DA)","description":"Acompanhamento do desempenho em Direito Administrativo (DA), com resultados de questões e evolução das revisões."},{"id":"desempenho-adm","section":"Desempenho","title":"Administração Pública (AP)","description":"Acompanhamento do desempenho em Administração Pública (AP), com resultados de questões e evolução das revisões."},{"id":"desempenho-ti","section":"Desempenho","title":"Tecnologia da Informação (TI)","description":"Acompanhamento do desempenho em Tecnologia da Informação (TI), com resultados de questões e evolução das revisões."},{"id":"estudos-complementacao","section":"Estudos","title":"Estudos Iniciais — Complementação (TEC)","description":"98 cadernos de RICD, PL, RCCN e LP/LING, acionados por gatilhos de Aprofundamento e com ciclos independentes."},{"id":"revisoes-complementacao","section":"Revisões","title":"Revisões — Complementação (TEC)","description":"D+1, D+7 e D+30 dos cadernos TEC, com questões não repetidas e progresso separado das revisões teóricas."},{"id":"revisoes-aprofundamento","section":"Revisões","title":"Revisões — Aprofundamento","description":"Revisões teóricas D+1, D+7 e D+30 e resultados ChatGPT."}];
 const workspaceById=Object.fromEntries(workspaceViews.map(v=>[v.id,v]));
 function showPage(view='principal', updateHash=true){
   showEntryForm='';
@@ -1225,52 +1224,84 @@ const planQueries={},planSubjects={},planPages={};
 let weeklySubjectFilter='Todos';
 let dailySelectedDate=null;
 
-// Plano estável de 11 semanas; a pausa de 22/11 a 27/11 não gera meta.
-const WEEK_SCHEDULE=[["2026-10-25","2026-10-30",9,22],["2026-11-01","2026-11-06",31,21],["2026-11-08","2026-11-13",31,21],["2026-11-15","2026-11-20",31,21],["2026-11-29","2026-12-04",31,21],["2026-12-06","2026-12-11",31,21],["2026-12-13","2026-12-18",31,21],["2026-12-20","2026-12-25",31,21],["2026-12-27","2027-01-01",31,21],["2027-01-03","2027-01-08",30,22],["2027-01-10","2027-01-15",30,21]];
-const CLOSED_WEEK1_PLAN_IDS=new Set(["A-001","A-002","A-003","A-004","A-005","A-006","A-007","A-008","A-009","Q-001","Q-002","Q-003","Q-004","Q-005","Q-006","Q-007","Q-008","Q-009","Q-010","Q-011","Q-012","Q-013","Q-014","Q-015","Q-016","Q-017","Q-018","Q-019","Q-020","Q-022","Q-233"]);
+// Metas aprovadas em 04/11/2026: histórico até 04/11 e 10 semanas de metas até 15/01/2027.
+// Complementação (TEC) não recebe cota semanal. De 22 a 27/11 não há meta.
+const PLAN_BASELINE_DATE='2026-11-04';
+const PLAN_BASELINE_STORAGE='central-estudos-metas-baseline-20261104-v1';
+const PLANNED_RANGES=[
+ ['2026-11-05','2026-11-06'],
+ ['2026-11-08','2026-11-13'],
+ ['2026-11-15','2026-11-20'],
+ ['2026-11-29','2026-12-04'],
+ ['2026-12-06','2026-12-11'],
+ ['2026-12-13','2026-12-18'],
+ ['2026-12-20','2026-12-25'],
+ ['2026-12-27','2027-01-01'],
+ ['2027-01-03','2027-01-08'],
+ ['2027-01-10','2027-01-15']
+];
+function historicalPlanIds(){
+ const eligible=id=>{const u=planById.get(id);return Boolean(u&&(u.flow==='A'||u.flow==='Q'));};
+ try{
+  const saved=JSON.parse(localStorage.getItem(PLAN_BASELINE_STORAGE)||'null');
+  if(Array.isArray(saved)&&saved.every(id=>typeof id==='string'&&eligible(id)))return new Set(saved);
+ }catch(e){}
+ const ids=new Set(studyData.studies.filter(x=>x.planId&&eligible(x.planId)&&x.status==='Concluído'&&!x.resetForRedo&&x.date&&x.date<=PLAN_BASELINE_DATE).map(x=>x.planId));
+ try{localStorage.setItem(PLAN_BASELINE_STORAGE,JSON.stringify([...ids]));}catch(e){}
+ return ids;
+}
+function evenQuotas(total,n){
+ const basic=Math.floor(total/n),extra=total%n;
+ return Array.from({length:n},(_,i)=>basic+(i<extra?1:0));
+}
 function buildWeeklyPlan(){
- // Semana 1 definitivamente encerrada em 29/10/2026.
- // Todos os tópicos realizados antes da Semana 2, inclusive os antecipados,
- // pertencem exclusivamente à Semana 1; não são reatribuídos às semanas futuras.
- const sorted={A:planUnits.filter(x=>x.flow==='A').sort((a,b)=>a.order-b.order),
-               Q:planUnits.filter(x=>x.flow==='Q').sort((a,b)=>a.order-b.order)};
- const remaining={A:sorted.A.filter(x=>!CLOSED_WEEK1_PLAN_IDS.has(x.id)),
-                  Q:sorted.Q.filter(x=>!CLOSED_WEEK1_PLAN_IDS.has(x.id))};
- const first=planUnits.filter(x=>CLOSED_WEEK1_PLAN_IDS.has(x.id));
- const offsets={A:0,Q:0};
- const weeks=WEEK_SCHEDULE.map(([start,end,quotaA,quotaQ],i)=>{
-  const units=i===0?first:[...remaining.A.slice(offsets.A,offsets.A+quotaA),...remaining.Q.slice(offsets.Q,offsets.Q+quotaQ)];
-  if(i>0){offsets.A+=quotaA;offsets.Q+=quotaQ}
-  return {index:i,number:i+1,start,end,quotaA,quotaQ,units};
+ const history=historicalPlanIds();
+ const A=planUnits.filter(x=>x.flow==='A').sort((a,b)=>a.order-b.order);
+ const Q=planUnits.filter(x=>x.flow==='Q').sort((a,b)=>a.order-b.order);
+ const old=[...A,...Q].filter(x=>history.has(x.id));
+ const remainingA=A.filter(x=>!history.has(x.id)),remainingQ=Q.filter(x=>!history.has(x.id));
+ const firstA=Math.min(4,remainingA.length);
+ const targetsA=[firstA,...evenQuotas(remainingA.length-firstA,9)];
+ const targetsQ=[0,...evenQuotas(remainingQ.length,9)];
+ const weeks=[{index:0,number:0,start:'2026-10-19',end:PLAN_BASELINE_DATE,
+   quotaA:old.filter(x=>x.flow==='A').length,quotaQ:old.filter(x=>x.flow==='Q').length,units:old,history:true}];
+ let ai=0,qi=0;
+ PLANNED_RANGES.forEach(([start,end],i)=>{
+  const quotaA=targetsA[i],quotaQ=targetsQ[i];
+  weeks.push({index:i+1,number:i+1,start,end,quotaA,quotaQ,
+   units:[...remainingA.slice(ai,ai+quotaA),...remainingQ.slice(qi,qi+quotaQ)]});
+  ai+=quotaA;qi+=quotaQ;
  });
- const ids=weeks.flatMap(w=>w.units.map(u=>u.id));
- if(ids.length!==550||new Set(ids).size!==550||offsets.A!==remaining.A.length||offsets.Q!==remaining.Q.length)throw Error('Metas semanais inconsistentes.');
+ const ids=weeks.flatMap(w=>w.units.map(x=>x.id));
+ if(ids.length!==A.length+Q.length||new Set(ids).size!==ids.length||ai!==remainingA.length||qi!==remainingQ.length)throw Error('Metas semanais: erro na cobertura de Aprofundamento/Questões.');
  return weeks;
 }
-const studyWeeks=buildWeeklyPlan();
-const weeklyUnitIndex=new Map(studyWeeks.flatMap(w=>w.units.map(u=>[u.id,w.index])));
-const DAILY_WEEK_PLANS={
-  // Após o fechamento de 02/11, restam 24 novos tópicos de Aprofundamento.
-  // Distribuição pedida: terça a quinta 7/dia; sexta 3. Os 14 tópicos de Questões adiantados são lançados em 02/11.
-  // Três A feitos em 03/11; sete seguintes por dia, em sequência.
-  2:{A:[3,4,3,7,7,7],Q:[4,17,0,0,0,0]}
-};
-function dailyStudyAssignments(date){
- const week=studyWeeks.find(w=>dateBetween(date,w.start,w.end));
- if(!week)return {week:null,configured:false,units:[]};
- const pattern=DAILY_WEEK_PLANS[week.number];
- if(!pattern)return {week,configured:false,units:[]};
- const day=Math.round((Date.parse(date+'T12:00:00Z')-Date.parse(week.start+'T12:00:00Z'))/86400000);
- if(!Number.isInteger(day)||day<0||day>5)return {week,configured:false,units:[]};
- const units=[];
- for(const flow of ['A','Q']){
-  const subset=week.units.filter(u=>u.flow===flow);
-  const counts=pattern[flow];
-  if(!Array.isArray(counts)||counts.length!==6||counts.reduce((a,b)=>a+b,0)!==subset.length)throw new Error('Distribuição incompatível com a Semana '+week.number);
-  const offset=counts.slice(0,day).reduce((a,b)=>a+b,0);
-  units.push(...subset.slice(offset,offset+counts[day]));
+let studyWeeks=[];
+let weeklyUnitIndex=new Map();
+function rebuildWeeklyPlan(){
+ studyWeeks=buildWeeklyPlan();
+ weeklyUnitIndex=new Map(studyWeeks.flatMap(w=>w.units.map(u=>[u.id,w.index])));
+}
+function plannedStudyDates(start,end){
+ const days=[];
+ for(let d=start;d<=end;d=shiftAgendaDate(d,1)){
+  if(new Date(d+'T12:00:00Z').getUTCDay()!==6&&!dateBetween(d,'2026-11-22','2026-11-27'))days.push(d);
  }
- return {week,configured:true,units,day,pattern,carriedCount:0};
+ return days;
+}
+function dailyStudyAssignments(date){
+ const week=studyWeeks.find(w=>!w.history&&dateBetween(date,w.start,w.end));
+ if(!week)return {week:null,configured:false,units:[]};
+ const days=plannedStudyDates(week.start,week.end),index=days.indexOf(date);
+ if(index<0)return {week,configured:false,units:[]};
+ const a=week.units.filter(x=>x.flow==='A'),q=week.units.filter(x=>x.flow==='Q');
+ function fromFlow(items){
+  if(week.number===1)return date==='2026-11-05'?items:[];
+  const counts=evenQuotas(items.length,days.length);
+  const offset=counts.slice(0,index).reduce((acc,n)=>acc+n,0);
+  return items.slice(offset,offset+counts[index]);
+ }
+ return {week,configured:true,units:[...fromFlow(a),...fromFlow(q)],day:index,carriedCount:0};
 }
 
 let selectedStudyWeek=null;
@@ -1278,7 +1309,7 @@ function dateBetween(value,start,end){return Boolean(value)&&value>=start&&value
 function getWeekPosition(){
  const now=todayISO();
  const exact=studyWeeks.findIndex(w=>dateBetween(now,w.start,w.end));
- if(exact===0&&now>='2026-10-29')return {index:1,phase:'Semana 1 encerrada · próxima meta'};
+ if(exact===0)return {index:1,phase:'Histórico consolidado até 04/11 · próxima meta'};
  if(exact>=0)return {index:exact,phase:'Em andamento'};
  if(dateBetween(now,'2026-11-22','2026-11-27'))return {index:4,phase:'Pausa de estudos'};
  if(now<studyWeeks[0].start)return {index:0,phase:'Planejamento ainda não iniciado'};
@@ -1311,7 +1342,7 @@ function weeklyStudyState(){
   const record=completed.get(u.id);return record&&record.date&&record.date<=now;
  });
  const completedNow=completed.size;
- return {weeks,completed,position:pos,active,backlog:preceding,ahead,remaining:active.remain+preceding.length,totalDone:completedNow,totalPct:planUnits.length?completedNow/planUnits.length:0};
+ return {weeks,completed,position:pos,active,backlog:preceding,ahead,remaining:active.remain+preceding.length,totalDone:completedNow,totalPct:completedNow/550};
 }
 const weekRange=w=>dateBR(w.start)+' a '+dateBR(w.end);
 function weeklyProgress(title,done,total,description=''){
@@ -1348,7 +1379,7 @@ function weeklySelectedDetails(data,w){
    '<details class="weekly-group" open><summary>Pendências acumuladas de semanas anteriores · '+previous.length+'</summary>'+list(previous)+'</details>':
    '<p class="weekly-note">Não há tópicos pendentes de semanas anteriores.</p>';
  return '<section class="weekly-selected"><h2>Semana '+w.number+' · '+weekRange(w)+'</h2>'+
- '<p class="weekly-note">Meta atribuída: '+w.quotaA+' de Aprofundamento e '+w.quotaQ+' de Questões. Os tópicos adiantados até 29/10 contam exclusivamente na Semana 1. A partir da Semana 2, os créditos antecipados ficam vinculados à semana atribuída. Pendências anteriores somam-se ao saldo operacional.</p>'+
+ '<p class="weekly-note">Meta atribuída: '+w.quotaA+' de Aprofundamento e '+w.quotaQ+' de Questões. O histórico concluído até 04/11 permanece fora das novas metas; antecipações posteriores continuam creditadas à semana originalmente atribuída. Pendências anteriores somam-se ao saldo operacional.</p>'+
  '<div class="weekly-kpi">'+metricCard('Meta semanal',formatNum(w.units.length)+' tópicos')+metricCard('Concluídos nesta meta',formatNum(w.done),formatPercent(w.pct))+metricCard('Restantes desta meta',formatNum(w.remain))+metricCard('Concluídos antes do início',formatNum(w.preDone))+metricCard('Concluídos após o prazo',formatNum(w.lateDone))+metricCard('Pendências anteriores à semana',formatNum(previous.length))+'</div>'+
  '<div class="weekly-filter"><div class="weekly-filter-heading"><strong>Filtrar tópicos por matéria e situação</strong><span>'+formatNum(visibleCount)+' '+(visibleCount===1?'tópico exibido':'tópicos exibidos')+'</span></div>'+
  '<div class="weekly-subject-row"><label for="weeklySubjectFilter">Matéria</label><select id="weeklySubjectFilter" aria-label="Filtrar tópicos por matéria"><option value="Todos" '+(weeklySubjectFilter==='Todos'?'selected':'')+'>Todas as matérias</option>'+[...new Set(planUnits.map(u=>u.subject))].map(code=>'<option value="'+escapeHtml(code)+'" '+(weeklySubjectFilter===code?'selected':'')+'>'+escapeHtml(subjectLabel(code))+'</option>').join('')+'</select></div>'+
@@ -1606,13 +1637,23 @@ function renderWorkspace(v){
 }
 
 function expectedInitialProgressForDay(day){
- // Referência: meta completa da semana atual, independentemente do dia.
- const idx=studyWeeks.reduce((old,w,i)=>day>=w.start?i:old,-1);
- const result={weekNumber:idx+1,weekEnd:idx>=0?studyWeeks[idx].end:null,A:0,Q:0,total:0};
- for(let i=0;i<=idx;i++){result.A+=studyWeeks[i].quotaA;result.Q+=studyWeeks[i].quotaQ;}
+ // Esperado cumulativo por modalidade, somando as metas de cada dia de estudo.
+ const historic=studyWeeks[0]||{quotaA:0,quotaQ:0};
+ const result={weekNumber:0,weekEnd:PLAN_BASELINE_DATE,A:day>=PLAN_BASELINE_DATE?historic.quotaA:0,Q:day>=PLAN_BASELINE_DATE?historic.quotaQ:0,total:0};
+ for(const week of studyWeeks.slice(1)){
+  if(day<week.start)break;
+  result.weekNumber=week.number;result.weekEnd=week.end;
+  for(const date of plannedStudyDates(week.start,week.end)){
+   if(date>day)break;
+   const units=dailyStudyAssignments(date).units;
+   result.A+=units.filter(x=>x.flow==='A').length;
+   result.Q+=units.filter(x=>x.flow==='Q').length;
+  }
+ }
  result.total=result.A+result.Q;
  return result;
 }
+
 function studyDaysRemaining(day,limit='2027-01-15'){
  // Contagem inclusiva: apenas dias contidos nas semanas do planejamento.
  const start=day>studyWeeks[0].start?day:studyWeeks[0].start;
@@ -2102,7 +2143,7 @@ function nextValidStudyDate(day){
  for(let i=0;i<8;i++){
   t=shiftAgendaDate(t,1);
   const dow=new Date(t+"T12:00:00Z").getUTCDay();
-  if(dow!==6)return t; // Domingo (0) é dia regular; sábado (6) não foi definido como dia de estudo.
+  if(dow!==6&&!dateBetween(t,"2026-11-22","2026-11-27"))return t; // Pular sábado e a pausa extraordinária.
  }
  return null;
 }
@@ -2239,48 +2280,63 @@ function renderStudyGeneralPanels(){
  panel("Planejamento integrado","RICD/PL/RCCN: 131 teóricas + 28 TEC = 159. LP/LING: 100 teóricas + 70 TEC = 170. CP/TEC aguarda a relação de tópicos. Domingo integra o cronograma; não há metas semanais obrigatórias.",`<div class="sector-links"><button type="button" class="dash-link" data-jump-view="estudos-semanal">Percurso contínuo</button><button type="button" class="dash-link" data-jump-view="estudos-complementacao">Complementação (TEC)</button><button type="button" class="dash-link" data-jump-view="estudos-cronograma-dia">Agenda do dia</button></div>`);
 }
 
+function renderContinuousWorkspace(){
+ const sequence=complementSequence(),pending=sequence.filter(u=>!completionOf(u));
+ const done=sequence.length-pending.length;
+ const row=u=>{
+  const gate=u.flow==='C'?complementGate(u):null;
+  const detail=u.flow==='C'?'Complementação (TEC) · '+gate.status+(gate.scheduled?' · '+dateBR(gate.scheduled):''):'Aprofundamento';
+  return '<div class="weekly-topic"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span><small>'+escapeHtml(detail)+'</small></div><button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="Estudo inicial">Abrir unidade</button></div>';
+ };
+ return '<p class="daily-note">Percurso pedagógico preservado: 317 unidades de Aprofundamento e 98 cadernos de Complementação intercalados após os gatilhos. As metas semanais continuam na seção própria.</p>'+
+ '<div class="weekly-kpi">'+metricCard('Aprofundamento',317)+metricCard('Complementação (TEC)',98)+metricCard('Percurso integrado',sequence.length)+metricCard('Percurso concluído',done)+metricCard('Percurso restante',pending.length)+'</div>'+
+ panel('Próximas unidades na ordem pedagógica',pending.length+' unidade(s) restantes. A Complementação só é executada após liberação.',pending.length?pending.slice(0,65).map(row).join(''):'<div class="emptytable">Percurso concluído.</div>')+
+ '<div class="sector-links"><button class="dash-link" data-jump-view="estudos-semanal">Metas Semanais</button><button class="dash-link" data-jump-view="estudos-aprofundamento">Aprofundamento</button><button class="dash-link" data-jump-view="estudos-complementacao">Complementação (TEC)</button></div>';
+}
+
 function renderWeeklyWorkspace(){
- const order=complementSequence();
- const pending=order.filter(x=>!completionOf(x)),completed=order.filter(x=>completionOf(x));
- const display=pending.slice(0,65);
- const view=u=>{const g=u.flow==="C"?complementGate(u):null;return `<div class="weekly-topic"><div><strong>${escapeHtml(u.code)}</strong> <span>${escapeHtml(u.title)}</span><small>${u.flow==="C"?"Complementação (TEC) · "+escapeHtml(g.status):"Aprofundamento"}${g?.scheduled?" · "+dateBR(g.scheduled):""}</small></div><div class="weekly-actions"><button type="button" class="smallbtn" data-open-topic="${escapeHtml(u.id)}" data-open-stage="Estudo inicial">Abrir</button></div></div>`;};
- return `<p class="daily-note">Percurso contínuo sem cotas semanais. Os cadernos TEC aparecem intercalados imediatamente após seus gatilhos; domingo é dia de estudo. A lista abaixo mostra os próximos 65 itens não concluídos, enquanto as listas de cada modalidade permitem consultar todos os registros.</p><div class="weekly-kpi">${metricCard("Teoria integrada",317)}${metricCard("Complementação (TEC)",98)}${metricCard("Percurso conjunto",415)}${metricCard("Tópicos do percurso concluídos",completed.length)}${metricCard("Próximas unidades",pending.length)}</div>`+
- panel("Fila contínua — próximos itens",`${pending.length} unidade(s) não concluída(s). A etapa TEC só pode começar após liberação automática.`,`<div class="daily-topic-list">${display.map(view).join("")}</div>`)+
- `<div class="sector-links"><button type="button" class="dash-link" data-jump-view="estudos-aprofundamento">Todas as unidades teóricas</button><button type="button" class="dash-link" data-jump-view="estudos-complementacao">Todos os cadernos TEC</button></div>`;
+ const d=weeklyStudyState();
+ const current=selectedStudyWeek===null?d.position.index:Math.max(1,Math.min(10,selectedStudyWeek));
+ const w=d.weeks[current];
+ const rows=d.weeks.slice(1).map(t=>{
+  const status=t.done===t.units.length?'Meta alcançada':todayISO()>t.end?'Prazo encerrado':todayISO()<t.start?'Futura':'Em andamento';
+  return '<tr class="'+(t.index===d.position.index?'weekly-current-row':'')+'"><th><button type="button" class="weekly-select" data-week-select="'+t.index+'" aria-pressed="'+(t.index===current)+'">Semana '+t.number+'</button></th><td>'+weekRange(t)+'</td><td>'+t.doneA+'/'+t.quotaA+'</td><td>'+t.doneQ+'/'+t.quotaQ+'</td><td>'+t.done+'/'+t.units.length+'</td><td>'+formatPercent(t.pct)+'</td><td>'+escapeHtml(status)+'</td></tr>';
+ }).join('');
+ const h=d.weeks[0],A=planUnits.filter(x=>x.flow==='A'),Q=planUnits.filter(x=>x.flow==='Q');
+ return weeklySnapshot()+
+ '<p class="weekly-pause"><strong>Histórico até 04/11:</strong> '+h.quotaA+' aprofundamentos e '+h.quotaQ+' tópicos de questões fora das novas metas. <strong>05/11:</strong> 4 aprofundamentos. <strong>Questões:</strong> começam em 08/11. <strong>Pausa:</strong> 22 a 27/11. Complementações entram no dia da liberação, sem cota fixa.</p>'+
+ '<div class="weekly-kpi">'+metricCard('Aprofundamento pendente em 04/11',A.length-h.quotaA)+metricCard('Questões pendentes em 04/11',Q.length-h.quotaQ)+metricCard('Aprofundamento concluído',A.filter(completionOf).length+'/'+A.length)+metricCard('Questões concluídas',Q.filter(completionOf).length+'/'+Q.length)+metricCard('Meta semanal atual',w.quotaA+' A + '+w.quotaQ+' Q')+metricCard('Prazo final','15/01/2027')+'</div>'+
+ panel('Calendário de Metas Semanais','Somente Aprofundamento e Questões; datas e quantitativos distribuídos até 15/01/2027.','<div class="platform-scroll"><table class="platform-table weekly-table"><thead><tr><th>Semana</th><th>Período</th><th>Aprofundamento</th><th>Questões</th><th>Total</th><th>Cumprimento</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
+ weeklySelectedDetails(d,w);
 }
 
 function renderDailyStudyWorkspace(){
- const today=todayISO(),date=dailySelectedDate||today;
- const sundayShift=new Date(date+"T12:00:00Z").getUTCDay();
- const sunday=shiftAgendaDate(date,-sundayShift);
- const days=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map((day,n)=>{
-  const dayDate=shiftAgendaDate(sunday,n);
-  const isStudy=n!==6;
-  return `<button type="button" data-daily-date="${dayDate}" aria-pressed="${dayDate===date}">${day} · ${dateBR(dayDate)}<small>${isStudy?"Dia de estudo":"Sem estudo regular"}</small></button>`;
- }).join("");
- const completed=planUnits.filter(u=>completionOf(u)).length;
- const C=planUnits.filter(u=>u.flow==="C");
- const scheduled=C.filter(u=>{const g=complementGate(u);return g.status==="Liberado"&&g.scheduled===date;});
- const overdue=C.filter(u=>{const g=complementGate(u);return g.status==="Liberado"&&g.scheduled&&g.scheduled<date;});
- const reviews=studyData.reviews.filter(r=>!r.resetForRedo&&(r.plannedDate===date||r.doneDate===date)).sort((a,b)=>String(a.stage).localeCompare(String(b.stage)));
- const active=reviews.filter(r=>r.status==="Realizada").length;
- const row=u=>{
-  const g=complementGate(u),m=complementMetrics(u);
-  return `<div class="weekly-topic"><div><strong>${escapeHtml(u.code)}</strong> <span>${escapeHtml(u.title)}</span><small>Gatilho: ${escapeHtml(u.triggerCodes.join(" + "))} · Liberação ${g.releasedAt?dateBR(g.releasedAt):"sem data"} · Prevista ${g.scheduled?dateBR(g.scheduled):"não determinada"} · ${m.answered} questões resolvidas</small></div><div class="weekly-actions"><button type="button" class="smallbtn" data-open-topic="${u.id}" data-open-stage="Estudo inicial">Abrir TEC</button></div></div>`;
- };
- const reviewRow=r=>{const u=findTopicUnit(r.subject,r.topic);return `<div class="daily-review-item"><div><strong>${escapeHtml(r.stage)}</strong><span>${escapeHtml(visibleTopicTitle(r.topic))}</span><small>${escapeHtml(subjectLabel(r.subject))} · ${escapeHtml(reviewInitialStudyFlow(r)==="C"?"Complementação (TEC)":reviewInitialStudyFlow(r)==="Q"?"Questões":"Aprofundamento")} · ${r.status==="Realizada"?"Realizada":"Prevista"} ${dateBR(r.plannedDate)}</small></div>${u?`<button type="button" class="smallbtn" data-open-topic="${u.id}" data-open-stage="${escapeHtml(r.stage)}">Abrir revisão</button>`:""}</div>`;};
- const nextA=planUnits.filter(u=>u.flow==="A"&&!completionOf(u)).sort((a,b)=>a.order-b.order).slice(0,6);
- const nextQ=planUnits.filter(u=>u.flow==="Q"&&!completionOf(u)).sort((a,b)=>a.order-b.order).slice(0,6);
- const nextRow=u=>`<div class="weekly-topic"><div><strong>${escapeHtml(u.code)}</strong><span>${escapeHtml(u.title)}</span><small>${escapeHtml(subjectLabel(u.subject))}</small></div><button type="button" class="smallbtn" data-open-topic="${u.id}" data-open-stage="Estudo inicial">Abrir</button></div>`;
+ const date=dailySelectedDate||todayISO(),assignment=dailyStudyAssignments(date);
+ const sunday=shiftAgendaDate(date,-new Date(date+'T12:00:00Z').getUTCDay());
+ const completed=weeklyStudyState().completed;
+ const dayStrip=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map((day,i)=>{
+  const dayDate=shiftAgendaDate(sunday,i),units=dailyStudyAssignments(dayDate).units;
+  return '<button type="button" data-daily-date="'+dayDate+'" aria-pressed="'+(dayDate===date)+'">'+day+' · '+dateBR(dayDate)+'<small>'+units.filter(u=>u.flow==='A').length+' A + '+units.filter(u=>u.flow==='Q').length+' Q</small></button>';
+ }).join('');
+ const entries=assignment.units.map(u=>({u,record:completed.get(u.id)}));
+ const row=x=>'<div class="weekly-topic '+(x.record?'weekly-topic-done':'')+'"><div><strong>'+escapeHtml(x.u.code)+'</strong><span>'+escapeHtml(x.u.title)+'</span><small>'+escapeHtml(subjectLabel(x.u.subject))+' · '+(x.record?'Concluído em '+dateBR(x.record.date):'Pendente')+'</small></div><div class="weekly-actions"><button type="button" class="smallbtn" data-open-topic="'+escapeHtml(x.u.id)+'" data-open-stage="Estudo inicial">Abrir estudo</button><button type="button" class="smallbtn" data-plan-id="'+escapeHtml(x.u.id)+'" data-plan-done="'+(x.record?'0':'1')+'">'+(x.record?'↶ Reabrir':'✓ Concluir')+'</button></div></div>';
+ const C=planUnits.filter(x=>x.flow==='C');
+ const scheduled=C.filter(u=>{const g=complementGate(u);return g.status==='Liberado'&&g.scheduled===date;});
+ const late=C.filter(u=>{const g=complementGate(u);return g.status==='Liberado'&&g.scheduled&&g.scheduled<date;});
+ const compRow=u=>{const g=complementGate(u);return '<div class="weekly-topic"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span><small>Gatilho: '+escapeHtml(u.triggerCodes.join(' + '))+' · Liberado em '+dateBR(g.releasedAt)+' · Programado para '+dateBR(g.scheduled)+'</small></div><button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="Estudo inicial">Abrir TEC</button></div>';};
+ const reviews=studyData.reviews.filter(r=>!r.resetForRedo&&(r.plannedDate===date||r.doneDate===date)&&['D+1','D+7','D+30'].includes(r.stage));
+ const reviewRow=r=>{const u=findTopicUnit(r.subject,r.topic);return '<div class="daily-review-item"><div><strong>'+escapeHtml(r.stage)+'</strong><span>'+escapeHtml(visibleTopicTitle(r.topic))+'</span><small>'+escapeHtml(subjectLabel(r.subject))+' · '+(r.status==='Realizada'?'Realizada':'Prevista')+' para '+dateBR(r.plannedDate)+'</small></div>'+(u?'<button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="'+escapeHtml(r.stage)+'">Abrir revisão</button>':'')+'</div>';};
  const timeInfo=dailyRegisteredStudyMinutes(date);
- const allC=C.filter(u=>complementGate(u).status==="Liberado").length;
- return `<div class="daily-controls"><label for="dailyDate">Data da agenda</label><button type="button" data-daily-step="-1">‹ Anterior</button><input id="dailyDate" type="date" value="${date}"><button type="button" data-daily-step="1">Próximo ›</button><button type="button" data-daily-date="${today}">Hoje</button></div><div class="daily-weekstrip">${days}</div><p class="daily-note">Domingo é dia regular de estudo. Após a conclusão do último gatilho, cada caderno TEC é programado para o dia válido subsequente. Sábado não é presumido como dia de estudo. Agendamento não equivale a realização; revisões seguem dias corridos.</p>`+
- `<div class="weekly-kpi">${metricCard("TEC previstos neste dia",scheduled.length)}${metricCard("TEC liberados",allC)}${metricCard("TEC anteriores não iniciados",overdue.length)}${metricCard("Revisões na data",reviews.length)}${metricCard("Revisões realizadas",active)}${metricCard("Tempo líquido conhecido",timeInfo.known?clockMinutes(timeInfo.minutes):"N/I")}</div>`+
- panel("Complementação (TEC) — prevista para a data","Unidades liberadas por conclusão do tópico de Aprofundamento; a execução não é automática.",scheduled.length?scheduled.map(row).join(""):'<div class="emptytable">Nenhuma Complementação programada nesta data.</div>')+
- (overdue.length?panel("Complementações TEC liberadas em datas anteriores","Permanece pendente a execução, sem alterar a data original de liberação.",overdue.map(row).join("")):"")+
- panel("Revisões D+1/D+7/D+30 — da data",`${reviews.length} registrada(s), com ciclos de Aprofundamento, Complementação (TEC) e Questões independentes.`,reviews.length?reviews.map(reviewRow).join(""):'<div class="emptytable">Nenhuma revisão nesta data.</div>')+
- panel("Próximas unidades — Aprofundamento","Fila orientativa contínua, não meta obrigatória da data.",nextA.map(nextRow).join(""))+
- panel("Próximas unidades — Questões (DC/DA/AP/TI)","Fila autônoma, sem cotas semanais obrigatórias.",nextQ.map(nextRow).join(""));
+ const A=entries.filter(x=>x.u.flow==='A'),Q=entries.filter(x=>x.u.flow==='Q');
+ const empty='<div class="emptytable">Nenhuma atividade programada nesta data.</div>';
+ return '<div class="daily-controls"><label for="dailyDate">Data da agenda</label><button type="button" data-daily-step="-1">‹ Anterior</button><input id="dailyDate" type="date" value="'+date+'"><button type="button" data-daily-step="1">Próximo ›</button><button type="button" data-daily-date="'+todayISO()+'">Hoje</button></div>'+
+ '<div class="daily-weekstrip">'+dayStrip+'</div><p class="daily-note">Quatro aprofundamentos em 05/11; tópicos iniciais de Questões a partir de 08/11. Pausa sem novas metas de 22 a 27/11. Complementações entram no dia de estudo seguinte à liberação; revisões continuam em dias corridos.</p>'+
+ '<div class="weekly-kpi">'+metricCard('Aprofundamento do dia',A.length)+metricCard('Questões do dia',Q.length)+metricCard('Complementações liberadas para hoje',scheduled.length)+metricCard('Revisões desta data',reviews.length)+metricCard('Estudos iniciais concluídos',entries.filter(x=>x.record).length+'/'+entries.length)+metricCard('Tempo líquido conhecido',timeInfo.known?clockMinutes(timeInfo.minutes):'N/I')+'</div>'+
+ panel('Estudos Iniciais — Aprofundamento',A.length+' tópico(s) previstos para a data.',A.length?A.map(row).join(''):empty)+
+ panel('Estudos Iniciais — Questões',Q.length+' tópico(s) previstos para a data.',Q.length?Q.map(row).join(''):empty)+
+ panel('Complementação (TEC) — liberadas para a data','Sem meta semanal; após a conclusão dos tópicos-gatilho.',scheduled.length?scheduled.map(compRow).join(''):empty)+
+ (late.length?panel('Complementações pendentes de datas anteriores','Liberação preservada e não contabilizada em metas fixas.',late.map(compRow).join('')):'')+
+ panel('Revisões da data — D+1, D+7 e D+30',reviews.length+' revisão(ões) com histórico e agendamento próprios.',reviews.length?reviews.map(reviewRow).join(''):empty);
 }
 
 function renderReviewGeneralPanels(){
@@ -2295,7 +2351,7 @@ function renderReviewGeneralPanels(){
 function renderWorkspace(v){
  const esc=escapeHtml;let body="";
  if(v.section==="Estudos"){
-  body=v.id==="estudos-semanal"?renderWeeklyWorkspace():v.id==="estudos-cronograma-dia"?renderDailyStudyWorkspace():v.id==="estudos-geral"?renderStudyGeneralPanels()+renderStudyWorkspace(v):renderStudyWorkspace(v);
+  body=v.id==="estudos-semanal"?renderWeeklyWorkspace():v.id==="estudos-percurso"?renderContinuousWorkspace():v.id==="estudos-cronograma-dia"?renderDailyStudyWorkspace():v.id==="estudos-geral"?renderStudyGeneralPanels()+renderStudyWorkspace(v):renderStudyWorkspace(v);
  }else if(v.section==="Revisões"){
   const stage=v.id==="revisoes-d1"?"D+1":v.id==="revisoes-d7"?"D+7":v.id==="revisoes-d30"?"D+30":null;
   const flow=v.id==="revisoes-complementacao"?"C":v.id==="revisoes-aprofundamento"?"A":null;
@@ -2312,23 +2368,51 @@ function renderWorkspace(v){
  }
  const note='<p class="workspace-note">Dados de execução ficam salvos neste navegador. O site não sincroniza automaticamente com outros aparelhos, ChatGPT ou TEC. Exporte e importe o histórico para mantê-lo seguro.</p>';
  g("workspacePage").innerHTML=`<div class="workspace-eyebrow">${esc(v.section)} / ${esc(v.title)}</div><h1 id="workspaceTitle">${esc(v.title)}</h1><p class="workspace-summary">${esc(v.description)}</p>${body}${note}`;
- if(v.section==="Estudos"&&!["estudos-semanal","estudos-cronograma-dia"].includes(v.id))refreshPlanList(v);
+ if(v.section==="Estudos"&&!["estudos-semanal","estudos-percurso","estudos-cronograma-dia"].includes(v.id))refreshPlanList(v);
 }
 
 function refreshOverview(){
- const root=g("dashboardRoot");if(!root)return;
- const A=planUnits.filter(x=>x.flow==="A"),C=planUnits.filter(x=>x.flow==="C"),Q=planUnits.filter(x=>x.flow==="Q");
- const done=list=>list.filter(x=>completionOf(x)).length;
- const due=C.filter(x=>{const g=complementGate(x);return g.status==="Liberado"&&g.scheduled&&g.scheduled<=todayISO();});
- const revisions=studyData.reviews.filter(x=>!x.resetForRedo);
- const metrics=metricsAttempt(studyData.attempts.filter(a=>!a.resetForRedo));
- const first=complementSequence().find(x=>!completionOf(x));
- const today=todayISO();
- const nav=(id,name)=>`<button type="button" class="dash-link" data-dashboard-view="${id}">${escapeHtml(name)}</button>`;
- root.innerHTML=`<div class="dash-kpis">${metricCard("Unidades cadastradas",planUnits.length)}${metricCard("Aprofundamento",done(A)+"/"+A.length)}${metricCard("Complementação (TEC)",done(C)+"/"+C.length)}${metricCard("Questões (DC/DA/AP/TI)",done(Q)+"/"+Q.length)}${metricCard("Questões respondidas",formatNum(metrics.all))}${metricCard("Aproveitamento",formatPercent(metrics.overall))}</div>`+
- panel("Próxima unidade na sequência",first?`${first.code} — ${first.title}`:"Percurso teórico e TEC concluído.",`<div class="sector-links">${nav("estudos-semanal","Percurso integrado")}${nav("estudos-aprofundamento","Aprofundamento")}${nav("estudos-complementacao","Complementação (TEC)")}</div>`)+
- panel("Complementações e revisões","Cadernos TEC liberados são incluídos no dia válido subsequente ao gatilho, inclusive domingo. Revisões calculadas em dias corridos.",`<div class="weekly-kpi">${metricCard("TEC liberados",C.filter(x=>complementGate(x).status==="Liberado").length)}${metricCard("TEC previstos até hoje",due.length)}${metricCard("Revisões previstas para hoje",revisions.filter(x=>x.plannedDate===today&&x.status!=="Realizada").length)}${metricCard("Revisões atrasadas",revisions.filter(x=>statusReview(x)==="Pendentes").length)}</div><div class="sector-links">${nav("estudos-cronograma-dia","Agenda diária")}${nav("revisoes-geral","Revisões")}${nav("desempenho-geral","Desempenho")}</div>`)+
- renderCumulativeStudyTime();
+ const root=g('dashboardRoot');if(!root)return;
+ const A=planUnits.filter(u=>u.flow==='A'),Q=planUnits.filter(u=>u.flow==='Q'),C=planUnits.filter(u=>u.flow==='C');
+ const all=[...A,...Q,...C],done=units=>units.filter(completionOf).length;
+ const expected=expectedInitialProgressForDay(todayISO());
+ const today=todayISO(),todayComp=C.filter(u=>{const t=complementGate(u);return t.status==='Liberado'&&t.scheduled===today;});
+ const reviews=studyData.reviews.filter(r=>!r.resetForRedo);
+ const stages=['D+1','D+7','D+30'].map(stage=>{
+  const rows=reviews.filter(r=>r.stage===stage);
+  return {stage,rows,done:rows.filter(r=>r.status==='Realizada').length,pending:rows.filter(r=>statusReview(r)==='Pendentes').length};
+ });
+ const m=metricsAttempt(studyData.attempts.filter(a=>!a.resetForRedo));
+ const stat=(k,v,n)=>'<div class="dash-kpi"><span class="dash-kpi-label">'+escapeHtml(k)+'</span><strong>'+escapeHtml(String(v))+'</strong><small>'+escapeHtml(n||'')+'</small></div>';
+ const nav=(id,name)=>'<button class="dash-link" type="button" data-dashboard-view="'+id+'">'+escapeHtml(name)+'</button>';
+ const progress=(label,items,goal)=>{
+  const actual=done(items),pct=items.length?actual/items.length:0;
+  const comparison=goal===null?'Sem meta fixa · programada após liberação':('Esperado até hoje: '+goal+' · '+(actual-goal>=0?'+':'')+(actual-goal)+' em relação à meta');
+  return '<div class="dash-mini"><div class="dash-mini-head"><strong>'+escapeHtml(label)+'</strong><span>'+formatPercent(pct)+'</span></div><div class="dash-mini-caption">'+actual+' de '+items.length+' realizados · '+(items.length-actual)+' restantes</div><div class="dash-track"><span style="width:'+(pct*100).toFixed(2)+'%"></span></div><div class="dash-pace">'+escapeHtml(comparison)+'</div></div>';
+ };
+ const totalDone=done(all);
+ const reviewTable=stages.map(x=>'<tr><th>'+x.stage+'</th><td>'+x.rows.length+'</td><td>'+x.done+'</td><td>'+x.rows.filter(r=>statusReview(r)==='Programadas').length+'</td><td>'+x.pending+'</td></tr>').join('');
+ root.innerHTML=
+ renderCumulativeStudyTime()+
+ '<section class="dash-section"><div class="dash-titlebar"><div><h2>Estudos — visão geral</h2><p>Três modalidades, sem misturar Estudos Iniciais com as revisões.</p></div>'+nav('estudos-geral','Quadro geral')+'</div>'+
+ '<div class="dash-kpi-grid">'+stat('Unidades planejadas',all.length,'317 Aprofundamento · 233 Questões · 98 Complementação')+stat('Unidades realizadas',totalDone,formatPercent(totalDone/all.length)+' do cadastro')+stat('Unidades restantes',all.length-totalDone,'Todas as modalidades')+stat('Complementações liberadas para hoje',todayComp.length,'Sem meta fixa')+'</div>'+
+ '<div class="dash-two"><div class="dash-panel"><div class="dash-panel-head"><h3>Aprofundamento e Questões</h3></div><div class="dash-panel-body">'+progress('Aprofundamento',A,expected.A)+progress('Questões',Q,expected.Q)+'</div></div><div class="dash-panel"><div class="dash-panel-head"><h3>Complementação (TEC)</h3></div><div class="dash-panel-body">'+progress('Complementação (TEC)',C,null)+'<p class="dash-note">Entra na agenda depois da conclusão de seus gatilhos; não integra as metas quantitativas semanais.</p></div></div></div></section>'+
+ '<section class="dash-section"><div class="dash-titlebar"><div><h2>Progresso — realizado × esperado</h2><p>Expectativa calculada pela divisão diária das metas semanais, até 15/01/2027, sem meta na pausa de novembro.</p></div>'+nav('estudos-semanal','Metas Semanais')+'</div>'+
+ '<div class="dash-kpi-grid">'+stat('Aprofundamento',done(A)+' / '+expected.A,'Realizado / esperado até hoje')+stat('Questões',done(Q)+' / '+expected.Q,'Realizado / esperado até hoje')+stat('Complementação (TEC)',done(C)+' / variável','Sem expectativa quantitativa')+stat('Dias de estudo restantes',studyDaysRemaining(today),'Até 15/01/2027')+'</div>'+weeklySnapshot()+'</section>'+
+ '<section class="dash-section"><div class="dash-titlebar"><div><h2>Revisões</h2><p>D+1, D+7 e D+30; programadas, realizadas e pendentes.</p></div>'+nav('revisoes-dia','Revisões do dia')+'</div>'+
+ '<div class="dash-kpi-grid">'+stat('Revisões registradas',reviews.length,'Todas as etapas')+stat('Revisões realizadas',reviews.filter(r=>r.status==='Realizada').length,'Ciclo registrado')+stat('Revisões atrasadas',reviews.filter(r=>statusReview(r)==='Pendentes').length,'Prazos vencidos')+stat('Revisões do dia',reviews.filter(r=>r.plannedDate===today&&r.status!=='Realizada').length,'Ainda não realizadas')+'</div>'+
+ '<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Etapa</th><th>Total</th><th>Realizadas</th><th>Programadas</th><th>Pendentes</th></tr></thead><tbody>'+reviewTable+'</tbody></table></div></section>'+
+ '<section class="dash-section"><div class="dash-titlebar"><div><h2>Desempenho</h2><p>Questões efetivamente resolvidas, contabilizadas sem duplicação de fontes.</p></div>'+nav('desempenho-geral','Ver desempenho')+'</div>'+
+ '<div class="dash-kpi-grid">'+stat('Questões respondidas',formatNum(m.all),'ChatGPT e TEC')+stat('Acertos',formatNum(m.correct),'Inclui acertos inseguros')+stat('Erros',formatNum(m.all-m.correct),'Respostas incorretas')+stat('Aproveitamento',formatPercent(m.overall),'Acertos / total respondido')+'</div>'+panel('Desempenho por plataforma','Distribuição efetiva das respostas registradas.',platformTable(m))+'</section>'+
+ '<p class="dash-note">Tempo líquido: total das sessões com duração registrada, apresentado no histórico acima, sem duplicar minutos dos estudos e das revisões. Os dados executados são mantidos no navegador e não sincronizam automaticamente com ChatGPT ou TEC.</p>';
+}
+
+function renderStudyGeneralPanels(){
+ const A=planUnits.filter(x=>x.flow==='A'),Q=planUnits.filter(x=>x.flow==='Q'),C=planUnits.filter(x=>x.flow==='C');
+ const d=weeklyStudyState(),expected=expectedInitialProgressForDay(todayISO());
+ const row=(name,units,goal)=>{const n=units.filter(completionOf).length;return '<tr><th>'+name+'</th><td>'+n+'</td><td>'+units.length+'</td><td>'+formatPercent(n/units.length)+'</td><td>'+(goal===null?'Variável':goal)+'</td></tr>';};
+ return '<div class="weekly-kpi">'+metricCard('Aprofundamento',A.filter(completionOf).length+'/'+A.length)+metricCard('Questões',Q.filter(completionOf).length+'/'+Q.length)+metricCard('Complementação (TEC)',C.filter(completionOf).length+'/'+C.length)+metricCard('Total de unidades',planUnits.length)+metricCard('Metas em aberto',d.remaining)+metricCard('Meta até 15/01/2027','Aprofundamento + Questões')+'</div>'+weeklySnapshot()+
+ panel('Progresso realizado × esperado','Aprofundamento e Questões possuem metas semanais; Complementação depende de liberação.','<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Modalidade</th><th>Realizado</th><th>Total</th><th>Progresso</th><th>Esperado</th></tr></thead><tbody>'+row('Aprofundamento',A,expected.A)+row('Questões',Q,expected.Q)+row('Complementação (TEC)',C,null)+'</tbody></table></div>');
 }
 
 function renderComplementTopicBlock(u,stage){
@@ -2464,6 +2548,7 @@ function migrateKnownTecContactOnce(){
 }
 applyCentralMigrationOnce();
 migrateKnownTecContactOnce();
+rebuildWeeklyPlan();
 installComplementationEvents();
 draw();refreshOverview();setActiveNav(null);const hash=location.hash.replace(/^#/,'');const match=location.hash.match(/^#comando-(\d+)$/);if(match)openDoc(Number(match[1]),false);else if(workspaceById[hash]||hash==='comandos')showPage(hash,false);
 })();
