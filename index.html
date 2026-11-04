@@ -1028,6 +1028,53 @@ function clockMinutes(minutes){
 function durationLabel(stats){
  return stats.known?formatNum(stats.minutes)+' min'+(stats.unknown?' (+'+stats.unknown+' N/I)':''):'N/I';
 }
+
+const CONSOLIDATED_TIME_MINUTES={
+ '2026-10-25':57,'2026-10-26':178,'2026-10-27':84,
+ '2026-10-28':160,'2026-10-29':61,'2026-10-30':null,
+ '2026-10-31':29,'2026-11-01':99,'2026-11-02':268,'2026-11-03':223
+};
+function dailyRegisteredStudyMinutes(date){
+ const attempts=studyData.attempts.filter(a=>a.date===date);
+ const known=knownDurationStats(attempts);
+ const hasAttempt=(r,stage)=>attempts.some(a=>
+  ((r.planId&&r.planId===a.planId)||(r.studyId&&r.studyId===a.studyId)||
+   (r.subject===a.subject&&topicKey(r)===topicKey(a)))&&
+  (a.stage===stage||stageForContact(a.contact)===stage));
+ for(const study of studyData.studies.filter(st=>st.status==='Concluído'&&st.date===date)){
+  if(Number.isFinite(study.durationMinutes)&&study.durationMinutes>=0&&!hasAttempt(study,'Estudo inicial')){
+   known.minutes+=study.durationMinutes;known.known++;
+  }
+ }
+ for(const review of studyData.reviews.filter(r=>r.status==='Realizada'&&r.doneDate===date)){
+  if(Number.isFinite(review.durationMinutes)&&review.durationMinutes>=0&&!hasAttempt(review,review.stage)){
+   known.minutes+=review.durationMinutes;known.known++;
+  }
+ }
+ return known;
+}
+function totalRegisteredStudyMinutes(){
+ // Os totais históricos de 25/10 a 03/11 são autoritativos e não são somados de novo.
+ const records=new Map(Object.entries(CONSOLIDATED_TIME_MINUTES).map(([date,minutes])=>
+  [date,{date,minutes,source:'Consolidado conferido',unknown:0}]));
+ const laterDates=new Set([
+  ...studyData.attempts.map(a=>a.date),
+  ...studyData.studies.filter(s=>s.status==='Concluído').map(s=>s.date),
+  ...studyData.reviews.filter(r=>r.status==='Realizada').map(r=>r.doneDate)
+ ].filter(date=>/^\d{4}-\d{2}-\d{2}$/.test(date||'')&&date>'2026-11-03'));
+ for(const date of laterDates){
+  const result=dailyRegisteredStudyMinutes(date);
+  records.set(date,{date,minutes:result.known?result.minutes:null,
+   unknown:result.unknown,source:'Registros da Central'});
+ }
+ const rows=[...records.values()].sort((a,b)=>a.date.localeCompare(b.date));
+ const confirmed=rows.filter(r=>r.minutes!==null);
+ const total=confirmed.reduce((sum,r)=>sum+r.minutes,0);
+ const extra=confirmed.filter(r=>r.date>'2026-11-03');
+ return {rows,total,last:confirmed.at(-1)||null,days:confirmed.length,
+  extraMinutes:extra.reduce((sum,r)=>sum+r.minutes,0),extraDays:extra.length};
+}
+
 function platformTable(metrics){
  const rows=PLATFORM_NAMES.filter(p=>p!=='Não informada'||metrics.unknown).map(p=>{
   const r=metrics.platforms[p],n=counted(r),correct=correctCount(r);
@@ -1576,6 +1623,26 @@ function studyDaysRemaining(day,limit='2027-01-15'){
  return total;
 }
 
+
+function renderCumulativeStudyTime(){
+ const data=totalRegisteredStudyMinutes();
+ const history=data.rows.map(r=>'<tr><th scope="row">'+dateBR(r.date)+'</th><td>'+
+  (r.minutes===null?'Não informado':clockMinutes(r.minutes))+'</td><td>'+
+  escapeHtml(r.source)+(r.unknown?' · '+r.unknown+' N/I':'')+'</td></tr>').join('');
+ const latest=data.last;
+ return '<section class="dash-section" aria-label="Tempo líquido acumulado de estudo">'+
+  '<div class="dash-titlebar"><div><h2>Tempo líquido acumulado de estudo</h2><p>Consolidado de 25/10 a 03/11 e novos dias acrescentados automaticamente.</p></div></div>'+
+  '<div class="dash-kpi-grid">'+
+  '<div class="dash-kpi"><span class="dash-kpi-label">TOTAL LÍQUIDO CONFIRMADO</span><strong>'+clockMinutes(data.total)+'</strong><small>'+formatNum(data.total)+' minutos documentados · mínimo confirmado</small></div>'+
+  '<div class="dash-kpi"><span class="dash-kpi-label">Último dia registrado</span><strong>'+(latest?clockMinutes(latest.minutes):'N/I')+'</strong><small>'+(latest?dateBR(latest.date):'Nenhum registro')+'</small></div>'+
+  '<div class="dash-kpi"><span class="dash-kpi-label">Dias com tempo confirmado</span><strong>'+formatNum(data.days)+'</strong><small>Sem presumir minutos nos dias sem duração</small></div>'+
+  '<div class="dash-kpi"><span class="dash-kpi-label">Após 03/11/2026</span><strong>'+clockMinutes(data.extraMinutes)+'</strong><small>'+formatNum(data.extraDays)+' dia(s) com tempo novo registrado</small></div></div>'+
+  '<details class="dash-panel" style="margin-top:12px"><summary style="cursor:pointer;padding:14px 18px;font-weight:700;font-size:13px">Ver histórico diário do tempo líquido</summary>'+
+  '<div class="platform-scroll" role="region" aria-label="Histórico diário do tempo líquido"><table class="platform-table"><thead><tr><th>Data</th><th>Tempo conhecido</th><th>Origem</th></tr></thead><tbody>'+history+
+  '<tr><th scope="row">Total</th><td><strong>'+clockMinutes(data.total)+'</strong></td><td>'+formatNum(data.total)+' minutos confirmados</td></tr></tbody></table></div></details>'+
+  '<p class="dash-note">O consolidado inclui os 57 minutos documentados em 25/10. O tempo de 30/10 não foi localizado. A partir de 04/11, cada duração nova é contabilizada uma única vez, a partir dos resultados, estudos ou revisões cadastrados. Tempos não informados não são tratados como zero.</p></section>';
+}
+
 function refreshOverview(){
  const root=g('dashboardRoot');if(!root)return;
  const overrides=planOverlays();
@@ -1658,6 +1725,7 @@ function refreshOverview(){
   '</div>'+recentSubjectTable+dailyTimeWarning+'</section>':'';
 
  root.innerHTML=`
+ ${renderCumulativeStudyTime()}
  ${recentDayPanel}
  ${weeklySnapshot()}
  <div class="dash-hero">
