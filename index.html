@@ -211,6 +211,8 @@ dialog.viewer{position:fixed;inset:0 0 0 auto;max-height:none;height:100vh;max-w
 .weekly-select{background:none;border:0;color:var(--accent);font:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-weight:730}
 .weekly-table tr.weekly-current-row{background:var(--accent-soft)}
 .weekly-table th,.weekly-table td{white-space:nowrap}
+.weekly-saldo strong{display:block;font-weight:750;font-variant-numeric:tabular-nums}
+.weekly-saldo small{display:block;font-size:10px;line-height:1.35;color:var(--muted)}
 .weekly-selected{margin:24px 0}.weekly-selected h2{font-size:20px;margin-bottom:5px}
 .weekly-group{border:1px solid var(--line);border-radius:12px;background:var(--card);margin:13px 0;overflow:hidden}
 .weekly-group>summary{cursor:pointer;padding:14px 17px;font-size:13px;font-weight:750;border-bottom:1px solid var(--line)}
@@ -2652,8 +2654,8 @@ function refreshOverview(){
 
 // QUATRO PAINÉIS DE PROGRESSO — metas proporcionais (A/Q), complementações por liberação.
 
-function weeklyExpectedProgressForDay(day=todayISO()){
- const weeks=weeklyStudyState().weeks,result={A:0,Q:0,C:0};
+function weeklyExpectedProgressForDay(day=todayISO(),data=weeklyStudyState()){
+ const weeks=data.weeks,result={A:0,Q:0,C:0};
  for(const w of weeks){
   if(day<w.start)continue;
   const days=plannedStudyDates(w.start,w.end);
@@ -2670,6 +2672,14 @@ function weeklyExpectedProgressForDay(day=todayISO()){
  result.C=Math.min(planUnits.filter(u=>u.flow==='C').length,result.C);
  result.total=result.A+result.Q+result.C;
  return result;
+}
+// Saldo acumulado realizado − previsto (com corte na semana ou hoje).
+function weeklyBalanceForWeek(week,data,day=todayISO()){
+ if(day<week.start)return null;
+ const cutoff=day<week.end?day:week.end;
+ const expected=weeklyExpectedProgressForDay(cutoff,data).total;
+ const done=[...data.completed.values()].filter(rec=>rec.date&&rec.date<=cutoff).length;
+ return {expected,done,balance:done-expected,cutoff};
 }
 function weeklyHistoricalComparison(data=weeklyStudyState()){
  const weeks=data.weeks.filter(w=>w.historical),sum=k=>weeks.reduce((n,w)=>n+w[k],0);
@@ -2746,16 +2756,19 @@ function renderWeeklyWorkspace(){
  const selected=d.weeks[chosen],A=planUnits.filter(u=>u.flow==='A'),Q=planUnits.filter(u=>u.flow==='Q'),C=planUnits.filter(u=>u.flow==='C');
  const rows=d.weeks.map(w=>{
   const ideal=w.historical?w.idealA+' A + '+w.idealQ+' Q + '+w.quotaC+' C':'—';
+  const saldo=weeklyBalanceForWeek(w,d);
+  const saldoCell=saldo===null?'<td title="Semana ainda não iniciada">—</td>':
+   '<td class="weekly-saldo" title="Realizado acumulado: '+saldo.done+'; previsto acumulado: '+saldo.expected+'"><strong>'+(saldo.balance>0?'+':'')+formatNum(saldo.balance)+'</strong><small>'+(saldo.balance>0?'adiantados':saldo.balance<0?'atrasados':'em dia')+'</small></td>';
   const status=w.totalPending===0?'Meta concluída':todayISO()>w.end?'Prazo encerrado':todayISO()<w.start?'Futura':'Em andamento';
   return '<tr class="'+(w.index===chosen?'weekly-current-row':'')+'"><th><button type="button" class="weekly-select" data-week-select="'+w.index+'">Semana '+w.number+'</button></th>'+
   '<td>'+weekRange(w)+'</td><td>'+w.quotaA+'</td><td>'+w.doneA+'</td><td>'+w.quotaQ+'</td><td>'+w.doneQ+'</td>'+
-  '<td>'+w.quotaC+'</td><td>'+w.doneC+'</td><td>'+w.quotaTotal+'</td><td>'+w.totalDoneWeek+'</td><td>'+w.totalPending+'</td><td>'+ideal+'</td><td>'+escapeHtml(status)+'</td></tr>';
+  '<td>'+w.quotaC+'</td><td>'+w.doneC+'</td><td>'+w.quotaTotal+'</td><td>'+w.totalDoneWeek+'</td><td>'+w.totalPending+'</td><td>'+ideal+'</td>'+saldoCell+'<td>'+escapeHtml(status)+'</td></tr>';
  }).join('');
  const history=weeklyHistoricalComparison(d),historicalDone=history.done,historicalIdeal=history.ideal;
  return weeklySnapshot()+
- '<p class="weekly-pause">As metas e os resultados da tabela correspondem às unidades atribuídas a cada semana. A referência ideal das semanas históricas é exibida separadamente. As Complementações (TEC) entram automaticamente na semana de sua programação após liberação, sem alterar as metas originais de Aprofundamento e Questões.</p>'+
+ '<p class="weekly-pause">As metas e os resultados da tabela correspondem às unidades atribuídas a cada semana. A referência ideal das semanas históricas é exibida separadamente. A Semana 1 inclui também um tópico de Questões de 19/10/2026, anterior ao seu início formal. O Saldo é acumulado: realizado até o final da semana (ou até hoje, se ela estiver em andamento) menos o previsto até a mesma data. Valores positivos indicam adiantamento, negativos indicam atraso e semanas futuras não exibem saldo. As Complementações (TEC) entram automaticamente na semana de sua programação após liberação, sem alterar as metas originais de Aprofundamento e Questões.</p>'+
  '<div class="weekly-kpi">'+metricCard('Ideal histórico A/Q/C — Semanas 1 e 2',historicalIdeal)+metricCard('Realizado histórico A/Q/C — Semanas 1 e 2',historicalDone)+metricCard('Diferença histórica A/Q/C',(historicalDone-historicalIdeal>0?'+':'')+(historicalDone-historicalIdeal))+metricCard('Total de Aprofundamento',A.length)+metricCard('Total de Questões',Q.length)+metricCard('Complementação cadastrada',C.length)+'</div>'+
- panel('Metas Semanais — Previsto × Realizado','Os valores de meta são os tópicos programados na semana; os complementares são incluídos conforme liberação. A referência ideal histórica permanece apenas para comparação.','<div class="platform-scroll"><table class="platform-table weekly-table"><thead><tr><th>Semana</th><th>Período</th><th>Meta A</th><th>Feito A</th><th>Meta Q</th><th>Feito Q</th><th>Meta C</th><th>Feito C</th><th>Meta Total</th><th>Feito Total</th><th>Pendentes</th><th>Ideal histórico A/Q/C</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
+ panel('Metas Semanais — Previsto × Realizado','Os valores de meta são os tópicos programados na semana; os complementares são incluídos conforme liberação. A referência ideal histórica permanece apenas para comparação.','<div class="platform-scroll"><table class="platform-table weekly-table"><thead><tr><th>Semana</th><th>Período</th><th>Meta A</th><th>Feito A</th><th>Meta Q</th><th>Feito Q</th><th>Meta C</th><th>Feito C</th><th>Meta Total</th><th>Feito Total</th><th>Pendentes</th><th>Ideal histórico A/Q/C</th><th>Saldo</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
  weeklySelectedDetails(d,selected);
 }
 function renderStudyGeneralPanels(){
@@ -2939,7 +2952,11 @@ function weeklyStudyState(){
   const a=w.units.filter(u=>u.flow==='A'),q=w.units.filter(u=>u.flow==='Q');
   const complements=complementWeeks.get(w.index)||[];
   // Histórico de A/Q considera a data efetiva em semanas 1 e 2.
-  const inPeriod=u=>{const d=completed.get(u.id)?.date;return Boolean(d&&(w.index>1||dateBetween(d,w.start,w.end)));};
+  // Incluir em Semana 1 os estudos históricos anteriores ao seu início formal.
+  const inPeriod=u=>{
+   const d=completed.get(u.id)?.date;
+   return Boolean(d&&(w.index>1||(w.index===0?d<=w.end:dateBetween(d,w.start,w.end))));
+  };
   const doneA=a.filter(inPeriod).length,doneQ=q.filter(inPeriod).length;
   const doneC=complements.filter(u=>completed.has(u.id)).length;
   const allocatedDone=w.units.filter(u=>completed.has(u.id)).length;
