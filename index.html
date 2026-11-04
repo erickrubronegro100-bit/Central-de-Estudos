@@ -282,11 +282,14 @@ dialog.viewer{position:fixed;inset:0 0 0 auto;max-height:none;height:100vh;max-w
     <details class="navgroup" name="secao" data-navgroup="Estudos"><summary class="navsummary"><span><span class="navicon" aria-hidden="true">◫</span>Estudos</span><span class="groupcaret" aria-hidden="true">›</span></summary><nav class="subnav worknav" aria-label="Estudos">
     <button class="navitem workitem" type="button" data-view="estudos-cronograma-dia"><span>Cronograma de Estudos do Dia</span></button>
     <button class="navitem workitem" type="button" data-view="estudos-aprofundamento"><span>Estudos Iniciais – Aprofundamento</span></button>
+    <button class="navitem workitem" type="button" data-view="estudos-complementacao"><span>Estudos Iniciais – Complementação (TEC)</span></button>
     <button class="navitem workitem" type="button" data-view="estudos-questoes"><span>Estudos Iniciais – Questões</span></button>
-    <button class="navitem workitem" type="button" data-view="estudos-semanal"><span>Metas Semanais</span></button>
+    <button class="navitem workitem" type="button" data-view="estudos-semanal"><span>Percurso contínuo</span></button>
     </nav></details>
     <details class="navgroup" name="secao" data-navgroup="Revisões"><summary class="navsummary"><span><span class="navicon" aria-hidden="true">◷</span>Revisões</span><span class="groupcaret" aria-hidden="true">›</span></summary><nav class="subnav worknav" aria-label="Revisões">
     <button class="navitem workitem" type="button" data-view="revisoes-dia"><span>Revisões do dia</span></button>
+    <button class="navitem workitem" type="button" data-view="revisoes-aprofundamento"><span>Revisões — Aprofundamento</span></button>
+    <button class="navitem workitem" type="button" data-view="revisoes-complementacao"><span>Revisões — Complementação (TEC)</span></button>
     <button class="navitem workitem" type="button" data-view="revisoes-d1"><span>Revisões D+1</span></button>
     <button class="navitem workitem" type="button" data-view="revisoes-d7"><span>Revisões D+7</span></button>
     <button class="navitem workitem" type="button" data-view="revisoes-d30"><span>Revisões D+30</span></button>
@@ -370,7 +373,7 @@ const subjects=[...new Set(docs.map(d=>d.materia))].map(id=>[id,subjectLabel(id)
 const escapeHtml=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const label=(k)=>k==='Estudo inicial'?'Professor · estudo inicial':k==='Revisão'?'Professor · revisão':k==='Relatório'?'Relatório de desempenho':k;
 
-const workspaceViews=[{"id":"estudos-geral","section":"Estudos","title":"Quadro Geral","description":"Painel completo do planejamento: 550 unidades, metas semanais, avanço por modalidade, atrasos, adiantamentos e sequência de estudos."},{"id":"estudos-cronograma-dia","section":"Estudos","title":"Cronograma de Estudos do Dia","description":"Agenda diária com tópicos de Aprofundamento, tópicos de Questões e revisões D+1, D+7 e D+30. A distribuição diária é definida semanalmente."},{"id":"estudos-aprofundamento","section":"Estudos","title":"Estudos Iniciais – Aprofundamento","description":"Sequência integrada de 317 unidades de aprofundamento. Consulte, filtre e acompanhe a conclusão dos tópicos."},{"id":"estudos-questoes","section":"Estudos","title":"Estudos Iniciais – Questões","description":"Sequência integrada de 233 tópicos de questões, com os códigos de controle fornecidos e a situação de cada tópico."},{"id":"estudos-semanal","section":"Estudos","title":"Metas Semanais","description":"Semana 1 encerrada com 31 tópicos creditados; 519 pendentes redistribuídos equilibradamente de 01/11/2026 a 15/01/2027."},{"id":"revisoes-geral","section":"Revisões","title":"Quadro Geral","description":"Painel completo das revisões: D+1, D+7, D+30, cumprimento, vencimentos, agenda e histórico de execução."},{"id":"revisoes-dia","section":"Revisões","title":"Revisões do dia","description":"Consulte as revisões programadas para hoje e acompanhe o cumprimento das atividades."},{"id":"revisoes-d1","section":"Revisões","title":"Revisões D+1","description":"Acompanhe as revisões D+1 vinculadas às datas efetivas dos estudos iniciais."},{"id":"revisoes-d7","section":"Revisões","title":"Revisões D+7","description":"Acompanhe as revisões D+7 vinculadas às datas efetivas dos estudos iniciais."},{"id":"revisoes-d30","section":"Revisões","title":"Revisões D+30","description":"Acompanhe as revisões D+30 vinculadas às datas efetivas dos estudos iniciais."},{"id":"desempenho-geral","section":"Desempenho","title":"Quadro Geral","description":"Painel completo de resultados: questões, fontes, acertos, erros, segurança, evolução e indicadores por disciplina."},{"id":"desempenho-regimentos","section":"Desempenho","title":"Regimentos e Processo Legislativo (RICD/PL/RCCN)","description":"Acompanhamento integrado do desempenho em Regimento Interno da Câmara dos Deputados (RICD), Processo Legislativo (PL) e Regimento Comum do Congresso Nacional (RCCN), com resultados de questões e evolução das revisões."},{"id":"desempenho-lpling","section":"Desempenho","title":"Língua Portuguesa e Linguística (LP/LING)","description":"Acompanhamento do desempenho em Língua Portuguesa e Linguística (LP/LING), com resultados de questões e evolução das revisões."},{"id":"desempenho-rfia","section":"Desempenho","title":"Reconhecimento de Fala, Transcrição e Inteligência Artificial (RFIA)","description":"Acompanhamento do desempenho em Reconhecimento de Fala, Transcrição e Inteligência Artificial (RFIA), com resultados de questões e evolução das revisões."},{"id":"desempenho-cp","section":"Desempenho","title":"Ciência Política (CP)","description":"Acompanhamento do desempenho em Ciência Política (CP), com resultados de questões e evolução das revisões."},{"id":"desempenho-dc","section":"Desempenho","title":"Direito Constitucional (DC)","description":"Acompanhamento do desempenho em Direito Constitucional (DC), com resultados de questões e evolução das revisões."},{"id":"desempenho-da","section":"Desempenho","title":"Direito Administrativo (DA)","description":"Acompanhamento do desempenho em Direito Administrativo (DA), com resultados de questões e evolução das revisões."},{"id":"desempenho-adm","section":"Desempenho","title":"Administração Pública (AP)","description":"Acompanhamento do desempenho em Administração Pública (AP), com resultados de questões e evolução das revisões."},{"id":"desempenho-ti","section":"Desempenho","title":"Tecnologia da Informação (TI)","description":"Acompanhamento do desempenho em Tecnologia da Informação (TI), com resultados de questões e evolução das revisões."}];
+const workspaceViews=[{"id":"estudos-geral","section":"Estudos","title":"Quadro Geral","description":"Quadro geral do percurso contínuo por disciplina, Aprofundamento, Complementação (TEC) e Questões, sem metas semanais obrigatórias."},{"id":"estudos-cronograma-dia","section":"Estudos","title":"Cronograma de Estudos do Dia","description":"Agenda por data: Complementações liberadas para o dia de estudo subsequente ao gatilho, revisões e próximas unidades, incluindo domingo."},{"id":"estudos-aprofundamento","section":"Estudos","title":"Estudos Iniciais – Aprofundamento","description":"Sequência integrada de 317 unidades de aprofundamento. Consulte, filtre e acompanhe a conclusão dos tópicos."},{"id":"estudos-questoes","section":"Estudos","title":"Estudos Iniciais — Questões (DC/DA/AP/TI)","description":"Unidades de resolução exclusiva no TEC para DC, DA, AP e TI; modalidade distinta da Complementação integrada."},{"id":"estudos-semanal","section":"Estudos","title":"Percurso contínuo","description":"Sequência de aprendizagem contínua e intercalada de Aprofundamento e Complementação (TEC), sem divisão em metas semanais."},{"id":"revisoes-geral","section":"Revisões","title":"Quadro Geral","description":"Painel completo das revisões: D+1, D+7, D+30, cumprimento, vencimentos, agenda e histórico de execução."},{"id":"revisoes-dia","section":"Revisões","title":"Revisões do dia","description":"Consulte as revisões programadas para hoje e acompanhe o cumprimento das atividades."},{"id":"revisoes-d1","section":"Revisões","title":"Revisões D+1","description":"Acompanhe as revisões D+1 vinculadas às datas efetivas dos estudos iniciais."},{"id":"revisoes-d7","section":"Revisões","title":"Revisões D+7","description":"Acompanhe as revisões D+7 vinculadas às datas efetivas dos estudos iniciais."},{"id":"revisoes-d30","section":"Revisões","title":"Revisões D+30","description":"Acompanhe as revisões D+30 vinculadas às datas efetivas dos estudos iniciais."},{"id":"desempenho-geral","section":"Desempenho","title":"Quadro Geral","description":"Painel completo de resultados: questões, fontes, acertos, erros, segurança, evolução e indicadores por disciplina."},{"id":"desempenho-regimentos","section":"Desempenho","title":"Regimentos e Processo Legislativo (RICD/PL/RCCN)","description":"Acompanhamento integrado do desempenho em Regimento Interno da Câmara dos Deputados (RICD), Processo Legislativo (PL) e Regimento Comum do Congresso Nacional (RCCN), com resultados de questões e evolução das revisões."},{"id":"desempenho-lpling","section":"Desempenho","title":"Língua Portuguesa e Linguística (LP/LING)","description":"Acompanhamento do desempenho em Língua Portuguesa e Linguística (LP/LING), com resultados de questões e evolução das revisões."},{"id":"desempenho-rfia","section":"Desempenho","title":"Reconhecimento de Fala, Transcrição e Inteligência Artificial (RFIA)","description":"Acompanhamento do desempenho em Reconhecimento de Fala, Transcrição e Inteligência Artificial (RFIA), com resultados de questões e evolução das revisões."},{"id":"desempenho-cp","section":"Desempenho","title":"Ciência Política (CP)","description":"Acompanhamento do desempenho em Ciência Política (CP), com resultados de questões e evolução das revisões."},{"id":"desempenho-dc","section":"Desempenho","title":"Direito Constitucional (DC)","description":"Acompanhamento do desempenho em Direito Constitucional (DC), com resultados de questões e evolução das revisões."},{"id":"desempenho-da","section":"Desempenho","title":"Direito Administrativo (DA)","description":"Acompanhamento do desempenho em Direito Administrativo (DA), com resultados de questões e evolução das revisões."},{"id":"desempenho-adm","section":"Desempenho","title":"Administração Pública (AP)","description":"Acompanhamento do desempenho em Administração Pública (AP), com resultados de questões e evolução das revisões."},{"id":"desempenho-ti","section":"Desempenho","title":"Tecnologia da Informação (TI)","description":"Acompanhamento do desempenho em Tecnologia da Informação (TI), com resultados de questões e evolução das revisões."},{"id":"estudos-complementacao","section":"Estudos","title":"Estudos Iniciais — Complementação (TEC)","description":"98 cadernos de RICD, PL, RCCN e LP/LING, acionados por gatilhos de Aprofundamento e com ciclos independentes."},{"id":"revisoes-complementacao","section":"Revisões","title":"Revisões — Complementação (TEC)","description":"D+1, D+7 e D+30 dos cadernos TEC, com questões não repetidas e progresso separado das revisões teóricas."},{"id":"revisoes-aprofundamento","section":"Revisões","title":"Revisões — Aprofundamento","description":"Revisões teóricas D+1, D+7 e D+30 e resultados ChatGPT."}];
 const workspaceById=Object.fromEntries(workspaceViews.map(v=>[v.id,v]));
 function showPage(view='principal', updateHash=true){
   showEntryForm='';
@@ -590,7 +593,7 @@ function stageForContact(contact){
  return direct?direct[1]:null;
 }
 function completeReviewFromContact(attempt){
- if(attempt.completionConfirmed===false)return false;
+ if(attempt.resetForRedo||attempt.completionConfirmed===false)return false;
  const stage=stageForContact(attempt.contact);
  if(!stage||!/^\d{4}-\d{2}-\d{2}$/.test(attempt.date||''))return false;
  let changed=false;
@@ -1915,7 +1918,7 @@ function personalizedPrompt(doc,unit,stage){
 }
 function openTopicBlock(unitId,stage='Estudo inicial'){
  const u=planById.get(unitId);
- if(!u||!['A','Q'].includes(u.flow))return;
+ if(!u||!['A','Q','C'].includes(u.flow))return;
  currentBlockUnit=u;currentBlockStage=blockStages.includes(stage)?stage:'Estudo inicial';currentBlockPrompt=null;
  renderTopicBlock();if(!g('blockViewer').open)g('blockViewer').showModal();
 }
@@ -1924,6 +1927,7 @@ function renderTopicBlock(){
  g('blockTitle').textContent=u.code+' — '+u.title;
  g('blockSubTitle').textContent=subjectLabel(u.subject)+' · '+(studyData.studies.some(x=>x.planId===u.id&&x.status==='Concluído')?'Estudo inicial concluído':'Estudo inicial planejado');
  g('blockTabs').innerHTML=blockStages.map(stage=>`<button type="button" role="tab" data-block-stage="${stage}" aria-selected="${stage===currentBlockStage}">${stage}</button>`).join('');
+ if(u.flow==='C'){renderComplementTopicBlock(u,currentBlockStage);return;}
  if(currentBlockPrompt){renderTopicPrompt();return}
  const files=pdfLinks.topics[u.id]||[];
  const shared=pdfLinks.sharedDocs?.[u.subject]||[];
@@ -1937,7 +1941,7 @@ function renderTopicBlock(){
  const docQuest=docs.find(d=>d.materia===(u.flow==='Q'?'Estudo – Questões':u.subject)&&d.categoria===(initial?'Questionário de estudo inicial':'Questionário de revisão'));
  const reviews=studyData.reviews.filter(r=>findTopicUnit(r.subject,r.topic)?.id===u.id&&r.stage===currentBlockStage);
  const reviewStatus=!initial?(reviews.length?'<p>Revisão registrada: '+escapeHtml(reviews.at(-1).status)+(reviews.at(-1).plannedDate?' · '+dateBR(reviews.at(-1).plannedDate):'')+'</p>':'<p>Revisão ainda não registrada. Acesse Revisões para registrar a realização.</p>'):'';
- g('blockContent').innerHTML=`<section class="block-section"><h3>1. Documentos-base</h3><p>Os arquivos vinculados a ${escapeHtml(u.code)} ficam disponíveis em todas as etapas. O Google Drive exige permissão de acesso.</p>${fileBody}${extraBody}</section><section class="block-section"><h3>2. ${escapeHtml(currentBlockStage)} · comandos personalizados</h3><p>O nome e o código deste bloco já estão preenchidos. Campos pedagógicos não informados permanecem identificados nos comandos-base.</p><div class="block-actions">${docStudy?`<button type="button" class="block-action" data-block-prompt="${docStudy.id}"><strong>📖 ${initial?'Comando de estudo inicial':'Comando da revisão '+currentBlockStage}</strong><span>Abrir, conferir e copiar o comando completo</span></button>`:''}${docQuest?`<button type="button" class="block-action" data-block-prompt="${docQuest.id}"><strong>▤ Questionário de avaliação</strong><span>Questionário correspondente à etapa, pronto para copiar</span></button>`:''}</div></section>${questionPdfBody}<section class="block-section"><h3>${nextQuestionPdf?'4':'3'}. Acompanhamento</h3><p>Os resultados permanecem vinculados a um único tópico na área Desempenho, com números separados de ChatGPT e TEC. As revisões têm controle próprio de execução.</p>${reviewStatus}</section>`;
+ g('blockContent').innerHTML=`<section class="block-section"><h3>1. Documentos-base</h3><p>Os arquivos vinculados a ${escapeHtml(u.code)} ficam disponíveis em todas as etapas. O Google Drive exige permissão de acesso.</p>${fileBody}${extraBody}</section><section class="block-section"><h3>2. ${escapeHtml(currentBlockStage)} · comandos personalizados</h3><p>O nome e o código deste bloco já estão preenchidos. Campos pedagógicos não informados permanecem identificados nos comandos-base.</p><div class="block-actions">${docStudy?`<button type="button" class="block-action" data-block-prompt="${docStudy.id}"><strong>📖 ${initial?'Comando de estudo inicial':'Comando da revisão '+currentBlockStage}</strong><span>Abrir, conferir e copiar o comando completo</span></button>`:''}${docQuest?`<button type="button" class="block-action" data-block-prompt="${docQuest.id}"><strong>▤ Questionário de avaliação</strong><span>Questionário correspondente à etapa, pronto para copiar</span></button>`:''}</div></section>${questionPdfBody}<section class="block-section"><h3>${nextQuestionPdf?'4':'3'}. Acompanhamento</h3><p>Os resultados do Aprofundamento pertencem às questões do ChatGPT; os do TEC são registrados separadamente nas unidades de Complementação. As revisões têm controle próprio de execução.</p>${reviewStatus}</section>`;
 }
 function renderTopicPrompt(){
  const d=docs.find(x=>x.id===currentBlockPrompt),u=currentBlockUnit;
@@ -2072,6 +2076,364 @@ g('themeBtn').addEventListener('click',toggleTheme);g('dashboardThemeBtn').addEv
 try{let theme=localStorage.getItem('cm-theme');if(theme)document.documentElement.setAttribute('data-theme',theme)}catch{}
 document.addEventListener('keydown',e=>{if(g('viewer').open){if(e.key==='ArrowLeft'&&e.altKey)openAdjacent(-1);if(e.key==='ArrowRight'&&e.altKey)openAdjacent(1)}});
 window.addEventListener('hashchange',()=>{const match=location.hash.match(/^#comando-(\d+)$/);if(match){openDoc(Number(match[1]),false);return}const id=location.hash.replace(/^#/, '');if(!g('viewer').open)showPage((workspaceById[id]||id==='comandos')?id:'principal',false)});
+function complementSequence(){
+ const all=planUnits.filter(x=>x.flow==="A").slice().sort((a,b)=>a.order-b.order);
+ const C=planUnits.filter(x=>x.flow==="C");
+ const grouped=new Map();
+ for(const u of C){if(!grouped.has(u.afterCode))grouped.set(u.afterCode,[]);grouped.get(u.afterCode).push(u);}
+ for(const arr of grouped.values())arr.sort((a,b)=>a.order-b.order);
+ const result=[],seen=new Set();
+ const append=u=>{if(seen.has(u.id))return;seen.add(u.id);result.push(u);for(const child of grouped.get(u.code)||[])append(child);};
+ for(const a of all)append(a);
+ if(result.length!==all.length+C.length)throw Error("Gatilhos de sequência inválidos: "+(all.length+C.length-result.length));
+ return result;
+}
+
+function completionOf(unit){
+ const matches=studyData.studies.filter(x=>x.planId===unit.id&&x.status==="Concluído"&&!x.resetForRedo);
+ if(!matches.length)return null;
+ return matches.slice().sort((a,b)=>String(a.date||"9999").localeCompare(String(b.date||"9999")))[0];
+}
+
+function nextValidStudyDate(day){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(day||""))return null;
+ let t=day;
+ for(let i=0;i<8;i++){
+  t=shiftAgendaDate(t,1);
+  const dow=new Date(t+"T12:00:00Z").getUTCDay();
+  if(dow!==6)return t; // Domingo (0) é dia regular; sábado (6) não foi definido como dia de estudo.
+ }
+ return null;
+}
+
+function complementGate(u){
+ if(!u||u.flow!=="C")return null;
+ const existing=studyData.studies.filter(x=>x.planId===u.id&&!x.resetForRedo);
+ const finished=existing.find(x=>x.status==="Concluído"),progress=existing.find(x=>x.status==="Em andamento");
+ const requirements=(u.triggerCodes||[]).map(code=>{
+  const source=planUnits.find(x=>x.flow==="A"&&x.code===code);
+  return {code,source,completion:source?completionOf(source):null};
+ });
+ const ready=requirements.length>0&&requirements.every(x=>Boolean(x.completion));
+ const dates=requirements.map(x=>x.completion?.date).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x||""));
+ const releasedAt=ready&&dates.length===requirements.length?dates.sort().at(-1):null;
+ const scheduled=ready?(existing.find(x=>x.plannedDate)?.plannedDate||nextValidStudyDate(releasedAt)):null;
+ const status=finished?"Concluído":progress?"Em andamento":ready?"Liberado":"Bloqueado";
+ return {status,ready,releasedAt,scheduled,requirements,record:finished||progress||null};
+}
+
+function complementMetrics(u){
+ const attempts=studyData.attempts.filter(a=>!a.resetForRedo&&a.planId===u.id&&a.source==="TEC");
+ const counts=blankCounts();
+ const stages={};
+ const idSet=new Set();
+ for(const at of attempts){
+  const stage=at.stage||"Estudo inicial";
+  if(!stages[stage])stages[stage]={...blankCounts(),sessions:0};
+  stages[stage].sessions++;
+  for(const k of RESULT_KEYS){counts[k]+=safeNum(at[k]);stages[stage][k]+=safeNum(at[k]);}
+  for(const id of at.questionIds||[])idSet.add(String(id));
+ }
+ const answered=counted(counts);
+ return {attempts,counts,stages,answered,ids:idSet,remaining:Number.isFinite(u.availableQuestions)?Math.max(0,u.availableQuestions-answered):null,percent:Number.isFinite(u.availableQuestions)&&u.availableQuestions>0?Math.min(1,answered/u.availableQuestions):null};
+}
+
+function planOverlays(){
+ const map=new Map();
+ for(const x of studyData.studies)if(x.planId&&planById.has(x.planId)){
+  const old=map.get(x.planId);
+  if(!old||x.status==="Concluído"||old.status!=="Concluído")map.set(x.planId,x);
+ }
+ return map;
+}
+
+function planEntries(v){
+ const filter=v.id==="estudos-aprofundamento"?"A":v.id==="estudos-complementacao"?"C":v.id==="estudos-questoes"?"Q":null;
+ const seq=complementSequence(), all=filter==="Q"?planUnits.filter(x=>x.flow==="Q").sort((a,b)=>a.order-b.order):filter?seq.filter(x=>x.flow===filter):[...seq,...planUnits.filter(x=>x.flow==="Q").sort((a,b)=>a.order-b.order)];
+ const overrides=planOverlays();
+ return all.map((u,ix)=>{
+  const record=overrides.get(u.id),gate=u.flow==="C"?complementGate(u):null;
+  return {...u,displayOrder:ix+1,status:record?.status==="Concluído"?"Concluído":"Planejado",
+    date:record?.status==="Concluído"?record.date||"":"",durationMinutes:record?.durationMinutes,
+    complementState:gate?.status,gate,scheduledDate:gate?.scheduled||null};
+ });
+}
+
+function filteredPlans(v){
+ const wanted=viewFilters[v.id]||"Planejados",search=(planQueries[v.id]||"").trim().toLocaleLowerCase("pt-BR"),subject=planSubjects[v.id]||"Todos";
+ return planEntries(v).filter(x=>statusStudy(x)===wanted&&(subject==="Todos"||x.subject===subject)&&(!search||[x.code,x.title,x.subject,subjectLabel(x.subject),String(x.displayOrder).padStart(3,"0")].some(z=>String(z).toLocaleLowerCase("pt-BR").includes(search))));
+}
+
+function getStudies(v){
+ if(v.id==="estudos-aprofundamento")return studyData.studies.filter(x=>x.activity==="Aprofundamento");
+ if(v.id==="estudos-complementacao")return studyData.studies.filter(x=>x.activity==="Complementação (TEC)");
+ if(v.id==="estudos-questoes")return studyData.studies.filter(x=>x.activity==="Questões");
+ return studyData.studies;
+}
+
+function findTopicUnit(subject,topic){
+ const match=String(topic||"").match(/(?:^|\b)(LP\/LING\/TEC|RICD\/TEC|RCCN\/TEC|PL\/TEC|CP\/TEC|LP\/LING|RICD|RCCN|PL|CP|RFIA|DA|DC|AP|TI)\s*0*(\d+)\b/i);
+ if(!match)return null;
+ const code=match[1].toUpperCase()+" "+Number(match[2]);
+ return planUnits.find(u=>u.subject===subject&&u.code.toUpperCase()===code)||null;
+}
+
+function nextLpQuestionsStage(){return null;}
+
+function currentLpQuestionsPdf(){return null;}
+
+function reviewInitialStudyFlow(review){
+ const st=studyData.studies.find(x=>x.id===review.studyId);
+ let u=planById.get(review.studyId)||planById.get(st?.planId);
+ if(!u)u=findTopicUnit(review.subject,review.topic);
+ if(u)return u.flow;
+ return st?.activity==="Complementação (TEC)"?"C":st?.activity==="Questões"?"Q":st?.activity==="Aprofundamento"?"A":null;
+}
+
+function planDisplayRow(x){
+ const done=x.status==="Concluído",c=x.flow==="C",g=c?(x.gate||complementGate(x)):null,m=c?complementMetrics(x):null;
+ const index=String(x.displayOrder||x.order).padStart(3,"0");
+ const detail=c?`Complementação (TEC) · ${g.status}${g.scheduled?" · Previsto: "+dateBR(g.scheduled):""} · ${Number.isFinite(x.availableQuestions)?x.availableQuestions+" questões previstas":"Quantidade individual não informada"}`:`${x.flow==="A"?"Aprofundamento":"Questões"} · ${done?"Concluído"+(x.date?" em "+dateBR(x.date):""):"Planejado"}`;
+ const extra=c?`<div class="study-pedagogical">Gatilho: ${escapeHtml((x.triggerCodes||[]).join(" + "))} · ${m.answered} resolvida(s)${m.remaining!==null?" · "+m.remaining+" restante(s)":""}${m.percent!==null?" · "+formatPercent(m.percent):""}</div>`:"";
+ const button=c?`<button type="button" class="block-access" data-open-topic="${escapeHtml(x.id)}" data-open-stage="Estudo inicial">◫ Abrir TEC</button>`:`<button type="button" class="block-access" data-open-topic="${escapeHtml(x.id)}" data-open-stage="Estudo inicial">◫ Abrir bloco</button><button type="button" class="${done?"smallbtn":"primary"}" data-plan-id="${escapeHtml(x.id)}" data-plan-done="${done?"0":"1"}">${done?"↶ Reabrir":"✓ Concluir"}</button>`;
+ return `<div class="plan-unit ${done?"done":""}"><div class="plan-unit-left"><div><span class="plan-unit-index">${index}.</span> <span class="plan-unit-code">${escapeHtml(x.code)}</span></div><div class="plan-unit-name">${escapeHtml(x.title)}</div><div class="plan-unit-meta">${escapeHtml(subjectLabel(x.subject))} · ${escapeHtml(detail)}</div>${extra}</div><div class="plan-unit-actions">${button}</div></div>`;
+}
+
+function setPlanDone(id,done){
+ const u=planById.get(id);if(!u)return;
+ if(u.flow==="C"){toast("Registre a etapa no bloco TEC para preservar as questões e as datas.");return;}
+ let current=studyData.studies.find(x=>x.planId===id);
+ if(done){
+  if(!current){current={id:freshId(),planId:id,subject:u.subject,topic:u.code+" — "+u.title,activity:u.flow==="A"?"Aprofundamento":"Questões",status:"Concluído",date:todayISO()};studyData.studies.push(current);}
+  else{current.status="Concluído";current.date=todayISO();delete current.resetForRedo;}
+  ensureScheduledReviews(current);
+ }else if(u.subject==="CP"&&(u.code==="CP 1"||u.code==="CP 2")){
+  if(current){current.status="Planejado";current.previousStudyDate=current.date;current.date="";current.resetForRedo=true;}
+ }else studyData.studies=studyData.studies.filter(x=>x.planId!==id);
+ writeData();renderWorkspace(workspaceById[activeView]);refreshOverview();toast(done?"Estudo concluído.":"Estudo reaberto.");
+}
+
+function statusReview(r){
+ if(r.resetForRedo)return "Reiniciada";
+ if(r.status==="Realizada")return "Realizadas";
+ if(r.status==="Pendente"||(r.plannedDate&&r.plannedDate<todayISO()))return "Pendentes";
+ return "Programadas";
+}
+
+function renderStudyGeneralPanels(){
+ const rows=["A","C","Q"].map(f=>{
+  const all=planUnits.filter(x=>x.flow===f),done=all.filter(x=>Boolean(completionOf(x))).length;
+  return {f,total:all.length,done,label:f==="A"?"Aprofundamento":f==="C"?"Complementação (TEC)":"Questões (DC/DA/AP/TI)"};
+ });
+ const sums=rows.map(x=>metricCard(x.label,x.done+"/"+x.total,formatPercent(x.total?x.done/x.total:0))).join("");
+ const subjects=["RICD","PL","RCCN","LP/LING","CP","RFIA","DC","DA","AP","TI"];
+ const body=subjects.map(sub=>{
+  const units=planUnits.filter(x=>x.subject===sub);
+  return `<tr><th scope="row">${escapeHtml(subjectLabel(sub))}</th><td>${units.filter(x=>x.flow==="A").length}</td><td>${units.filter(x=>x.flow==="C").length}</td><td>${units.filter(x=>x.flow==="Q").length}</td><td>${units.filter(x=>Boolean(completionOf(x))).length}/${units.length}</td></tr>`;
+ }).join("");
+ const C=planUnits.filter(x=>x.flow==="C");
+ const due=C.filter(x=>{const g=complementGate(x);return g.status==="Liberado"&&g.scheduled&&g.scheduled<=todayISO();});
+ return `<div class="weekly-kpi">${metricCard("Unidades totais",planUnits.length)}${sums}${metricCard("TEC liberados, não iniciados",C.filter(x=>complementGate(x).status==="Liberado").length)}${metricCard("TEC já agendados até hoje",due.length)}</div>`+
+ panel("Distribuição por disciplina","Todas as categorias contabilizadas uma única vez, com numerações originais preservadas.",`<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Disciplina</th><th>Aprof.</th><th>Compl. TEC</th><th>Questões</th><th>Concluídas/total</th></tr></thead><tbody>${body}</tbody></table></div>`)+
+ panel("Planejamento integrado","RICD/PL/RCCN: 131 teóricas + 28 TEC = 159. LP/LING: 100 teóricas + 70 TEC = 170. CP/TEC aguarda a relação de tópicos. Domingo integra o cronograma; não há metas semanais obrigatórias.",`<div class="sector-links"><button type="button" class="dash-link" data-jump-view="estudos-semanal">Percurso contínuo</button><button type="button" class="dash-link" data-jump-view="estudos-complementacao">Complementação (TEC)</button><button type="button" class="dash-link" data-jump-view="estudos-cronograma-dia">Agenda do dia</button></div>`);
+}
+
+function renderWeeklyWorkspace(){
+ const order=complementSequence();
+ const pending=order.filter(x=>!completionOf(x)),completed=order.filter(x=>completionOf(x));
+ const display=pending.slice(0,65);
+ const view=u=>{const g=u.flow==="C"?complementGate(u):null;return `<div class="weekly-topic"><div><strong>${escapeHtml(u.code)}</strong> <span>${escapeHtml(u.title)}</span><small>${u.flow==="C"?"Complementação (TEC) · "+escapeHtml(g.status):"Aprofundamento"}${g?.scheduled?" · "+dateBR(g.scheduled):""}</small></div><div class="weekly-actions"><button type="button" class="smallbtn" data-open-topic="${escapeHtml(u.id)}" data-open-stage="Estudo inicial">Abrir</button></div></div>`;};
+ return `<p class="daily-note">Percurso contínuo sem cotas semanais. Os cadernos TEC aparecem intercalados imediatamente após seus gatilhos; domingo é dia de estudo. A lista abaixo mostra os próximos 65 itens não concluídos, enquanto as listas de cada modalidade permitem consultar todos os registros.</p><div class="weekly-kpi">${metricCard("Teoria integrada",317)}${metricCard("Complementação (TEC)",98)}${metricCard("Percurso conjunto",415)}${metricCard("Tópicos do percurso concluídos",completed.length)}${metricCard("Próximas unidades",pending.length)}</div>`+
+ panel("Fila contínua — próximos itens",`${pending.length} unidade(s) não concluída(s). A etapa TEC só pode começar após liberação automática.`,`<div class="daily-topic-list">${display.map(view).join("")}</div>`)+
+ `<div class="sector-links"><button type="button" class="dash-link" data-jump-view="estudos-aprofundamento">Todas as unidades teóricas</button><button type="button" class="dash-link" data-jump-view="estudos-complementacao">Todos os cadernos TEC</button></div>`;
+}
+
+function renderDailyStudyWorkspace(){
+ const today=todayISO(),date=dailySelectedDate||today;
+ const sundayShift=new Date(date+"T12:00:00Z").getUTCDay();
+ const sunday=shiftAgendaDate(date,-sundayShift);
+ const days=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map((day,n)=>{
+  const dayDate=shiftAgendaDate(sunday,n);
+  const isStudy=n!==6;
+  return `<button type="button" data-daily-date="${dayDate}" aria-pressed="${dayDate===date}">${day} · ${dateBR(dayDate)}<small>${isStudy?"Dia de estudo":"Sem estudo regular"}</small></button>`;
+ }).join("");
+ const completed=planUnits.filter(u=>completionOf(u)).length;
+ const C=planUnits.filter(u=>u.flow==="C");
+ const scheduled=C.filter(u=>{const g=complementGate(u);return g.status==="Liberado"&&g.scheduled===date;});
+ const overdue=C.filter(u=>{const g=complementGate(u);return g.status==="Liberado"&&g.scheduled&&g.scheduled<date;});
+ const reviews=studyData.reviews.filter(r=>!r.resetForRedo&&(r.plannedDate===date||r.doneDate===date)).sort((a,b)=>String(a.stage).localeCompare(String(b.stage)));
+ const active=reviews.filter(r=>r.status==="Realizada").length;
+ const row=u=>{
+  const g=complementGate(u),m=complementMetrics(u);
+  return `<div class="weekly-topic"><div><strong>${escapeHtml(u.code)}</strong> <span>${escapeHtml(u.title)}</span><small>Gatilho: ${escapeHtml(u.triggerCodes.join(" + "))} · Liberação ${g.releasedAt?dateBR(g.releasedAt):"sem data"} · Prevista ${g.scheduled?dateBR(g.scheduled):"não determinada"} · ${m.answered} questões resolvidas</small></div><div class="weekly-actions"><button type="button" class="smallbtn" data-open-topic="${u.id}" data-open-stage="Estudo inicial">Abrir TEC</button></div></div>`;
+ };
+ const reviewRow=r=>{const u=findTopicUnit(r.subject,r.topic);return `<div class="daily-review-item"><div><strong>${escapeHtml(r.stage)}</strong><span>${escapeHtml(visibleTopicTitle(r.topic))}</span><small>${escapeHtml(subjectLabel(r.subject))} · ${escapeHtml(reviewInitialStudyFlow(r)==="C"?"Complementação (TEC)":reviewInitialStudyFlow(r)==="Q"?"Questões":"Aprofundamento")} · ${r.status==="Realizada"?"Realizada":"Prevista"} ${dateBR(r.plannedDate)}</small></div>${u?`<button type="button" class="smallbtn" data-open-topic="${u.id}" data-open-stage="${escapeHtml(r.stage)}">Abrir revisão</button>`:""}</div>`;};
+ const nextA=planUnits.filter(u=>u.flow==="A"&&!completionOf(u)).sort((a,b)=>a.order-b.order).slice(0,6);
+ const nextQ=planUnits.filter(u=>u.flow==="Q"&&!completionOf(u)).sort((a,b)=>a.order-b.order).slice(0,6);
+ const nextRow=u=>`<div class="weekly-topic"><div><strong>${escapeHtml(u.code)}</strong><span>${escapeHtml(u.title)}</span><small>${escapeHtml(subjectLabel(u.subject))}</small></div><button type="button" class="smallbtn" data-open-topic="${u.id}" data-open-stage="Estudo inicial">Abrir</button></div>`;
+ const timeInfo=dailyRegisteredStudyMinutes(date);
+ const allC=C.filter(u=>complementGate(u).status==="Liberado").length;
+ return `<div class="daily-controls"><label for="dailyDate">Data da agenda</label><button type="button" data-daily-step="-1">‹ Anterior</button><input id="dailyDate" type="date" value="${date}"><button type="button" data-daily-step="1">Próximo ›</button><button type="button" data-daily-date="${today}">Hoje</button></div><div class="daily-weekstrip">${days}</div><p class="daily-note">Domingo é dia regular de estudo. Após a conclusão do último gatilho, cada caderno TEC é programado para o dia válido subsequente. Sábado não é presumido como dia de estudo. Agendamento não equivale a realização; revisões seguem dias corridos.</p>`+
+ `<div class="weekly-kpi">${metricCard("TEC previstos neste dia",scheduled.length)}${metricCard("TEC liberados",allC)}${metricCard("TEC anteriores não iniciados",overdue.length)}${metricCard("Revisões na data",reviews.length)}${metricCard("Revisões realizadas",active)}${metricCard("Tempo líquido conhecido",timeInfo.known?clockMinutes(timeInfo.minutes):"N/I")}</div>`+
+ panel("Complementação (TEC) — prevista para a data","Unidades liberadas por conclusão do tópico de Aprofundamento; a execução não é automática.",scheduled.length?scheduled.map(row).join(""):'<div class="emptytable">Nenhuma Complementação programada nesta data.</div>')+
+ (overdue.length?panel("Complementações TEC liberadas em datas anteriores","Permanece pendente a execução, sem alterar a data original de liberação.",overdue.map(row).join("")):"")+
+ panel("Revisões D+1/D+7/D+30 — da data",`${reviews.length} registrada(s), com ciclos de Aprofundamento, Complementação (TEC) e Questões independentes.`,reviews.length?reviews.map(reviewRow).join(""):'<div class="emptytable">Nenhuma revisão nesta data.</div>')+
+ panel("Próximas unidades — Aprofundamento","Fila orientativa contínua, não meta obrigatória da data.",nextA.map(nextRow).join(""))+
+ panel("Próximas unidades — Questões (DC/DA/AP/TI)","Fila autônoma, sem cotas semanais obrigatórias.",nextQ.map(nextRow).join(""));
+}
+
+function renderReviewGeneralPanels(){
+ const reviews=studyData.reviews.filter(r=>!r.resetForRedo);
+ const rows=["D+1","D+7","D+30"].map(stage=>{
+  const r=reviews.filter(x=>x.stage===stage);
+  return `<tr><th>${stage}</th><td>${r.length}</td><td>${r.filter(x=>x.status==="Realizada").length}</td><td>${r.filter(x=>statusReview(x)==="Programadas").length}</td><td>${r.filter(x=>statusReview(x)==="Pendentes").length}</td></tr>`;
+ }).join("");
+ return `<div class="weekly-kpi">${metricCard("Revisões válidas",reviews.length)}${metricCard("Realizadas",reviews.filter(x=>x.status==="Realizada").length)}${metricCard("Programadas",reviews.filter(x=>statusReview(x)==="Programadas").length)}${metricCard("Pendentes",reviews.filter(x=>statusReview(x)==="Pendentes").length)}</div>`+panel("Ciclos D+1/D+7/D+30","Os vencimentos são calculados em dias corridos a partir do estudo inicial efetivo; históricos reiniciados de CP 1/2 não são computados.",`<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Etapa</th><th>Total</th><th>Realizadas</th><th>Programadas</th><th>Atrasadas</th></tr></thead><tbody>${rows}</tbody></table></div>`);
+}
+
+function renderWorkspace(v){
+ const esc=escapeHtml;let body="";
+ if(v.section==="Estudos"){
+  body=v.id==="estudos-semanal"?renderWeeklyWorkspace():v.id==="estudos-cronograma-dia"?renderDailyStudyWorkspace():v.id==="estudos-geral"?renderStudyGeneralPanels()+renderStudyWorkspace(v):renderStudyWorkspace(v);
+ }else if(v.section==="Revisões"){
+  const stage=v.id==="revisoes-d1"?"D+1":v.id==="revisoes-d7"?"D+7":v.id==="revisoes-d30"?"D+30":null;
+  const flow=v.id==="revisoes-complementacao"?"C":v.id==="revisoes-aprofundamento"?"A":null;
+  const all=studyData.reviews.filter(x=>!x.resetForRedo&&(!stage||x.stage===stage)&&(!flow||reviewInitialStudyFlow(x)===flow)&&(v.id!=="revisoes-dia"||x.plannedDate===todayISO()||x.doneDate===todayISO()));
+  const counts=["Programadas","Realizadas","Pendentes"].map(label=>all.filter(x=>statusReview(x)===label).length);
+  const choice=viewFilters[v.id]||"Programadas",shown=all.filter(x=>statusReview(x)===choice).slice().reverse();
+  body=(v.id==="revisoes-geral"?renderReviewGeneralPanels():"")+`<div class="workspace-metrics">${metricCard("Programadas",counts[0])}${metricCard("Realizadas",counts[1])}${metricCard("Pendentes",counts[2])}</div>${choiceBar(v.id,["Programadas","Realizadas","Pendentes"])}${actionsHtml("review")}${entryForm("review",v)}${panel((stage||v.title)+" · "+choice,"Revisões separadas por modalidade, em dias corridos.",listFor(shown,"review"))}`;
+ }else{
+  const rawAttempts=subsetByView(v,studyData.attempts).filter(x=>!x.resetForRedo);
+  const allAttempts=topicResults(rawAttempts),m=metricsAttempt(rawAttempts),has=m.all>0;
+  const metrics=[["Questões respondidas",has?formatNum(m.all):"—"],["Acertos totais",has?formatNum(m.correct):"—"],["Erros totais",has?formatNum(m.all-m.correct):"—"],["Acertos seguros",has?formatNum(m.cs):"—"],["Acertos inseguros",has?formatNum(m.cu):"—"],["Erros seguros",has?formatNum(m.ws):"—"],["Erros inseguros",has?formatNum(m.wu):"—"],["Aproveitamento geral",formatPercent(m.overall)],["Insegurança declarada",formatPercent(m.all?(m.cu+m.wu)/m.all:null)],["Tópicos com resultados",allAttempts.length]];
+  const f=viewFilters[v.id]||"Todos",shown=allAttempts.filter(x=>f==="Todos"||(f==="Pontos fortes"?domainCategory(x)==="Forte":domainCategory(x)==="Fraco")).slice().reverse();
+  body=(v.id==="desempenho-geral"?renderPerformanceGeneralPanels():"")+`<div class="workspace-metrics performance-metrics">${metrics.map(([a,b])=>metricCard(a,b)).join("")}</div><p class="statusnote">Questões ChatGPT e TEC são acompanhadas separadamente. Dados reiniciados de CP 1 e CP 2 foram excluídos do aproveitamento, mantendo os minutos históricos.</p>${panel("Resultados por plataforma","Acertos e erros seguros/inseguros, sem duplicar modalidades.",platformTable(m))}${actionsHtml("attempt")}${entryForm("attempt",v)}${choiceBar(v.id,["Todos","Pontos fortes","Pontos fracos"])}${panel("Resultados por tópico · "+f,"Dados das sessões efetivamente informadas.",listFor(shown,"attempt"))}`;
+ }
+ const note='<p class="workspace-note">Dados de execução ficam salvos neste navegador. O site não sincroniza automaticamente com outros aparelhos, ChatGPT ou TEC. Exporte e importe o histórico para mantê-lo seguro.</p>';
+ g("workspacePage").innerHTML=`<div class="workspace-eyebrow">${esc(v.section)} / ${esc(v.title)}</div><h1 id="workspaceTitle">${esc(v.title)}</h1><p class="workspace-summary">${esc(v.description)}</p>${body}${note}`;
+ if(v.section==="Estudos"&&!["estudos-semanal","estudos-cronograma-dia"].includes(v.id))refreshPlanList(v);
+}
+
+function refreshOverview(){
+ const root=g("dashboardRoot");if(!root)return;
+ const A=planUnits.filter(x=>x.flow==="A"),C=planUnits.filter(x=>x.flow==="C"),Q=planUnits.filter(x=>x.flow==="Q");
+ const done=list=>list.filter(x=>completionOf(x)).length;
+ const due=C.filter(x=>{const g=complementGate(x);return g.status==="Liberado"&&g.scheduled&&g.scheduled<=todayISO();});
+ const revisions=studyData.reviews.filter(x=>!x.resetForRedo);
+ const metrics=metricsAttempt(studyData.attempts.filter(a=>!a.resetForRedo));
+ const first=complementSequence().find(x=>!completionOf(x));
+ const today=todayISO();
+ const nav=(id,name)=>`<button type="button" class="dash-link" data-dashboard-view="${id}">${escapeHtml(name)}</button>`;
+ root.innerHTML=`<div class="dash-kpis">${metricCard("Unidades cadastradas",planUnits.length)}${metricCard("Aprofundamento",done(A)+"/"+A.length)}${metricCard("Complementação (TEC)",done(C)+"/"+C.length)}${metricCard("Questões (DC/DA/AP/TI)",done(Q)+"/"+Q.length)}${metricCard("Questões respondidas",formatNum(metrics.all))}${metricCard("Aproveitamento",formatPercent(metrics.overall))}</div>`+
+ panel("Próxima unidade na sequência",first?`${first.code} — ${first.title}`:"Percurso teórico e TEC concluído.",`<div class="sector-links">${nav("estudos-semanal","Percurso integrado")}${nav("estudos-aprofundamento","Aprofundamento")}${nav("estudos-complementacao","Complementação (TEC)")}</div>`)+
+ panel("Complementações e revisões","Cadernos TEC liberados são incluídos no dia válido subsequente ao gatilho, inclusive domingo. Revisões calculadas em dias corridos.",`<div class="weekly-kpi">${metricCard("TEC liberados",C.filter(x=>complementGate(x).status==="Liberado").length)}${metricCard("TEC previstos até hoje",due.length)}${metricCard("Revisões previstas para hoje",revisions.filter(x=>x.plannedDate===today&&x.status!=="Realizada").length)}${metricCard("Revisões atrasadas",revisions.filter(x=>statusReview(x)==="Pendentes").length)}</div><div class="sector-links">${nav("estudos-cronograma-dia","Agenda diária")}${nav("revisoes-geral","Revisões")}${nav("desempenho-geral","Desempenho")}</div>`)+
+ renderCumulativeStudyTime();
+}
+
+function renderComplementTopicBlock(u,stage){
+ const gate=complementGate(u),m=complementMetrics(u);
+ const comp=studyData.studies.filter(x=>x.planId===u.id&&x.status==="Concluído").at(-1);
+ const link=u.tecUrl?`<a href="${escapeHtml(u.tecUrl)}" target="_blank" rel="noopener noreferrer">Abrir filtro no TEC Concursos ↗</a>`:"Link individual ainda não informado; identifique o filtro diretamente no TEC antes de registrar as questões.";
+ const report=["Estudo inicial","D+1","D+7","D+30"].map(k=>{const b=m.stages[k],qty=b?counted(b):0;return `<tr><th>${k}</th><td>${qty}</td><td>${b?b.sessions:0}</td></tr>`;}).join("");
+ const review=stage==="Estudo inicial"?null:studyData.reviews.find(x=>x.studyId===comp?.id&&x.stage===stage&&!x.resetForRedo);
+ const permit=gate.ready||gate.status==="Concluído"||gate.status==="Em andamento";
+ const reason=!permit?"Esta unidade só será liberada após a conclusão de todos os tópicos-gatilho.":"";
+ const form=permit?`<form id="tecActivityForm" data-tec-unit-id="${escapeHtml(u.id)}" data-tec-stage="${escapeHtml(stage)}"><div class="formgrid"><label>Data efetiva<input type="date" name="date" value="${todayISO()}" required></label><label>Tempo líquido (minutos)<input name="duration" type="number" min="0" step="1" placeholder="Se conhecido"></label><label>Acertos seguros<input name="cs" type="number" min="0" step="1" value="0" required></label><label>Acertos inseguros<input name="cu" type="number" min="0" step="1" value="0" required></label><label>Erros seguros<input name="ws" type="number" min="0" step="1" value="0" required></label><label>Erros inseguros<input name="wu" type="number" min="0" step="1" value="0" required></label><label>IDs das questões resolvidas (opcional)<textarea name="questionIds" rows="2" placeholder="Separar por vírgula ou espaço; usados para evitar duplicidade"></textarea></label><label>Autoavaliação<select name="domain"><option value="Não avaliado">Não avaliado</option><option>Seguro</option><option>Parcial</option><option>Fraco</option></select></label><label>Observações e dificuldades<textarea name="notes" rows="2"></textarea></label></div><label><input type="checkbox" name="noNewQuestions"> Não havia questões inéditas disponíveis nesta etapa (somente revisões)</label><label><input type="checkbox" name="finish" checked> Etapa concluída (desmarcar para sessão parcial)</label><div class="formfooter"><button type="submit" class="primary">Registrar sessão TEC</button></div></form>`:`<p>${reason}</p>`;
+ const qq=docs.find(d=>d.materia==="Complementação (TEC)"&&d.categoria===(stage==="Estudo inicial"?"Questionário de estudo inicial":"Questionário de revisão"));
+ g("blockSubTitle").textContent=subjectLabel(u.subject)+" · Complementação (TEC) · "+gate.status;
+ g("blockContent").innerHTML=`<section class="block-section"><h3>1. Gatilho e liberação</h3><p>Pré-requisitos: ${escapeHtml(u.triggerCodes.join(" + "))}. Situação: <strong>${gate.status}</strong>. Liberação: ${gate.releasedAt?dateBR(gate.releasedAt):"aguardando conclusão"}. Primeiro dia de estudo previsto: ${gate.scheduled?dateBR(gate.scheduled):"não determinado"}.</p><p>As revisões são próprias deste caderno, contadas da data efetiva do estudo inicial.</p></section><section class="block-section"><h3>2. Caderno do TEC</h3><p><strong>${escapeHtml(u.code)} — ${escapeHtml(u.title)}</strong></p><p>${link}</p><p>Questões disponíveis: ${Number.isFinite(u.availableQuestions)?u.availableQuestions:"quantidade individual a conferir"} · Resolvidas: ${m.answered} · Restantes: ${m.remaining===null?"não aferível":m.remaining} · Conclusão: ${m.percent===null?"não aferível":formatPercent(m.percent)}</p>${u.notes?`<p>${escapeHtml(u.notes)}</p>`:""}<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Etapa</th><th>Questões registradas</th><th>Sessões</th></tr></thead><tbody>${report}</tbody></table></div></section><section class="block-section"><h3>3. ${escapeHtml(stage)} — registro da sessão</h3>${stage!=="Estudo inicial"&&!comp?'<p>Finalize primeiro o estudo inicial TEC para iniciar as revisões.</p>':stage!=="Estudo inicial"?`<p>Revisão prevista: ${dateBR(review?.plannedDate||shiftReviewDate(comp.date,{"D+1":1,"D+7":7,"D+30":30}[stage]))} · ${review?.status||"Programada"}</p>`:""}${stage!=="Estudo inicial"&&!comp?"":form}</section><section class="block-section"><h3>4. Questionário e registro pedagógico</h3><p>Registro de datas, tempo, acertos seguros/inseguros, erros, dificuldades e autoavaliação, exclusivamente TEC, sem PDFs obrigatórios.</p>${qq?`<button type="button" class="block-action" data-block-prompt="${qq.id}">▤ Abrir questionário de ${escapeHtml(stage)}</button>`:""}</section>`;
+}
+
+function installComplementationEvents(){
+ document.addEventListener("submit",event=>{
+  const form=event.target;if(!form||form.id!=="tecActivityForm")return;
+  event.preventDefault();
+  const u=planById.get(form.dataset.tecUnitId),stage=form.dataset.tecStage;
+  if(!u||u.flow!=="C"||!blockStages.includes(stage))return;
+  const gate=complementGate(u);if(!gate.ready){toast("Aguardando conclusão do tópico-gatilho.");return;}
+  const fd=new FormData(form),date=String(fd.get("date")||"");
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){toast("Informe a data efetiva.");return;}
+  const qty={};
+  for(const k of ["cs","cu","ws","wu"]){const n=Number(fd.get(k));if(!Number.isSafeInteger(n)||n<0){toast("Informe contagens válidas.");return;}qty[k]=n;}
+  const n=Object.values(qty).reduce((a,b)=>a+b,0);
+  const noNew=fd.get("noNewQuestions")==="on",finish=fd.get("finish")==="on";
+  if(!n&&!noNew){toast("Informe questões resolvidas ou marque ausência de itens inéditos.");return;}
+  if(stage==="Estudo inicial"&&!n){toast("O estudo inicial TEC precisa conter questões efetivamente resolvidas.");return;}
+  const rawIds=String(fd.get("questionIds")||"").trim();
+  const ids=rawIds?rawIds.split(/[\s,;\n]+/).filter(Boolean):[];
+  if(new Set(ids).size!==ids.length){toast("IDs repetidos na mesma sessão.");return;}
+  if(ids.length>n){toast("Há mais IDs informados que questões resolvidas.");return;}
+  const allIds=new Set(studyData.attempts.filter(a=>a.source==="TEC"&&!a.resetForRedo).flatMap(a=>a.questionIds||[]));
+  if(ids.some(id=>allIds.has(id))){toast("Identificador já registrado em outra sessão; evite duplicidade.");return;}
+  const metrics=complementMetrics(u);
+  if(Number.isFinite(u.availableQuestions)&&metrics.answered+n>u.availableQuestions){toast("Quantidade acima do total do caderno; confira a possível sobreposição.");return;}
+  const durationRaw=String(fd.get("duration")||"").trim(),duration=durationRaw===""?undefined:Number(durationRaw);
+  if(duration!==undefined&&(!Number.isSafeInteger(duration)||duration<0)){toast("Tempo líquido inválido.");return;}
+  const domain=String(fd.get("domain")||"Não avaliado"),notes=String(fd.get("notes")||"");
+  let study=studyData.studies.find(x=>x.planId===u.id&&!x.resetForRedo);
+  if(stage==="Estudo inicial"){
+   if(!study){study={id:freshId(),planId:u.id,subject:u.subject,topic:u.code+" — "+u.title,activity:"Complementação (TEC)",date:date,status:finish?"Concluído":"Em andamento"};studyData.studies.push(study);}
+   else{study.status=finish?"Concluído":"Em andamento";if(!study.date)study.date=date;}
+   if(finish)ensureScheduledReviews(study);
+  }else{
+   if(!study||study.status!=="Concluído"){toast("Conclua o estudo inicial TEC antes desta revisão.");return;}
+   let rev=studyData.reviews.find(r=>r.studyId===study.id&&r.stage===stage&&!r.resetForRedo);
+   if(!rev){rev={id:freshId(),studyId:study.id,subject:u.subject,topic:study.topic,stage,plannedDate:shiftReviewDate(study.date,{"D+1":1,"D+7":7,"D+30":30}[stage]),status:"Programada"};studyData.reviews.push(rev);}
+   if(finish){rev.status="Realizada";rev.doneDate=date;}
+  }
+  studyData.attempts.push({id:freshId(),planId:u.id,studyId:study.id,subject:u.subject,topic:u.code+" — "+u.title,source:"TEC",stage,contact:stage,date,cs:qty.cs,cu:qty.cu,ws:qty.ws,wu:qty.wu,correctOther:0,wrongOther:0,questionIds:ids,notes,domain,durationMinutes:duration,completionConfirmed:finish,activity:"Complementação (TEC)"});
+  writeData();renderTopicBlock();refreshOverview();toast("Sessão TEC registrada com sucesso.");
+ });
+}
+
+function applyCentralMigrationOnce(){
+ const KEY="central-estudos-complementacao-cp-redo-20261104-v1";
+ try{if(localStorage.getItem(KEY)==="1")return;}catch(e){}
+ let changed=false;
+ for(const type of ["studies","attempts","reviews","classifications"]){
+  for(const row of studyData[type]){
+   if(row.subject!=="LP/LING")continue;
+   const label=String(row.topic||"");
+   let newNum=null;
+   const oldPT=label.match(/^LP\/TEC\s*0*(\d+)\b/i),oldLing=label.match(/^LP\/LING\s*0*(10[1-9]|11[0-4])\b/i);
+   const ptNumbers=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,19,20,21,22,24,25,26,27,28,29,30,31,32,33,34,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,55,56,57,64,65,70];
+   const lingNumbers=[18,23,35,54,58,59,60,61,62,63,66,67,68,69];
+   if(oldPT&&Number(oldPT[1])>=1&&Number(oldPT[1])<=56)newNum=ptNumbers[Number(oldPT[1])-1];
+   if(oldLing)newNum=lingNumbers[Number(oldLing[1])-101];
+   if(!newNum)continue;
+   const newUnit=planUnits.find(u=>u.code===`LP/LING/TEC ${newNum}`);
+   if(!newUnit)continue;
+   row.topic=newUnit.code+" — "+newUnit.title;
+   if(type==="studies"){row.planId=newUnit.id;row.activity="Complementação (TEC)";}
+   if(type==="attempts")row.planId=newUnit.id;
+   changed=true;
+  }
+ }
+ const cpPlans=new Set(["A-006","A-016"]);
+ for(const study of studyData.studies){
+  const unit=planById.get(study.planId)||findTopicUnit(study.subject,study.topic);
+  if(study.subject!=="CP"||!unit||!cpPlans.has(unit.id))continue;
+  study.previousStudyDate=study.date||study.previousStudyDate||"";
+  study.date="";study.status="Planejado";study.resetForRedo=true;changed=true;
+ }
+ for(const attempt of studyData.attempts){
+  const unit=planById.get(attempt.planId)||findTopicUnit(attempt.subject,attempt.topic);
+  if(attempt.subject!=="CP"||!unit||!cpPlans.has(unit.id))continue;
+  attempt.preResetResult={cs:attempt.cs,cu:attempt.cu,ws:attempt.ws,wu:attempt.wu,date:attempt.date};
+  for(const k of RESULT_KEYS)attempt[k]=0;
+  if(attempt.platforms&&typeof attempt.platforms==="object")for(const p of Object.values(attempt.platforms))for(const k of RESULT_KEYS)p[k]=0;
+  attempt.resetForRedo=true;changed=true;
+ }
+ for(const review of studyData.reviews){
+  const unit=findTopicUnit(review.subject,review.topic);
+  if(review.subject!=="CP"||!unit||!cpPlans.has(unit.id))continue;
+  review.previousStatus=review.status;review.status="Reiniciada";review.resetForRedo=true;changed=true;
+ }
+ if(changed)writeData();
+ try{localStorage.setItem(KEY,"1");}catch(e){}
+}
+applyCentralMigrationOnce();
+installComplementationEvents();
 draw();refreshOverview();setActiveNav(null);const hash=location.hash.replace(/^#/,'');const match=location.hash.match(/^#comando-(\d+)$/);if(match)openDoc(Number(match[1]),false);else if(workspaceById[hash]||hash==='comandos')showPage(hash,false);
 })();
 </script>
