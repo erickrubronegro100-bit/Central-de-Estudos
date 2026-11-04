@@ -196,7 +196,7 @@ dialog.viewer{position:fixed;inset:0 0 0 auto;max-height:none;height:100vh;max-w
 .weekly-header{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
 .weekly-header h2{margin:0 0 5px;font-size:18px;letter-spacing:-.3px}
 .weekly-header p{margin:0;color:var(--muted);font-size:12px}
-.weekly-compact{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin-top:16px}
+.weekly-compact{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin-top:16px}
 .weekly-line{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px}
 .weekly-line strong{font-weight:670}.weekly-line span{white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums}
 .weekly-track{width:100%;height:9px;border-radius:100px;background:var(--accent-soft);overflow:hidden;margin-top:8px}
@@ -1386,11 +1386,14 @@ function weeklySnapshot(){
  '<div class="weekly-meta"><span>Acumulado: <strong>'+formatNum(data.totalDone)+'/550 · '+formatPercent(data.totalPct)+'</strong></span><span>Pendências anteriores: <strong>'+formatNum(data.backlog.length)+'</strong></span><span>Saldo operacional: <strong>'+formatNum(data.remaining)+'</strong></span><span>Adiantamentos futuros: <strong>'+formatNum(data.ahead.length)+'</strong></span></div></section>';
 }
 function weekListRow(u,data){
- const record=data.completed.get(u.id);
- const done=Boolean(record);
- const assigned=studyWeeks[weeklyUnitIndex.get(u.id)];
- const timing=done?(record.date&&record.date<assigned.start?' · adiantado':record.date&&record.date>assigned.end?' · concluído em atraso':''):'';
- return '<div class="weekly-topic '+(done?'weekly-topic-done':'')+'"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span><small>'+escapeHtml(subjectLabel(u.subject))+' · '+(done?'Concluído'+(record.date?' em '+dateBR(record.date):'')+timing:'Pendente')+'</small></div><div class="weekly-actions"><button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="Estudo inicial">Abrir bloco</button><button type="button" class="smallbtn" data-plan-id="'+escapeHtml(u.id)+'" data-plan-done="'+(done?'0':'1')+'">'+(done?'↶ Reabrir':'✓ Concluir')+'</button></div></div>';
+ const record=data.completed.get(u.id),done=Boolean(record);
+ const assigned=u.flow==='C'?data.weeks.find(w=>w.complements.some(c=>c.id===u.id)):studyWeeks[weeklyUnitIndex.get(u.id)];
+ const timing=done&&assigned?(record.date&&record.date<assigned.start?' · adiantado':record.date&&record.date>assigned.end?' · concluído em atraso':''):'';
+ const gate=u.flow==='C'?complementGate(u):null;
+ const status=done?'Concluído'+(record.date?' em '+dateBR(record.date):'')+timing:u.flow==='C'?'Liberado · '+(gate?.scheduled?'programado para '+dateBR(gate.scheduled):'aguardando programação'):'Pendente';
+ const action=u.flow==='C'?'<button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="Estudo inicial">Abrir TEC</button>':
+ '<button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="Estudo inicial">Abrir bloco</button><button type="button" class="smallbtn" data-plan-id="'+escapeHtml(u.id)+'" data-plan-done="'+(done?'0':'1')+'">'+(done?'↶ Reabrir':'✓ Concluir')+'</button>';
+ return '<div class="weekly-topic '+(done?'weekly-topic-done':'')+'"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span><small>'+escapeHtml(subjectLabel(u.subject))+' · '+status+'</small></div><div class="weekly-actions">'+action+'</div></div>';
 }
 function weeklySelectedDetails(data,w){
  const done=data.completed;
@@ -2659,45 +2662,60 @@ function centralProgressCards(day=todayISO()){
 }
 function weeklySnapshot(){
  const d=weeklyStudyState(),w=d.active,pause=d.position.phase==='Pausa de estudos';
- const historical=w.index<=1;
- const goalA=historical?w.idealA:w.quotaA,goalQ=historical?w.idealQ:w.quotaQ;
- const before=d.weeks.slice(0,w.index),actualA=before.reduce((a,x)=>a+x.doneA,0)+w.doneA,actualQ=before.reduce((a,x)=>a+x.doneQ,0)+w.doneQ;
- const idealA=before.reduce((a,x)=>a+x.idealA,0)+w.idealA,idealQ=before.reduce((a,x)=>a+x.idealQ,0)+w.idealQ;
- return '<section class="weekly-panel"><div class="weekly-header"><div><h2>'+(pause?'Pausa · próxima meta: ':'Semana ')+w.number+' · '+weekRange(w)+'</h2><p>'+(historical?'Meta proporcional histórica':'Programação operacional futura')+' · '+(pause?'Nenhum estudo novo de 22 a 27/11. ':'')+'Aprofundamento e Questões</p></div><button type="button" class="dash-link" data-jump-view="estudos-semanal">Metas Semanais</button></div>'+
- '<div class="weekly-compact">'+weeklyProgress('TOTAL · '+(historical?'META IDEAL':'META PROGRAMADA'),w.done,goalA+goalQ)+weeklyProgress('APROFUNDAMENTO',w.doneA,goalA)+weeklyProgress('QUESTÕES',w.doneQ,goalQ)+'</div>'+
- '<div class="weekly-meta"><span>Histórico acumulado (semanas iniciadas): <strong>'+formatNum(actualA+actualQ)+' realizados</strong></span><span>Referência proporcional: <strong>'+formatNum(idealA+idealQ)+' esperados</strong></span><span>Diferença: <strong>'+(actualA+actualQ-idealA-idealQ>0?'+':'')+formatNum(actualA+actualQ-idealA-idealQ)+'</strong></span><span>Estudos pendentes de semanas anteriores: <strong>'+formatNum(d.backlog.length)+'</strong></span></div></section>';
+ const before=d.weeks.slice(0,w.index),historical=w.index<=1;
+ const actualA=before.reduce((n,x)=>n+x.doneA,0)+w.doneA;
+ const actualQ=before.reduce((n,x)=>n+x.doneQ,0)+w.doneQ;
+ const idealA=before.reduce((n,x)=>n+x.idealA,0)+w.idealA;
+ const idealQ=before.reduce((n,x)=>n+x.idealQ,0)+w.idealQ;
+ return '<section class="weekly-panel"><div class="weekly-header"><div><h2>'+(pause?'Pausa · próxima meta: ':'Semana ')+w.number+' · '+weekRange(w)+'</h2><p>Metas atribuídas à semana · Complementação (TEC) por liberação</p></div><button type="button" class="dash-link" data-jump-view="estudos-semanal">Metas Semanais</button></div>'+
+ '<div class="weekly-compact">'+
+ weeklyProgress('TOTAL DA SEMANA',w.totalDoneWeek,w.quotaTotal)+
+ weeklyProgress('APROFUNDAMENTO',w.doneA,w.quotaA)+
+ weeklyProgress('QUESTÕES',w.doneQ,w.quotaQ)+
+ weeklyProgress('COMPLEMENTAÇÃO (TEC)',w.doneC,w.quotaC)+'</div>'+
+ '<div class="weekly-meta"><span>Referência ideal A/Q acumulada: <strong>'+formatNum(idealA+idealQ)+' unidades</strong></span><span>Realizadas A/Q nas semanas: <strong>'+formatNum(actualA+actualQ)+'</strong></span><span>Complementações programadas na semana: <strong>'+formatNum(w.quotaC)+'</strong></span><span>Pendências anteriores: <strong>'+formatNum(d.backlog.length)+'</strong></span></div></section>';
 }
 function weeklySelectedDetails(data,w){
  const mode=['Todos','Pendentes','Concluídos'].includes(viewFilters['estudos-semanal'])?viewFilters['estudos-semanal']:'Todos';
  const subject=weeklySubjectFilter;
  const match=u=>(subject==='Todos'||u.subject===subject)&&(mode==='Todos'||(mode==='Concluídos'?data.completed.has(u.id):!data.completed.has(u.id)));
- const rows=w.units.filter(match);
- const other=studyWeeks.slice(0,w.index).flatMap(t=>t.units).filter(u=>!data.completed.has(u.id)&&(subject==='Todos'||u.subject===subject));
+ const rows=[...w.units,...w.complements].filter(match);
+ const other=data.weeks.slice(0,w.index).flatMap(t=>[...t.units,...t.complements]).filter(u=>!data.completed.has(u.id)&&(subject==='Todos'||u.subject===subject));
  const choices=['Todos','Pendentes','Concluídos'];
- const shownA=rows.filter(u=>u.flow==='A'),shownQ=rows.filter(u=>u.flow==='Q');
+ const shownA=rows.filter(u=>u.flow==='A'),shownQ=rows.filter(u=>u.flow==='Q'),shownC=rows.filter(u=>u.flow==='C');
  const empty='<p class="weekly-empty">Nenhum tópico nesta categoria.</p>';
  return '<section class="weekly-selected"><h2>Semana '+w.number+' · '+weekRange(w)+'</h2>'+
- '<p class="weekly-note">'+(w.index<=1?'Referência ideal proporcional: '+w.idealA+' Aprofundamento e '+w.idealQ+' Questões.':'Programação operacional: '+w.quotaA+' Aprofundamento e '+w.quotaQ+' Questões.')+' As metas passadas não são automaticamente transferidas às semanas seguintes.</p>'+
- '<div class="weekly-kpi">'+metricCard('Aprofundamento realizado',w.doneA)+metricCard('Questões realizadas',w.doneQ)+metricCard('Ideal de Aprofundamento',w.idealA)+metricCard('Ideal de Questões',w.idealQ)+metricCard('Operacional na semana',w.units.length)+metricCard('Ainda não concluídos',w.remain)+'</div>'+
+ '<p class="weekly-note">Programação da semana: '+w.quotaA+' Aprofundamento, '+w.quotaQ+' Questões e '+w.quotaC+' Complementação (TEC) liberada. A meta de Complementação é dinâmica, sem cota fixa. Pendências continuam vinculadas à semana original.</p>'+
+ '<div class="weekly-kpi">'+
+ metricCard('Aprofundamento realizado',w.doneA)+
+ metricCard('Questões realizadas',w.doneQ)+
+ metricCard('Complementações realizadas',w.doneC)+
+ metricCard('Meta de Aprofundamento',w.quotaA)+
+ metricCard('Meta de Questões',w.quotaQ)+
+ metricCard('Meta de Complementação (TEC)',w.quotaC)+
+ metricCard('Meta Total da Semana',w.quotaTotal)+
+ metricCard('Pendentes na Semana',w.totalPending)+'</div>'+
  '<div class="weekly-filter"><label>Matéria <select id="weeklySubjectFilter"><option value="Todos">Todas as matérias</option>'+[...new Set(planUnits.map(u=>u.subject))].map(x=>'<option value="'+escapeHtml(x)+'" '+(subject===x?'selected':'')+'>'+escapeHtml(subjectLabel(x))+'</option>').join('')+'</select></label>'+choiceBar('estudos-semanal',choices)+'</div>'+
- (other.length&&mode!=='Concluídos'?'<details class="weekly-group"><summary>Pendências anteriores · '+other.length+'</summary>'+other.map(u=>weekListRow(u,data)).join('')+'</details>':'')+
+ (other.length&&mode!=='Concluídos'?'<details class="weekly-group"><summary>Pendências Anteriores · '+other.length+'</summary>'+other.map(u=>weekListRow(u,data)).join('')+'</details>':'')+
  '<details class="weekly-group" open><summary>Aprofundamento · '+shownA.length+' tópico(s) exibido(s)</summary>'+(shownA.length?shownA.map(u=>weekListRow(u,data)).join(''):empty)+'</details>'+
- '<details class="weekly-group" open><summary>Questões · '+shownQ.length+' tópico(s) exibido(s)</summary>'+(shownQ.length?shownQ.map(u=>weekListRow(u,data)).join(''):empty)+'</details></section>';
+ '<details class="weekly-group" open><summary>Questões · '+shownQ.length+' tópico(s) exibido(s)</summary>'+(shownQ.length?shownQ.map(u=>weekListRow(u,data)).join(''):empty)+'</details>'+
+ '<details class="weekly-group" open><summary>Complementação (TEC) · '+shownC.length+' tópico(s) exibido(s)</summary>'+(shownC.length?shownC.map(u=>weekListRow(u,data)).join(''):empty)+'</details></section>';
 }
 function renderWeeklyWorkspace(){
- const d=weeklyStudyState(),chosen=selectedStudyWeek===null?d.position.index:Math.max(0,Math.min(10,selectedStudyWeek));
- const selected=d.weeks[chosen],A=planUnits.filter(u=>u.flow==='A'),Q=planUnits.filter(u=>u.flow==='Q');
+ const d=weeklyStudyState(),chosen=selectedStudyWeek===null?d.position.index:Math.max(0,Math.min(d.weeks.length-1,selectedStudyWeek));
+ const selected=d.weeks[chosen],A=planUnits.filter(u=>u.flow==='A'),Q=planUnits.filter(u=>u.flow==='Q'),C=planUnits.filter(u=>u.flow==='C');
  const rows=d.weeks.map(w=>{
-  const historical=w.index<=1,expectedA=historical?w.idealA:w.quotaA,expectedQ=historical?w.idealQ:w.quotaQ;
-  const balance=(w.doneA-expectedA)+(w.doneQ-expectedQ);
-  const status=w.remain===0?'Todos atribuídos concluídos':todayISO()>w.end?'Prazo encerrado':todayISO()<w.start?'Futura':'Em andamento';
-  return '<tr class="'+(w.index===chosen?'weekly-current-row':'')+'"><th><button type="button" class="weekly-select" data-week-select="'+w.index+'">Semana '+w.number+'</button></th><td>'+weekRange(w)+'</td><td>'+expectedA+'</td><td>'+w.doneA+'</td><td>'+expectedQ+'</td><td>'+w.doneQ+'</td><td>'+(balance>0?'+':'')+balance+'</td><td>'+w.quotaA+' A + '+w.quotaQ+' Q</td><td>'+escapeHtml(status)+'</td></tr>';
+  const ideal=w.index<=1?w.idealA+' A + '+w.idealQ+' Q':'—';
+  const status=w.totalPending===0?'Meta concluída':todayISO()>w.end?'Prazo encerrado':todayISO()<w.start?'Futura':'Em andamento';
+  return '<tr class="'+(w.index===chosen?'weekly-current-row':'')+'"><th><button type="button" class="weekly-select" data-week-select="'+w.index+'">Semana '+w.number+'</button></th>'+
+  '<td>'+weekRange(w)+'</td><td>'+w.quotaA+'</td><td>'+w.doneA+'</td><td>'+w.quotaQ+'</td><td>'+w.doneQ+'</td>'+
+  '<td>'+w.quotaC+'</td><td>'+w.doneC+'</td><td>'+w.quotaTotal+'</td><td>'+w.totalDoneWeek+'</td><td>'+w.totalPending+'</td><td>'+ideal+'</td><td>'+escapeHtml(status)+'</td></tr>';
  }).join('');
- const base=d.weeks.slice(0,2),historicalDone=base.reduce((n,w)=>n+w.done,0),historicalIdeal=base.reduce((n,w)=>n+w.idealA+w.idealQ,0);
+ const history=d.weeks.slice(0,2),historicalDone=history.reduce((n,w)=>n+w.doneA+w.doneQ,0),historicalIdeal=history.reduce((n,w)=>n+w.idealA+w.idealQ,0);
  return weeklySnapshot()+
- '<p class="weekly-pause"><strong>Referência proporcional:</strong> O progresso esperado considera metas proporcionais nas semanas históricas e o planejamento operacional nas demais semanas. <strong>Agenda:</strong> a distribuição preserva as unidades planejadas e a pausa cadastrada. A meta de Complementação (TEC) acompanha os tópicos liberados.</p>'+
- '<div class="weekly-kpi">'+metricCard('Ideal nas semanas 1 e 2',historicalIdeal)+metricCard('Concluídos nas semanas 1 e 2',historicalDone)+metricCard('Diferença histórica',(historicalDone-historicalIdeal>0?'+':'')+(historicalDone-historicalIdeal))+metricCard('Total de Aprofundamento',A.length)+metricCard('Total de Questões',Q.length)+metricCard('Data final','15/01/2027')+'</div>'+
- panel('Metas Semanais — Esperado × Realizado','Para as semanas 1 e 2, referência ideal proporcional. Nas posteriores, a coluna esperado indica as metas operacionais já distribuídas. As duas referências não são somadas uma à outra.','<div class="platform-scroll"><table class="platform-table weekly-table"><thead><tr><th>Semana</th><th>Período</th><th>A esperado</th><th>A feito</th><th>Q esperado</th><th>Q feito</th><th>Saldo</th><th>Unidades atribuídas</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
+ '<p class="weekly-pause">As metas e os resultados da tabela correspondem às unidades atribuídas a cada semana. A referência ideal das semanas históricas é exibida separadamente. As Complementações (TEC) entram automaticamente na semana de sua programação após liberação, sem alterar as metas originais de Aprofundamento e Questões.</p>'+
+ '<div class="weekly-kpi">'+metricCard('Referência ideal A/Q — Semanas 1 e 2',historicalIdeal)+metricCard('Realizado A/Q — Semanas 1 e 2',historicalDone)+metricCard('Diferença histórica A/Q',(historicalDone-historicalIdeal>0?'+':'')+(historicalDone-historicalIdeal))+metricCard('Total de Aprofundamento',A.length)+metricCard('Total de Questões',Q.length)+metricCard('Complementação cadastrada',C.length)+'</div>'+
+ panel('Metas Semanais — Previsto × Realizado','Os valores de meta são os tópicos programados na semana; os complementares são incluídos conforme liberação. A referência ideal histórica permanece apenas para comparação.','<div class="platform-scroll"><table class="platform-table weekly-table"><thead><tr><th>Semana</th><th>Período</th><th>Meta A</th><th>Feito A</th><th>Meta Q</th><th>Feito Q</th><th>Meta C</th><th>Feito C</th><th>Meta Total</th><th>Feito Total</th><th>Pendentes</th><th>Ideal histórico A/Q</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
  weeklySelectedDetails(d,selected);
 }
 function renderStudyGeneralPanels(){
@@ -2855,30 +2873,47 @@ function dailyStudyAssignments(date){
  return {week,configured:true,units:list,day:ix,carriedCount:0};
 }
 function weeklyStudyState(){
+ // A/Q permanecem na alocação fixa; complementações ingressam na semana de sua programação após liberação.
  const completed=new Map();
- for(const u of planUnits.filter(x=>x.flow==='A'||x.flow==='Q')){
-  const c=completionOf(u);
-  if(c)completed.set(u.id,c);
+ for(const u of planUnits){
+  const rec=completionOf(u);
+  if(rec)completed.set(u.id,rec);
+ }
+ const complementWeeks=new Map(studyWeeks.map(w=>[w.index,[]]));
+ const complementUnits=planUnits.filter(u=>u.flow==='C');
+ for(const u of complementUnits){
+  const gate=complementGate(u),record=completed.get(u.id);
+  // A data programada prevalece sobre a data de conclusão para manter a pendência na semana original.
+  const date=(gate?.ready&&(gate.scheduled||gate.releasedAt))||(record&&(record.plannedDate||record.date));
+  if(!date||!/^\d{4}-\d{2}-\d{2}$/.test(date))continue;
+  const week=studyWeeks.find(w=>dateBetween(date,w.start,w.end));
+  if(week)complementWeeks.get(week.index).push(u);
  }
  const weeks=studyWeeks.map(w=>{
   const a=w.units.filter(u=>u.flow==='A'),q=w.units.filter(u=>u.flow==='Q');
-  // Nas semanas históricas, contabilizar no realizado somente estudos com data efetiva no período.
-  // Um estudo anterior a 25/10 permanece concluído no total geral, mas não entra na Semana 1.
+  const complements=complementWeeks.get(w.index)||[];
+  // Histórico de A/Q considera a data efetiva em semanas 1 e 2.
   const inPeriod=u=>{const d=completed.get(u.id)?.date;return Boolean(d&&(w.index>1||dateBetween(d,w.start,w.end)));};
   const doneA=a.filter(inPeriod).length,doneQ=q.filter(inPeriod).length;
+  const doneC=complements.filter(u=>completed.has(u.id)).length;
   const allocatedDone=w.units.filter(u=>completed.has(u.id)).length;
   const preDone=w.units.filter(u=>completed.get(u.id)?.date<w.start).length;
   const onTime=w.units.filter(u=>{const d=completed.get(u.id)?.date;return d&&d<=w.end;}).length;
   const lateDone=w.units.filter(u=>{const d=completed.get(u.id)?.date;return d&&d>w.end;}).length;
-  return {...w,doneA,doneQ,done:doneA+doneQ,onTime,preDone,lateDone,
-   remain:w.units.length-allocatedDone,pct:w.units.length?allocatedDone/w.units.length:0};
+  const quotaC=complements.length,quotaTotal=w.units.length+quotaC;
+  const totalDoneWeek=doneA+doneQ+doneC;
+  const totalPending=w.units.filter(u=>!completed.has(u.id)).length+(quotaC-doneC);
+  return {...w,complements,quotaC,doneC,quotaTotal,totalDoneWeek,totalPending,
+   doneA,doneQ,done:doneA+doneQ,onTime,preDone,lateDone,
+   remain:w.units.length-allocatedDone,pct:quotaTotal?(quotaTotal-totalPending)/quotaTotal:0};
  });
  const now=todayISO(),pos=getWeekPosition(),active=weeks[pos.index];
- const preceding=weeks.slice(0,pos.index).flatMap(w=>w.units).filter(u=>!completed.has(u.id));
- const ahead=weeks.slice(pos.index+1).flatMap(w=>w.units).filter(u=>completed.get(u.id)?.date<=now);
- const total=planUnits.filter(u=>u.flow==='A'||u.flow==='Q').length;
+ const preceding=weeks.slice(0,pos.index).flatMap(w=>[...w.units,...w.complements]).filter(u=>!completed.has(u.id));
+ const ahead=weeks.slice(pos.index+1).flatMap(w=>[...w.units,...w.complements]).filter(u=>completed.get(u.id)?.date<=now);
+ const initialUnits=planUnits.filter(u=>u.flow==='A'||u.flow==='Q');
+ const totalDone=initialUnits.filter(u=>completed.has(u.id)).length;
  return {weeks,completed,position:pos,active,backlog:preceding,ahead,
-  remaining:active.remain+preceding.length,totalDone:completed.size,totalPct:completed.size/total};
+  remaining:active.totalPending+preceding.length,totalDone,totalPct:totalDone/initialUnits.length};
 }
 function expectedInitialProgressForDay(day){
  const result={weekNumber:0,weekEnd:null,A:0,Q:0,total:0};
