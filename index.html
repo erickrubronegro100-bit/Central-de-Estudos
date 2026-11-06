@@ -3080,10 +3080,84 @@ function applyNov04Records(){
  try{localStorage.setItem(NOV04_SEED_KEY,'1')}catch(e){}
 }
 
+
+// Registro Individual Padronizado — LP/LING 3, revisão D+7 de 04/11/2026.
+// Migração aditiva: conserva a única bateria já contabilizada, confirma a execução
+// operacional e mantém "Não informada" a declaração formal de situação.
+const LP3_D7_RECORD_KEY='central-estudos-lpling3-d7-20261104-registro-individual-v1';
+function applyLpLing3D7IndividualRecordOnce(){
+ try{if(localStorage.getItem(LP3_D7_RECORD_KEY)==='1')return;}catch(e){}
+ const topic='LP/LING 3 — Referência, representação e significação contextual';
+ const study=studyData.studies.find(s=>s.planId==='A-008'&&s.status==='Concluído'&&!s.resetForRedo);
+ const sameTopic=r=>r.subject==='LP/LING'&&topicKey(r)===topicKey({subject:'LP/LING',topic});
+ const resultFields={
+  planId:'A-008',subject:'LP/LING',topic,date:'2026-11-04',
+  source:'ChatGPT',contact:'Revisão D+7',stage:'D+7',
+  cs:17,cu:1,ws:0,wu:0,correctOther:0,wrongOther:0,
+  durationMinutes:10,domain:'Seguro',reinforcement:'Dispensável',
+  nextReviewDepth:'Breve',correctedErrors:0,uncorrectedErrors:0,
+  insecureCorrectStudied:1,insecureCorrectUnstudied:0,
+  completionConfirmed:true,operationalExecution:'Integral demonstrada',
+  formalCompletion:'Não informada',executionReported:true,
+  questionsAnswered:18,questionsAvailable:18,
+  questionResponses:['C','E','C','E','C','E','C','E','C','C','E','C','E','C','E','C','E','C'],
+  insecureQuestionNumbers:[5],tecQuestionsAnswered:0,tecContact:false,
+  spontaneousRecovery:'Autônoma e fácil',perceivedRetention:'Semelhante à D+1',
+  teacherDomain:'Seguro',studentDomain:'Seguro',
+  pedagogicalNotes:'18/18 (100%, nota 10,00); 17 acertos sem insegurança e Q05 com acerto inseguro. Frege: referência da expressão nominal é objeto designado; referência da frase declarativa, quando determinada, é valor de verdade. Correção integrada ao resumo e compreendida. Recuperação autônoma e fácil; sem erros. Todas as atividades de D+7 confirmadas. Situação formal não selecionada. Reforço extraordinário dispensável. D+30 em 27/11/2026, profundidade Breve, com aplicação inédita sobre Frege.'
+ };
+ const questions=studyData.attempts.filter(a=>!a.resetForRedo&&sameTopic(a)&&a.date==='2026-11-04'&&
+  a.source==='ChatGPT'&&(a.stage==='D+7'||stageForContact(a.contact)==='D+7'));
+ let target=questions.find(a=>a.id==='central-20261104-lpling3-d7')||questions[0];
+ let changed=false;
+ if(!target){
+  target={id:'central-20261104-lpling3-d7'};studyData.attempts.push(target);changed=true;
+ }
+ for(const [k,v] of Object.entries({...resultFields,...(study?{studyId:study.id}:{})})){
+  if(JSON.stringify(target[k])!==JSON.stringify(v)){target[k]=v;changed=true;}
+ }
+ // Não criar outra bateria nem duplicar registros manuais.
+ const reviews=studyData.reviews.filter(r=>!r.resetForRedo&&sameTopic(r)&&r.stage==='D+7');
+ let rev=reviews.find(r=>r.status==='Realizada')||
+         reviews.find(r=>r.plannedDate==='2026-11-04')||reviews[0];
+ if(!rev){
+  rev={id:'central-20261028-lp-ling-3-revisao-D-7',subject:'LP/LING',topic,stage:'D+7'};
+  studyData.reviews.push(rev);changed=true;
+ }
+ const reviewFields={
+  status:'Realizada',plannedDate:'2026-11-04',doneDate:'2026-11-04',
+  source:'ChatGPT',contact:'Revisão D+7',durationMinutes:10,
+  depth:'Breve',teacherDomain:'Seguro',formalCompletion:'Não informada',
+  operationalExecution:'Integral demonstrada',executionReported:true,
+  recovery:'Autônoma e fácil',retention:'Semelhante à D+1',
+  reinforcement:'Dispensável',insecureQuestion:'Q05',
+  focus:'Frege — referência da frase declarativa completa; retomar em aplicação inédita na D+30.',
+  documentaryNotes:'Execução integral confirmada em 04/11/2026, sem seleção formal de situação. Resultado já contabilizado em tentativa ChatGPT: 18/18, sendo 17 acertos sem insegurança e Q05 inseguro.',
+  ...(study?{studyId:study.id}:{})
+ };
+ for(const [k,v] of Object.entries(reviewFields))if(rev[k]!==v){rev[k]=v;changed=true;}
+ // A D+30 é só programada, não realizada, sem criar uma nova revisão.
+ const future=studyData.reviews.filter(r=>!r.resetForRedo&&sameTopic(r)&&r.stage==='D+30');
+ let d30=future.find(r=>r.plannedDate==='2026-11-27')||future[0];
+ if(!d30){
+  d30={id:'central-20261028-lp-ling-3-revisao-D-30',subject:'LP/LING',topic,stage:'D+30'};
+  studyData.reviews.push(d30);changed=true;
+ }
+ const nextFields={
+  plannedDate:'2026-11-27',status:d30.status==='Realizada'?'Realizada':'Programada',
+  depth:'Breve',focus:'Reavaliar com questão inédita Frege — referência de frases declarativas completas; manter cobertura representativa de LP/LING 3 e questões não agrupadas por unidade ⭐.',
+  reinforcement:'Dispensável',...(study?{studyId:study.id}:{})
+ };
+ for(const [k,v] of Object.entries(nextFields))if(d30[k]!==v){d30[k]=v;changed=true;}
+ if(changed&&!writeData())return;
+ try{localStorage.setItem(LP3_D7_RECORD_KEY,'1');}catch(e){}
+}
+
 applyCentralMigrationOnce();
 migrateKnownTecContactOnce();
 migrateCP36Once();
 applyNov04Records();
+applyLpLing3D7IndividualRecordOnce();
 reschedulePendingSaturdayReviews();
 rebuildWeeklyPlan();
 installComplementationEvents();
