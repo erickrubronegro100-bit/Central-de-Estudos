@@ -607,7 +607,7 @@ function reviewMatchesStudy(r,study){
  return topicKey(r)===topicKey(study);
 }
 function ensureScheduledReviews(study){
- if(!study||study.status!=='Concluído'||['Q-038','C-RCCN-001'].includes(study.planId)||/^(?:DA\s*0*23|RCCN\/TEC\s*0*1)\b/i.test(String(study.topic||'')))return false;
+ if(!study||study.status!=='Concluído'||['Q-038','C-RCCN-001','Q-040'].includes(study.planId)||/^(?:DA\s*0*23|RCCN\/TEC\s*0*1)\b/i.test(String(study.topic||'')))return false;
  let modified=false;
  for(const [stage,offset] of [['D+1',1],['D+7',7],['D+30',30]]){
   if(study.planId==='Q-038'&&(stage==='D+7'||stage==='D+30'))continue;
@@ -1056,6 +1056,20 @@ function metricsAttempt(list){
  for(const a of list){
   const portions=sourceCounts(a);
   for(const platform of PLATFORM_NAMES)for(const k of RESULT_KEYS)out.platforms[platform][k]+=portions[platform][k];
+ }
+ // Reconciliação por DISCIPLINA, exclusivamente quando o conjunto completo
+ // de sessões TEC de 09/11 está presente. Não classificar itens individuais.
+ const nov09=list.filter(a=>a.date==='2026-11-09'&&a.source==='TEC'&&a.recordOrigin===NOV09_REPORT_ORIGIN);
+ for(const [subject,known] of Object.entries(NOV09_TEC_SECURITY)){
+  const expected=NOV09_TEC_ROWS.filter(row=>planById.get(row[0])?.subject===subject);
+  const rows=nov09.filter(a=>a.subject===subject);
+  if(rows.length!==expected.length||!expected.every(e=>rows.some(a=>a.planId===e[0]&&a.stage===e[1])))continue;
+  const correct=rows.reduce((n,a)=>n+safeNum(a.correctOther),0);
+  const wrong=rows.reduce((n,a)=>n+safeNum(a.wrongOther),0);
+  if(rows.reduce((n,a)=>n+counted(a),0)!==known.q||correct!==known.correct||wrong!==known.errors)continue;
+  const tec=out.platforms.TEC;
+  tec.correctOther-=correct;tec.wrongOther-=wrong;
+  for(const k of ['cs','cu','ws','wu'])tec[k]+=known[k];
  }
  for(const platform of PLATFORM_NAMES){
   const row=out.platforms[platform];
@@ -1591,6 +1605,35 @@ function renderReviewGeneralPanels(){
  panel('Próximas revisões','As próximas dez revisões programadas, ordenadas pela data.',upcomingBody)+
  '<div class="sector-links"><button class="dash-link" type="button" data-jump-view="revisoes-dia">Revisões do dia</button><button class="dash-link" type="button" data-jump-view="revisoes-d1">D+1</button><button class="dash-link" type="button" data-jump-view="revisoes-d7">D+7</button><button class="dash-link" type="button" data-jump-view="revisoes-d30">D+30</button></div>';
 }
+
+function renderNov09CloseoutPanel(){
+ const day='2026-11-09',rows=studyData.attempts.filter(a=>a.date===day&&a.recordOrigin===NOV09_REPORT_ORIGIN&&!a.resetForRedo);
+ if(rows.length!==39)return '';
+ const m=metricsAttempt(rows),duration=knownDurationStats(rows);
+ const chat=rows.filter(a=>a.source==='ChatGPT'),tec=rows.filter(a=>a.source==='TEC');
+ const valid=m.all===508&&m.correct===476&&m.cs===439&&m.cu===37&&m.ws===8&&m.wu===24&&
+   duration.minutes===160&&duration.unknown===0;
+ const table=['DA','LP/LING','CP','RICD','AP','DC','PL','TI'].map(code=>{
+  const rs=rows.filter(a=>a.subject===code),v=metricsAttempt(rs),time=knownDurationStats(rs);
+  return '<tr><th>'+escapeHtml(subjectLabel(code))+'</th><td>'+v.all+'</td><td>'+v.correct+'</td><td>'+
+    (v.all-v.correct)+'</td><td>'+formatPercent(v.overall)+'</td><td>'+time.minutes+' min</td></tr>';
+ }).join('');
+ return panel('Relatório Final de Desempenho — 09/11/2026',
+  'DIA ENCERRADO · 8 disciplinas · 39 atividades concluídas · 1 revisão não realizada (TI 007).',
+  '<div class="weekly-kpi">'+metricCard('Atividades',rows.length)+
+  metricCard('ChatGPT',chat.length+' · '+chat.reduce((n,x)=>n+x.durationMinutes,0)+' min')+
+  metricCard('TEC',tec.length+' · '+tec.reduce((n,x)=>n+x.durationMinutes,0)+' min')+
+  metricCard('Tempo líquido',clockMinutes(duration.minutes))+
+  metricCard('Questões',m.all)+metricCard('Acertos / erros',m.correct+' / '+(m.all-m.correct))+
+  metricCard('Aproveitamento',formatPercent(m.overall))+
+  metricCard('Insegurança',formatPercent(m.all?(m.cu+m.wu)/m.all:null))+'</div>'+
+  '<p class="daily-note">Segurança: '+m.cs+' AS · '+m.cu+' AI · '+m.ws+' ES · '+m.wu+
+  ' EI · '+(m.correctOther+m.wrongOther)+' sem classificação. TEC: segurança reconciliada por disciplina, sem atribuição individual por caderno.</p>'+
+  '<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Disciplina</th><th>Questões</th><th>Acertos</th><th>Erros</th><th>Aproveitamento</th><th>Tempo</th></tr></thead><tbody>'+table+'</tbody></table></div>'+
+  '<p class="daily-note">TI 007 — D+7 não realizada: questões TEC esgotadas, sem novo ciclo. '+
+  (valid?'Fechamento matemático conciliado.':'Atenção: o histórico local diverge do consolidado registrado; confira alterações manuais.')+'</p>');
+}
+
 function renderPerformanceGeneralPanels(){
  const validAttempts=studyData.attempts.filter(a=>!a.resetForRedo);
  const bySubject=[...new Set(validAttempts.map(x=>canonicalSubject(x.subject)))].map(code=>{
@@ -1611,7 +1654,7 @@ function renderPerformanceGeneralPanels(){
   const rows=latestRows.filter(a=>canonicalSubject(a.subject)===code),m=metricsAttempt(rows),duration=knownDurationStats(rows);
   return '<tr><th scope="row">'+escapeHtml(subjectLabel(code))+'</th><td>'+formatNum(rows.length)+'</td><td>'+formatNum(m.all)+'</td><td>'+formatPercent(m.overall)+'</td><td>'+durationLabel(duration)+'</td></tr>';
  }).join('');
- return '<div class="weekly-kpi">'+metricCard('Questões acumuladas',formatNum(totals.all))+metricCard('Acertos totais',formatNum(totals.correct))+metricCard('Erros totais',formatNum(totals.all-totals.correct))+metricCard('Aproveitamento',formatPercent(totals.overall))+metricCard('Insegurança declarada',formatPercent(insecurity))+metricCard('Tópicos avaliados',formatNum(topicResults(validAttempts).length))+'</div>'+
+ return renderNov09CloseoutPanel()+'<div class="weekly-kpi">'+metricCard('Questões acumuladas',formatNum(totals.all))+metricCard('Acertos totais',formatNum(totals.correct))+metricCard('Erros totais',formatNum(totals.all-totals.correct))+metricCard('Aproveitamento',formatPercent(totals.overall))+metricCard('Insegurança declarada',formatPercent(insecurity))+metricCard('Tópicos avaliados',formatNum(topicResults(validAttempts).length))+'</div>'+
  panel('Resultados por disciplina','Total de questões e segurança a partir de sessões distintas, sem duplicação.','<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Disciplina</th><th>Tópicos</th><th>Questões</th><th>Acertos</th><th>Erros</th><th>Aproveitamento</th><th>Insegurança</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
  '<div class="weekly-kpi">'+metricCard('Último dia com resultados',lastLabel)+metricCard('Questões nesse dia',formatNum(recent.all))+metricCard('Aproveitamento do dia',formatPercent(recent.overall))+metricCard('ChatGPT',formatNum(totals.chat)+' questões')+metricCard('TEC',formatNum(totals.tec)+' questões')+metricCard('Respostas inseguras',formatNum(totals.cu+totals.wu),'AI + EI')+'</div>'+
  '<div class="weekly-kpi">'+metricCard('Tempo líquido conhecido · '+lastLabel,time.known?clockMinutes(time.minutes):'N/I',formatNum(time.known)+' atividades com tempo'+(time.unknown?' · '+time.unknown+' N/I':''))+metricCard('Tempo ChatGPT · '+lastLabel,chatTime.known?clockMinutes(chatTime.minutes):'N/I')+metricCard('Tempo TEC · '+lastLabel,tecTime.known?clockMinutes(tecTime.minutes):'N/I')+'</div>'+
@@ -2320,6 +2363,7 @@ function setPlanDone(id,done){
 
 function statusReview(r){
  if(r.resetForRedo)return "Reiniciada";
+ if(r.closedNoFurtherTecReviews)return "Não realizadas";
  if(r.status==="Realizada")return "Realizadas";
  if(r.status==="Pendente"||(r.plannedDate&&r.plannedDate<todayISO()))return "Pendentes";
  return "Programadas";
@@ -2419,7 +2463,7 @@ function renderWorkspace(v){
   const stage=v.id==="revisoes-d1"?"D+1":v.id==="revisoes-d7"?"D+7":v.id==="revisoes-d30"?"D+30":null;
   const flow=v.id==="revisoes-complementacao"?"C":v.id==="revisoes-aprofundamento"?"A":null;
   const all=studyData.reviews.filter(x=>!x.resetForRedo&&(!stage||x.stage===stage)&&(!flow||reviewInitialStudyFlow(x)===flow)&&(v.id!=="revisoes-dia"||x.plannedDate===todayISO()||x.doneDate===todayISO()));
-  const counts=["Programadas","Realizadas","Pendentes"].map(label=>all.filter(x=>statusReview(x)===label).length);
+  const counts=["Programadas","Realizadas","Pendentes","Não realizadas"].map(label=>all.filter(x=>statusReview(x)===label).length);
   const choice=viewFilters[v.id]||"Programadas",shown=all.filter(x=>statusReview(x)===choice).slice().reverse();
   const groupedPanels=v.id==="revisoes-dia"?
    [["A","Revisões — Aprofundamento"],["Q","Revisões — Questões"],["C","Revisões — Complementação (TEC)"]].map(([modality,title])=>{
@@ -2437,8 +2481,8 @@ function renderWorkspace(v){
     metricCard("Complementação (TEC)",all.filter(r=>reviewInitialStudyFlow(r)==="C").length)+
    '</div>':"";
   body=(v.id==="revisoes-geral"?renderReviewGeneralPanels():"")+
-   '<div class="workspace-metrics">'+metricCard("Programadas",counts[0])+metricCard("Realizadas",counts[1])+metricCard("Pendentes",counts[2])+'</div>'+
-   modalitySummary+choiceBar(v.id,["Programadas","Realizadas","Pendentes"])+actionsHtml("review")+entryForm("review",v)+groupedPanels;
+   '<div class="workspace-metrics">'+metricCard("Programadas",counts[0])+metricCard("Realizadas",counts[1])+metricCard("Pendentes",counts[2])+metricCard("Não realizadas",counts[3])+'</div>'+
+   modalitySummary+choiceBar(v.id,["Programadas","Realizadas","Pendentes","Não realizadas"])+actionsHtml("review")+entryForm("review",v)+groupedPanels;
  }else{
   const rawAttempts=subsetByView(v,studyData.attempts).filter(x=>!x.resetForRedo);
   const allAttempts=topicResults(rawAttempts),m=metricsAttempt(rawAttempts),has=m.all>0;
@@ -2871,6 +2915,7 @@ function renderDailyStudyWorkspace(){
  };
  const revs=studyData.reviews.filter(r=>{
   if(r.resetForRedo||!['D+1','D+7','D+30'].includes(r.stage))return false;
+  if(r.closedNoFurtherTecReviews)return r.plannedDate===date;
   if(r.status==='Realizada')return r.plannedDate===date||r.doneDate===date;
   return date===today?Boolean(r.plannedDate&&r.plannedDate<=today):
    date>today&&r.plannedDate===date;
@@ -2888,7 +2933,7 @@ function renderDailyStudyWorkspace(){
  const revisionOther=revs.filter(r=>!['A','Q','C'].includes(revisionFlow(r)));
  const rRow=r=>{
   const u=findTopicUnit(r.subject,r.topic);
-  const detail=r.status==='Realizada'?'Realizada'+(r.doneDate?' em '+dateBR(r.doneDate):''):
+  const detail=r.closedNoFurtherTecReviews?'Não realizada: esgotamento das questões TEC; ciclo encerrado':r.status==='Realizada'?'Realizada'+(r.doneDate?' em '+dateBR(r.doneDate):''):
    'Pendente'+(r.plannedDate<date?' · Adiada desde '+dateBR(r.plannedDate):'');
   return '<div class="daily-review-item"><div><strong>'+escapeHtml(r.stage)+'</strong><span>'+escapeHtml(visibleTopicTitle(r.topic))+'</span><small>'+escapeHtml(detail)+' · Prevista originalmente: '+dateBR(r.originalPlannedDate||r.plannedDate)+'</small></div>'+(u?'<button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="'+escapeHtml(r.stage)+'">Abrir</button>':'')+'</div>';
  };
@@ -3341,6 +3386,102 @@ function applyNov08RecordsOnce(){
  if(changed&&!writeData())return;
  try{localStorage.setItem(NOV08_REPORT_KEY,'1')}catch(e){}
 }
+
+// Fechamento auditado em 09/11/2026. Cadernos TEC têm Q e acertos/erros
+// documentados por caderno, mas categorias AS/AI/ES/EI apenas por disciplina.
+const NOV09_REPORT_KEY='central-estudos-fechamento-20261109-39-atividades-v1';
+const NOV09_REPORT_ORIGIN="Relatório Final de Desempenho de 09/11/2026";
+const NOV09_CHAT_ROWS=[["A-024","D+1",14,2,0,0,10],["A-022","D+1",27,3,1,1,17],["A-021","D+1",24,0,2,0,10],["A-023","D+1",24,4,2,0,10],["A-006","D+1",25,2,1,0,17],["A-014","D+7",29,1,0,0,11],["A-016","D+1",29,0,0,1,14],["A-013","D+7",40,1,0,1,12]];
+const NOV09_TEC_ROWS=[["Q-049","Estudo inicial",4,3,1,1],["Q-050","Estudo inicial",5,5,0,1],["Q-051","Estudo inicial",2,2,0,1],["Q-048","Estudo inicial",50,44,6,9],["C-LP-LING-004","Estudo inicial",6,5,1,2],["C-LP-LING-005","Estudo inicial",3,3,0,1],["Q-043","D+1",10,9,1,2],["Q-045","D+1",2,2,0,1],["Q-047","D+1",11,10,1,2],["Q-044","D+1",4,4,0,1],["Q-046","D+1",17,12,5,5],["C-PL-001","D+1",2,2,0,2],["C-LP-LING-001","D+1",1,1,0,1],["C-LP-LING-002","D+1",1,1,0,1],["C-LP-LING-003","D+1",3,3,0,1],["Q-025","D+7",4,4,0,1],["Q-027","D+7",5,4,1,1],["Q-029","D+7",13,13,0,2],["Q-030","D+7",6,6,0,1],["Q-031","D+7",2,2,0,1],["Q-034","D+7",3,3,0,1],["Q-035","D+7",9,9,0,1],["Q-037","D+7",30,30,0,4],["Q-041","D+7",15,14,1,2],["Q-042","D+7",11,10,1,2],["Q-026","D+7",2,2,0,1],["Q-032","D+7",39,38,1,6],["Q-039","D+7",3,3,0,1],["Q-036","D+7",4,4,0,1],["Q-028","D+7",6,2,4,2],["Q-033","D+7",1,1,0,1]];
+const NOV09_TEC_SECURITY={"DA":{"q":130,"cs":119,"cu":5,"ws":1,"wu":5,"correct":124,"errors":6},"LP/LING":{"q":14,"cs":12,"cu":1,"ws":1,"wu":0,"correct":13,"errors":1},"AP":{"q":54,"cs":37,"cu":11,"ws":0,"wu":6,"correct":48,"errors":6},"DC":{"q":50,"cs":49,"cu":0,"ws":0,"wu":1,"correct":49,"errors":1},"PL":{"q":2,"cs":1,"cu":1,"ws":0,"wu":0,"correct":2,"errors":0},"TI":{"q":24,"cs":9,"cu":6,"ws":0,"wu":9,"correct":15,"errors":9}};
+function applyNov09RecordsOnce(){
+ try{if(localStorage.getItem(NOV09_REPORT_KEY)==='1')return;}catch(e){}
+ const day='2026-11-09';
+ let changed=false;
+ const entries=[
+  ...NOV09_CHAT_ROWS.map(([planId,stage,cs,cu,ws,wu,minutes])=>({planId,stage,source:'ChatGPT',cs,cu,ws,wu,minutes,questions:cs+cu+ws+wu})),
+  ...NOV09_TEC_ROWS.map(([planId,stage,questions,correct,wrong,minutes])=>({planId,stage,source:'TEC',cs:0,cu:0,ws:0,wu:0,correctOther:correct,wrongOther:wrong,minutes,questions}))
+ ];
+ if(entries.length!==39||entries.filter(e=>e.stage==='Estudo inicial').length!==6||
+   entries.filter(e=>e.stage==='D+1').length!==15||entries.filter(e=>e.stage==='D+7').length!==18||
+   entries.reduce((n,e)=>n+e.minutes,0)!==160)throw Error('Fechamento de 09/11 com contagem inconsistente.');
+ for(const e of entries){
+  const unit=planById.get(e.planId);
+  if(!unit)throw Error('Plano 09/11 ausente: '+e.planId);
+  const topic=unit.code+' — '+unit.title,slug=e.planId.toLowerCase().replace(/[^a-z0-9]+/g,'-');
+  let study=studyData.studies.find(x=>x.planId===e.planId&&x.status==='Concluído'&&!x.resetForRedo&&x.date===day);
+  if(e.stage==='Estudo inicial'&&!study){
+   study=studyData.studies.find(x=>x.planId===e.planId&&x.status==='Concluído'&&!x.resetForRedo);
+   if(!study){
+    study={id:'central-20261109-'+slug+'-estudo',planId:e.planId,subject:unit.subject,topic,
+      activity:unit.flow==='C'?'Complementação (TEC)':unit.flow==='Q'?'Questões':'Aprofundamento',
+      status:'Concluído',date:day,source:e.source,durationMinutes:e.minutes,
+      contact:e.source==='TEC'?'1º contato':'Estudo inicial',completionConfirmed:true,
+      recordOrigin:NOV09_REPORT_ORIGIN};
+    studyData.studies.push(study);changed=true;
+   }
+   if(study.date===day&&ensureScheduledReviews(study))changed=true;
+  }
+  if(!study)study=studyData.studies.find(x=>x.planId===e.planId&&x.status==='Concluído'&&!x.resetForRedo);
+  const contact=e.stage==='Estudo inicial'?(e.source==='TEC'?'1º contato':'Estudo inicial'):
+    e.source==='TEC'?(e.stage==='D+1'?'2º contato':'3º contato'):'Revisão '+e.stage;
+  const same=a=>!a.resetForRedo&&a.date===day&&a.source===e.source&&
+   (a.planId===e.planId||(a.subject===unit.subject&&topicKey(a)===topicKey({subject:unit.subject,topic})))&&
+   (a.stage===e.stage||stageForContact(a.contact)===e.stage);
+  const duplicates=studyData.attempts.filter(same);
+  let target=duplicates[0];
+  if(!target){
+   const id='central-20261109-'+slug+'-'+e.stage.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+e.source.toLowerCase();
+   target={id};studyData.attempts.push(target);changed=true;
+  }
+  const fields={planId:e.planId,subject:unit.subject,topic,date:day,stage:e.stage,source:e.source,contact,
+   cs:e.cs,cu:e.cu,ws:e.ws,wu:e.wu,correctOther:e.correctOther||0,wrongOther:e.wrongOther||0,
+   durationMinutes:e.minutes,completionConfirmed:true,completionStatus:'Concluída',
+   questionsAnswered:e.questions,recordOrigin:NOV09_REPORT_ORIGIN,
+   ...(study?{studyId:study.id}:{}),
+   ...(e.source==='TEC'?{
+     securityGranularity:'Classificações de segurança documentadas apenas por disciplina; não individualizadas por caderno.',
+     correctedErrors:e.wrongOther,insecureCorrectStudied:null,insecureCorrectUnstudied:null
+   }:{})
+  };
+  for(const [key,val] of Object.entries(fields)){
+   if(JSON.stringify(target[key])!==JSON.stringify(val)){target[key]=val;changed=true;}
+  }
+  if(target.platforms){delete target.platforms;changed=true;}
+  if(duplicates.length>1){
+   const ids=new Set(duplicates.slice(1).map(x=>x.id));
+   target.deduplicatedSessionIds=[...new Set([...(target.deduplicatedSessionIds||[]),...ids])];
+   studyData.attempts=studyData.attempts.filter(a=>!ids.has(a.id));changed=true;
+  }
+  if(e.stage!=='Estudo inicial'&&completeReviewFromContact(target))changed=true;
+ }
+ // Revisão D+7 de TI 007: não realizada por falta de questões, sem contá-la
+ // como contato concluído e sem criação de futuras revisões TEC.
+ const ti=planById.get('Q-040');
+ if(!ti)throw Error('TI 007 não encontrado.');
+ const belongs=r=>r.planId==='Q-040'||r.subject==='TI'&&topicKey(r)===topicKey({subject:'TI',topic:ti.code+' — '+ti.title});
+ const existing=studyData.reviews.filter(r=>r.stage==='D+7'&&belongs(r));
+ let closed=existing.find(r=>r.plannedDate===day&&r.status!=='Realizada')||
+   existing.find(r=>r.status!=='Realizada');
+ if(!closed){
+  closed={id:'central-20261109-ti007-d7-nao-realizada',studyId:'Q-040',
+   planId:'Q-040',subject:'TI',topic:ti.code+' — '+ti.title,stage:'D+7'};
+  studyData.reviews.push(closed);changed=true;
+ }
+ const fields={planId:'Q-040',subject:'TI',topic:ti.code+' — '+ti.title,
+  stage:'D+7',status:'Não realizada',plannedDate:day,doneDate:'',
+  durationMinutes:0,completionConfirmed:false,wasNotPerformed:true,
+  closedNoFurtherTecReviews:true,
+  notPerformedReason:'Esgotamento das questões no TEC; não realizar novas revisões TEC deste tópico.',
+  recordOrigin:NOV09_REPORT_ORIGIN};
+ for(const [k,v] of Object.entries(fields))if(closed[k]!==v){closed[k]=v;changed=true;}
+ const count=studyData.reviews.length;
+ studyData.reviews=studyData.reviews.filter(r=>r===closed||r.status==='Realizada'||!belongs(r));
+ if(studyData.reviews.length!==count)changed=true;
+ if(changed&&!writeData())return;
+ try{localStorage.setItem(NOV09_REPORT_KEY,'1');}catch(e){}
+}
+
 function confirmTi6CompletedReview(){
  const key='central-estudos-ti6-d1-confirmada-20261108-v1';
  try{if(localStorage.getItem(key)==='1')return;}catch(e){}
@@ -3396,6 +3537,7 @@ migrateCP36Once();
 applyNov04Records();
 applyLpLing3D7IndividualRecordOnce();
 applyNov08RecordsOnce();
+applyNov09RecordsOnce();
 // Recupera D+1/D+7/D+30 dos estudos refeitos de CP 1 e CP 2 em 08/11/2026.
 // Revisões anteriores reiniciadas ficam preservadas no histórico, mas não bloqueiam novos ciclos.
 function syncNov08CpReviews(){
