@@ -1342,7 +1342,7 @@ function buildWeeklyPlan(){
 let studyWeeks=[];
 let weeklyUnitIndex=new Map();
 function rebuildWeeklyPlan(){
- studyWeeks=rebalanceAprofPlan(buildWeeklyPlan());
+ studyWeeks=redistributeWeek3Aprofundamento(buildWeeklyPlan());
  weeklyUnitIndex=new Map(studyWeeks.flatMap(w=>w.units.map(u=>[u.id,w.index])));
 }
 function plannedStudyDates(start,end){
@@ -1715,7 +1715,7 @@ function studyDaysRemaining(day,limit='2027-01-15'){
  let total=0;
  for(let current=start;current<=limit;){
   const date=new Date(current+'T12:00:00Z');
-  if(date.getUTCDay()!==5&&date.getUTCDay()!==6&&studyWeeks.some(w=>current>=w.start&&current<=w.end)&&!dateBetween(current,'2026-11-23','2026-11-28'))total++;
+  if((date.getUTCDay()!==5||current==='2026-11-13')&&date.getUTCDay()!==6&&studyWeeks.some(w=>current>=w.start&&current<=w.end)&&!dateBetween(current,'2026-11-23','2026-11-28'))total++;
   date.setUTCDate(date.getUTCDate()+1);
   current=date.toISOString().slice(0,10);
  }
@@ -2771,7 +2771,7 @@ function weeklySelectedDetails(data,w){
  const shownA=rows.filter(u=>u.flow==='A'),shownQ=rows.filter(u=>u.flow==='Q'),shownC=rows.filter(u=>u.flow==='C');
  const empty='<p class="weekly-empty">Nenhum tópico nesta categoria.</p>';
  return '<section class="weekly-selected"><h2>Semana '+w.number+' · '+weekRange(w)+'</h2>'+
- '<p class="weekly-note">Programação da semana: '+w.quotaA+' Aprofundamento, '+w.quotaQ+' Questões e '+w.quotaC+' Complementação (TEC) liberada. A meta de Complementação é dinâmica, sem cota fixa. Pendências transferidas da Semana 2 passam a integrar as metas das semanas seguintes.'+(w.number===4?' Semana 4: 9 dias corridos, com dois sábados sem estudos e sexta-feira disponível para Aprofundamento; Questões seguem a programação original.':' Aprofundamento ocorre de terça a sexta; sábado fica sem estudos novos.')+'</p>'+
+ '<p class="weekly-note">Programação da semana: '+w.quotaA+' Aprofundamento, '+w.quotaQ+' Questões e '+w.quotaC+' Complementação (TEC) liberada. A meta de Complementação é dinâmica, sem cota fixa. Pendências transferidas da Semana 2 passam a integrar as metas das semanas seguintes.'+(w.number===4?' Semana 4: 9 dias corridos, com dois sábados sem estudos e sexta-feira reservada às revisões; são 6 dias de novos estudos.':' Apenas nesta Semana 3, os Aprofundamentos pendentes foram divididos entre terça e sexta; nas demais semanas, sexta fica reservada às revisões e sábado sem novos estudos.')+'</p>'+
  '<div class="weekly-kpi">'+
  metricCard('Aprofundamento realizado',w.doneA)+
  metricCard('Questões realizadas',w.doneQ)+
@@ -2802,7 +2802,7 @@ function renderWeeklyWorkspace(){
  }).join('');
  const history=weeklyHistoricalComparison(d),historicalDone=history.done,historicalIdeal=history.ideal;
  return weeklySnapshot()+
- '<p class="weekly-pause">As metas e os resultados da tabela correspondem às unidades atribuídas a cada semana. A referência ideal histórica original é exibida separadamente. O saldo da Semana 2 preserva o ideal histórico original e não utiliza a meta operacional ajustada em 05/11. Em 09/11, os Aprofundamentos restantes foram reunidos e divididos pelas terças, quartas, quintas e sextas de 10/11/2026 a 15/01/2027. Estudos concluídos anteriormente permanecem em suas datas efetivas, e Questões mantêm a programação anterior. As Complementações pendentes da Semana 2 foram transferidas para 08/11. A Semana 1 inclui também um tópico de Questões de 19/10/2026, anterior ao seu início formal. O Saldo é acumulado por semana: soma do Realizado A/Q/C menos soma do Ideal A/Q/C (referências ideais A/Q originais e cadernos C programados). Para a semana em andamento, compara-se o ideal integral da semana com o realizado registrado até o momento. Valores positivos indicam adiantamento, negativos indicam atraso e semanas futuras não exibem saldo. As Complementações (TEC) entram automaticamente na semana de sua programação após liberação, sem alterar as metas originais de Aprofundamento e Questões.</p>'+
+ '<p class="weekly-pause">As metas e os resultados da tabela correspondem às unidades atribuídas a cada semana. A referência ideal histórica original é exibida separadamente. O saldo da Semana 2 preserva o ideal histórico original e não utiliza a meta operacional ajustada em 05/11. Somente os Aprofundamentos pendentes da Semana 3 (08–13/11) foram reunidos e divididos entre 10 e 13/11/2026, preservando os concluídos e a programação original das demais semanas e de Questões. As Complementações pendentes da Semana 2 foram transferidas para 08/11. A Semana 1 inclui também um tópico de Questões de 19/10/2026, anterior ao seu início formal. O Saldo é acumulado por semana: soma do Realizado A/Q/C menos soma do Ideal A/Q/C (referências ideais A/Q originais e cadernos C programados). Para a semana em andamento, compara-se o ideal integral da semana com o realizado registrado até o momento. Valores positivos indicam adiantamento, negativos indicam atraso e semanas futuras não exibem saldo. As Complementações (TEC) entram automaticamente na semana de sua programação após liberação, sem alterar as metas originais de Aprofundamento e Questões.</p>'+
  '<div class="weekly-kpi">'+metricCard('Ideal histórico A/Q/C — Até semana atual (Semana '+history.weekNumber+')',historicalIdeal)+metricCard('Realizado histórico A/Q/C — Até semana atual (Semana '+history.weekNumber+')',historicalDone)+metricCard('Diferença histórica A/Q/C',(historicalDone-historicalIdeal>0?'+':'')+(historicalDone-historicalIdeal))+metricCard('Total de Aprofundamento',A.length)+metricCard('Total de Questões',Q.length)+metricCard('Complementação cadastrada',C.length)+'</div>'+
  panel('Metas Semanais — Previsto × Realizado','As metas operacionais consideram a reprogramação de 05/11. O Saldo A/Q/C compara somente o ideal original acumulado e o realizado acumulado das três modalidades.','<div class="platform-scroll"><table class="platform-table weekly-table"><thead><tr><th>Semana</th><th>Período</th><th>Meta A</th><th>Feito A</th><th>Meta Q</th><th>Feito Q</th><th>Meta C</th><th>Feito C</th><th>Meta Total</th><th>Feito Total</th><th>Pendentes</th><th>Ideal histórico A/Q/C</th><th>Saldo A/Q/C</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
  weeklySelectedDetails(d,selected);
@@ -2898,7 +2898,7 @@ function renderDailyStudyWorkspace(){
  scheduled.filter(u=>complementGate(u).scheduled<date).length+
  revs.filter(r=>r.status!=='Realizada'&&r.plannedDate<date).length;
  return '<div class="daily-controls"><label for="dailyDate">Data</label><button type="button" data-daily-step="-1">‹ Anterior</button><input type="date" id="dailyDate" value="'+date+'"><button type="button" data-daily-step="1">Próximo ›</button><button type="button" data-daily-date="'+today+'">Hoje</button></div>'+
- '<div class="daily-weekstrip">'+days+'</div><p class="daily-note">Toda atividade que passou da data programada sem conclusão reaparece automaticamente no Cronograma do dia corrente e continua a ser transferida enquanto estiver pendente. As datas originais, os resultados e as metas permanecem preservados. Aprofundamentos restantes distribuídos de terça a sexta, desde 10/11/2026; Questões mantêm o calendário anterior. Sábado sem novos estudos.</p>'+
+ '<div class="daily-weekstrip">'+days+'</div><p class="daily-note">Toda atividade que passou da data programada sem conclusão reaparece automaticamente no Cronograma do dia corrente e continua a ser transferida enquanto estiver pendente. As datas originais, os resultados e as metas permanecem preservados. Nesta semana (08–13/11), apenas os Aprofundamentos pendentes são distribuídos de terça a sexta (10–13/11). Questões e semanas seguintes preservam o calendário original. Sábado sem estudos novos.</p>'+
  '<div class="weekly-kpi">'+metricCard('Aprofundamentos do dia',A.length)+metricCard('Tópicos de Questões do dia',Q.length)+metricCard('Complementações liberadas para hoje',scheduled.length)+metricCard('Revisões na agenda',revs.length)+metricCard('Pendências transferidas',carryCount)+metricCard('Tempo líquido',time.known?clockMinutes(time.minutes):'N/I')+'</div>'+
  panel('Estudos Iniciais — Aprofundamento',A.length+' nesta data.',A.length?A.map(row).join(''):blank)+
  panel('Estudos Iniciais — Questões',Q.length+' nesta data.',Q.length?Q.map(row).join(''):blank)+
@@ -3001,94 +3001,43 @@ function buildWeeklyPlan(){
  }
  return weeks;
 }
-// 09/11/2026 — Aprofundamentos ainda não concluídos: redistribuição
-// equilibrada em quatro dias semanais (terça a sexta), a partir de 10/11.
-// Conclusões anteriores e toda a programação de Questões são preservadas.
-function rebalanceAprofPlan(weeks){
- const start='2026-11-10',last='2027-01-15';
- const future=weeks.slice(2);
- const qByWeek=new Map();
- // Congelar o calendário diário original de Questões ANTES de alterar as cotas de A.
- for(const w of future){
-  const a=w.units.filter(u=>u.flow==='A'),q=w.units.filter(u=>u.flow==='Q');
-  const days=plannedStudyDates(w.start,w.end);
-  if(!days.length)throw Error('Semana sem dias de Questões: '+w.number);
-  const total=evenQuotas(a.length+q.length,days.length),aQuotas=evenQuotas(a.length,days.length);
-  const qQuotas=total.map((n,i)=>n-aQuotas[i]);
-  if(qQuotas.some(n=>n<0)||qQuotas.reduce((n,v)=>n+v,0)!==q.length)
-   throw Error('Distribuição original de Questões inconsistente: '+w.number);
-  let qi=0;
-  qByWeek.set(w.index,Object.fromEntries(days.map((day,i)=>{
-   const selected=q.slice(qi,qi+qQuotas[i]);qi+=qQuotas[i];
-   return [day,selected];
-  })));
- }
- const oldFutureA=future.flatMap(w=>w.units.filter(u=>u.flow==='A')).sort((a,b)=>a.order-b.order);
- const fixed=oldFutureA.filter(u=>{const d=completionOf(u)?.date;return d&&d<start;});
+// Ajuste restrito à semana de 08 a 13/11/2026: preserva os
+// aprofundamentos concluídos até 09/11 e divide somente os
+// aprofundamentos pendentes da semana entre terça e sexta (10–13/11).
+// As semanas posteriores e as Questões conservam sua programação original.
+function redistributeWeek3Aprofundamento(weeks){
+ const w=weeks.find(x=>x.index===2&&x.start==='2026-11-08'&&x.end==='2026-11-13');
+ if(!w)throw Error('Semana 3 (08–13/11) não encontrada.');
+ const A=w.units.filter(u=>u.flow==='A'),Q=w.units.filter(u=>u.flow==='Q');
+ const qDays=plannedStudyDates(w.start,w.end);
+ const allQuotas=evenQuotas(A.length+Q.length,qDays.length);
+ const aQuotas=evenQuotas(A.length,qDays.length);
+ const qQuotas=allQuotas.map((n,i)=>n-aQuotas[i]);
+ if(qQuotas.some(n=>n<0)||qQuotas.reduce((n,v)=>n+v,0)!==Q.length)
+  throw Error('Não é possível preservar a agenda original de Questões.');
+ let qStart=0;
+ w.qByDate=Object.fromEntries(qDays.map((d,i)=>{
+  const items=Q.slice(qStart,qStart+qQuotas[i]);
+  qStart+=qQuotas[i];
+  return [d,items];
+ }));
+ const fixed=A.filter(u=>{const done=completionOf(u)?.date;return done&&done<'2026-11-10';});
  const fixedIds=new Set(fixed.map(u=>u.id));
- const remainder=oldFutureA.filter(u=>!fixedIds.has(u.id));
- const anchors={'A-184':'A-CP-NEW-020','A-273':'A-CP-NEW-030','A-302':'A-CP-NEW-034','A-312':'A-CP-NEW-036'};
- const remainingById=new Map(remainder.map(u=>[u.id,u]));
- const groups=[];
- for(const u of remainder){
-  if(u.newTopic)continue;
-  const pair=anchors[u.id],group=[u];
-  if(pair){const child=remainingById.get(pair);if(!child)throw Error('Âncora CP indisponível: '+pair);group.push(child);}
-  groups.push(group);
- }
- if(groups.reduce((n,g)=>n+g.length,0)!==remainder.length)
-  throw Error('Agrupamento dos Aprofundamentos não abrange todas as unidades.');
- const dates=[];
- for(const w of future)for(let d=w.start;d<=w.end;d=shiftAgendaDate(d,1)){
-  const dow=new Date(d+'T12:00:00Z').getUTCDay();
-  if(d>=start&&d<=last&&dow>=2&&dow<=5&&!dateBetween(d,'2026-11-23','2026-11-28'))
-   dates.push(d);
- }
- if(dates.length!==36||new Set(dates).size!==dates.length)
-  throw Error('Calendário de Aprofundamento incompleto: '+dates.length+' datas.');
- const dailyGoals=evenQuotas(remainder.length,dates.length);
- const aByDate={};
+ const pending=A.filter(u=>!fixedIds.has(u.id));
+ const dates=['2026-11-10','2026-11-11','2026-11-12','2026-11-13'];
+ const quotas=evenQuotas(pending.length,dates.length);
+ const aByDate=Object.fromEntries(dates.map((d,i)=>{
+  const first=quotas.slice(0,i).reduce((n,x)=>n+x,0);
+  return [d,pending.slice(first,first+quotas[i])];
+ }));
  for(const u of fixed){
   const d=completionOf(u).date;
-  if(!future.some(w=>dateBetween(d,w.start,w.end)))throw Error('Estudo concluído sem semana válida: '+u.code);
   (aByDate[d]||(aByDate[d]=[])).push(u);
  }
- let index=0,assigned=0,expected=0;
- for(let i=0;i<dates.length;i++){
-  const chosen=[];
-  expected+=dailyGoals[i];
-  if(i===dates.length-1){
-   while(index<groups.length)chosen.push(...groups[index++]);
-  }else{
-   while(index<groups.length&&assigned+chosen.length+groups[index].length<=expected)
-    chosen.push(...groups[index++]);
-   if(index<groups.length&&groups[index].length===2){
-    const shortfall=expected-(assigned+chosen.length),overshoot=assigned+chosen.length+2-expected;
-    if(shortfall>overshoot)chosen.push(...groups[index++]);
-   }
-  }
-  aByDate[dates[i]]=chosen;
-  assigned+=chosen.length;
- }
- if(index!==groups.length||assigned!==remainder.length)
-  throw Error('Distribuição de Aprofundamentos incompleta.');
- for(const w of future){
-  const ownDays=Object.keys(aByDate).filter(d=>dateBetween(d,w.start,w.end)).sort();
-  const a=ownDays.flatMap(d=>aByDate[d]),q=w.units.filter(u=>u.flow==='Q');
-  w.units=[...a,...q].sort((x,y)=>x.flow.localeCompare(y.flow)||x.order-y.order);
-  w.quotaA=a.length;
-  w.aByDate=Object.fromEntries(ownDays.map(d=>[d,aByDate[d]]));
-  w.qByDate=qByWeek.get(w.index);
- }
- const all=weeks.flatMap(w=>w.units);
- if(all.length!==planUnits.filter(u=>u.flow==='A'||u.flow==='Q').length||
-    new Set(all.map(u=>u.id)).size!==all.length)
-  throw Error('Replanejamento gerou falta ou duplicação de unidades.');
- for(const [anchor,child] of Object.entries(anchors)){
-  const match=future.some(w=>Object.values(w.aByDate).some(day=>
-    day.some(u=>u.id===anchor)&&day.some(u=>u.id===child)));
-  if(!match)throw Error('Bloco CP não preservado no mesmo dia: '+anchor);
- }
+ w.aByDate=aByDate;
+ const assigned=Object.values(w.aByDate).flat().map(u=>u.id);
+ if(assigned.length!==A.length||new Set(assigned).size!==A.length)
+  throw Error('Aprofundamentos da Semana 3 duplicados ou ausentes.');
  return weeks;
 }
 
@@ -3104,15 +3053,33 @@ function getWeekPosition(){
 function dailyStudyAssignments(date){
  const week=studyWeeks.find(w=>dateBetween(date,w.start,w.end));
  if(!week)return {week:null,configured:false,units:[]};
- if(dateBetween(date,'2026-11-23','2026-11-28'))return {week,configured:false,units:[]};
+ const dow=new Date(date+'T12:00:00Z').getUTCDay();
+ if(week.index===2){
+  const a=week.aByDate?.[date]||[],q=week.qByDate?.[date]||[];
+  return {week,configured:Boolean(a.length||q.length),units:[...a,...q],day:0,carriedCount:0};
+ }
+ if(dow===5||dow===6||dateBetween(date,'2026-11-23','2026-11-28'))return {week,configured:false,units:[]};
  if(week.index===0||week.index===1){
-  // Semanas históricas: preservar apenas estudos concluídos nas datas reais.
-  const historical=week.units.filter(u=>completionOf(u)?.date===date);
+  // Histórico anterior é preservado. Nenhuma tarefa nova é marcada para a Semana 2.
+  const historical=week.units.filter(u=>{
+   const rec=studyData.studies.find(r=>r.planId===u.id&&!r.resetForRedo&&r.status==='Concluído');
+   return rec?.date===date;
+  });
+  const planned=[]; // Estudos novos da Semana 2 foram redistribuídos.
   return {week,configured:true,units:historical,day:0,carriedCount:0};
  }
- // Aprofundamento: terça a sexta. Questões: calendário original preservado.
- const a=week.aByDate?.[date]||[],q=week.qByDate?.[date]||[];
- return {week,configured:Boolean(a.length||q.length),units:[...a,...q],day:0,carriedCount:0};
+ const days=plannedStudyDates(week.start,week.end),ix=days.indexOf(date);
+ if(ix<0)return {week,configured:false,units:[]};
+ const a=week.units.filter(u=>u.flow==='A'),q=week.units.filter(u=>u.flow==='Q');
+ // Primeiro dividir a carga total; depois distribuir os dois fluxos dentro da meta diária.
+ // Isso evita sobrecarregar os primeiros dias quando A e Q são arredondados separadamente.
+ const totalQuotas=evenQuotas(a.length+q.length,days.length);
+ const aQuotas=evenQuotas(a.length,days.length);
+ const qQuotas=totalQuotas.map((n,i)=>n-aQuotas[i]);
+ if(qQuotas.some(n=>n<0)||qQuotas.reduce((n,x)=>n+x,0)!==q.length)throw Error('Distribuição diária de Questões inconsistente.');
+ const take=(units,quotas)=>units.slice(quotas.slice(0,ix).reduce((n,x)=>n+x,0),
+                                       quotas.slice(0,ix+1).reduce((n,x)=>n+x,0));
+ return {week,configured:true,units:[...take(a,aQuotas),...take(q,qQuotas)],day:ix,carriedCount:0};
 }
 
 function weeklyStudyState(){
@@ -3166,14 +3133,13 @@ function expectedInitialProgressForDay(day){
  const result={weekNumber:0,weekEnd:null,A:0,Q:0,total:0};
  for(const w of studyWeeks){
   if(day<w.start)break;
+  const days=plannedStudyDates(w.start,w.end),elapsed=days.filter(d=>d<=day).length;
+  const p=day>=w.end?1:elapsed/days.length;
+  result.A+=w.idealA*p;result.Q+=w.idealQ*p;
   result.weekNumber=w.number;result.weekEnd=w.end;
-  if(w.historical){
-   for(const u of w.units)if(completionOf(u)?.date<=day)result[u.flow]++;
-  }else{
-   for(const [date,units] of Object.entries(w.aByDate||{}))if(date<=day)result.A+=units.length;
-   for(const [date,units] of Object.entries(w.qByDate||{}))if(date<=day)result.Q+=units.length;
-  }
  }
+ result.A=Math.min(321,Math.round(result.A));
+ result.Q=Math.min(233,Math.round(result.Q));
  result.total=result.A+result.Q;
  return result;
 }
