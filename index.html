@@ -2672,8 +2672,9 @@ function weeklyExpectedProgressForDay(day=todayISO(),data=weeklyStudyState()){
   if(day<w.start)continue;
   const days=plannedStudyDates(w.start,w.end);
   const fraction=day>=w.end?1:(days.length?days.filter(d=>d<=day).length/days.length:0);
-  result.A+=(w.historical&&!w.adjusted?w.idealA:w.quotaA)*fraction;
-  result.Q+=(w.historical&&!w.adjusted?w.idealQ:w.quotaQ)*fraction;
+  // O ideal histórico original define o esperado; cotas operacionais não alteram essa referência.
+  result.A+=w.idealA*fraction;
+  result.Q+=w.idealQ*fraction;
   result.C+=w.complements.filter(u=>{
    const gate=complementGate(u),rec=completionOf(u);
    const planned=gate?.scheduled||gate?.releasedAt||rec?.plannedDate||rec?.date;
