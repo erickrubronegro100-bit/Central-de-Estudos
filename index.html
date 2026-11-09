@@ -2858,6 +2858,17 @@ function renderDailyStudyWorkspace(){
   return date===today?Boolean(r.plannedDate&&r.plannedDate<=today):
    date>today&&r.plannedDate===date;
  });
+ // Classificação pela modalidade do estudo inicial, não pela plataforma utilizada na revisão.
+ const revisionFlow=r=>{
+  const sourceStudy=studyData.studies.find(s=>s.id===r.studyId);
+  const unit=planById.get(r.planId)||planById.get(sourceStudy?.planId)||
+   planById.get(r.studyId)||findTopicUnit(r.subject,r.topic);
+  return unit?.flow||null;
+ };
+ const revisionA=revs.filter(r=>revisionFlow(r)==='A');
+ const revisionQ=revs.filter(r=>revisionFlow(r)==='Q');
+ const revisionC=revs.filter(r=>revisionFlow(r)==='C');
+ const revisionOther=revs.filter(r=>!['A','Q','C'].includes(revisionFlow(r)));
  const rRow=r=>{
   const u=findTopicUnit(r.subject,r.topic);
   const detail=r.status==='Realizada'?'Realizada'+(r.doneDate?' em '+dateBR(r.doneDate):''):
@@ -2876,7 +2887,10 @@ function renderDailyStudyWorkspace(){
  panel('Estudos Iniciais — Questões',Q.length+' nesta data.',Q.length?Q.map(row).join(''):blank)+
  panel('Complementação (TEC) — agenda dinâmica',scheduled.length+' caderno(s) liberado(s) para esta data.',scheduled.length?scheduled.map(cRow).join(''):blank)+
  ''+
- panel('Revisões D+1, D+7 e D+30',revs.length+' ciclo(s) registrado(s).',revs.length?revs.map(rRow).join(''):blank);
+ panel('Revisões — Aprofundamento',revisionA.length+' revisão(ões) de estudos de Aprofundamento (D+1, D+7 e D+30).',revisionA.length?revisionA.map(rRow).join(''):blank)+
+ panel('Revisões — Questões',revisionQ.length+' revisão(ões) de estudos iniciais de Questões (D+1, D+7 e D+30).',revisionQ.length?revisionQ.map(rRow).join(''):blank)+
+ panel('Revisões — Complementação (TEC)',revisionC.length+' revisão(ões) de Complementação (TEC) (D+1, D+7 e D+30).',revisionC.length?revisionC.map(rRow).join(''):blank)+
+ (revisionOther.length?panel('Revisões — Sem modalidade identificada',revisionOther.length+' revisão(ões) sem vínculo inequívoco com uma unidade do planejamento.',revisionOther.map(rRow).join('')):'');
 }
 
 // MIGRAÇÃO ADITIVA E IDPOTENTE DE CP 32 → 36, preservando histórico e IDs dos tópicos já existentes.
