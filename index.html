@@ -2810,31 +2810,72 @@ function renderContinuousWorkspace(){
 }
 function renderDailyStudyWorkspace(){
  const today=todayISO(),date=dailySelectedDate||today,info=dailyStudyAssignments(date);
+ const completed=weeklyStudyState().completed;
+ // Pendências de A/Q retornam à agenda corrente sem mudança nas datas de origem.
+ const pendingPrevious=new Map();
+ for(const w of studyWeeks){
+  if(w.start>=today)continue;
+  for(const prior of plannedStudyDates(w.start,w.end)){
+   if(prior>=today)break;
+   for(const unit of dailyStudyAssignments(prior).units){
+    if(!completed.has(unit.id)&&!pendingPrevious.has(unit.id))pendingPrevious.set(unit.id,{unit,origin:prior});
+   }
+  }
+ }
+ const dailyEntries=(target)=>{
+  const originals=dailyStudyAssignments(target).units.filter(u=>target>=today||completed.has(u.id))
+    .map(unit=>({unit,origin:null}));
+  if(target!==today)return originals;
+  const seen=new Set(originals.map(x=>x.unit.id));
+  return [...[...pendingPrevious.values()].filter(x=>!seen.has(x.unit.id)),...originals];
+ };
  const shift=new Date(date+'T12:00:00Z').getUTCDay(),sunday=shiftAgendaDate(date,-shift);
  const days=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map((label,i)=>{
-  const d=shiftAgendaDate(sunday,i),u=dailyStudyAssignments(d).units;
-  return '<button type="button" data-daily-date="'+d+'" aria-pressed="'+(d===date)+'">'+label+' · '+dateBR(d)+'<small>'+u.filter(x=>x.flow==='A').length+' A + '+u.filter(x=>x.flow==='Q').length+' Q</small></button>';
+  const d=shiftAgendaDate(sunday,i),u=dailyEntries(d),carry=u.filter(x=>x.origin).length;
+  return '<button type="button" data-daily-date="'+d+'" aria-pressed="'+(d===date)+'">'+label+' · '+dateBR(d)+'<small>'+
+   u.filter(x=>x.unit.flow==='A').length+' A + '+u.filter(x=>x.unit.flow==='Q').length+
+   ' Q'+(carry?' · +'+carry+' adiadas':'')+'</small></button>';
  }).join('');
- const completed=weeklyStudyState().completed;
- const row=u=>{
-  const r=completed.get(u.id);
-  return '<div class="weekly-topic '+(r?'weekly-topic-done':'')+'"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span><small>'+escapeHtml(subjectLabel(u.subject))+' · '+(r?'Concluído':'Pendente')+'</small></div><div class="weekly-actions"><button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="Estudo inicial">Abrir bloco</button><button type="button" class="smallbtn" data-plan-id="'+escapeHtml(u.id)+'" data-plan-done="'+(r?'0':'1')+'">'+(r?'↶ Reabrir':'✓ Concluir')+'</button></div></div>';
+ const row=item=>{
+  const u=item.unit,r=completed.get(u.id);
+  const detail=r?'Concluído'+(r.date?' em '+dateBR(r.date):''):'Pendente'+(item.origin?' · Adiado desde '+dateBR(item.origin):'');
+  return '<div class="weekly-topic '+(r?'weekly-topic-done':'')+'"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span><small>'+escapeHtml(subjectLabel(u.subject))+' · '+escapeHtml(detail)+'</small></div><div class="weekly-actions"><button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="Estudo inicial">Abrir bloco</button><button type="button" class="smallbtn" data-plan-id="'+escapeHtml(u.id)+'" data-plan-done="'+(r?'0':'1')+'">'+(r?'↶ Reabrir':'✓ Concluir')+'</button></div></div>';
  };
- const A=info.units.filter(u=>u.flow==='A'),Q=info.units.filter(u=>u.flow==='Q');
- const C=planUnits.filter(u=>u.flow==='C'),scheduled=C.filter(u=>{const g=complementGate(u);return g.status==='Liberado'&&g.scheduled===date;});
- const overdue=C.filter(u=>{const g=complementGate(u);return g.status==='Liberado'&&g.scheduled&&g.scheduled<date;});
- const cRow=u=>'<div class="weekly-topic"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span><small>Liberação: '+dateBR(complementGate(u).releasedAt)+' · Gatilhos: '+escapeHtml(u.triggerCodes.join(' + '))+'</small></div><button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="Estudo inicial">Abrir TEC</button></div>';
- const revs=studyData.reviews.filter(r=>!r.resetForRedo&&(r.plannedDate===date||r.doneDate===date));
- const rRow=r=>{const u=findTopicUnit(r.subject,r.topic);return '<div class="daily-review-item"><div><strong>'+escapeHtml(r.stage)+'</strong><span>'+escapeHtml(r.topic)+'</span><small>'+escapeHtml(r.status)+' · '+dateBR(r.plannedDate)+'</small></div>'+(u?'<button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="'+escapeHtml(r.stage)+'">Abrir</button>':'')+'</div>';};
+ const entries=dailyEntries(date);
+ const A=entries.filter(x=>x.unit.flow==='A'),Q=entries.filter(x=>x.unit.flow==='Q');
+ const C=planUnits.filter(u=>u.flow==='C'),scheduled=C.filter(u=>{
+  const g=complementGate(u);
+  if(!['Liberado','Em andamento'].includes(g.status)||!g.scheduled)return false;
+  return g.scheduled===date&&date>=today||(date===today&&g.scheduled<date);
+ });
+ const cRow=u=>{
+  const g=complementGate(u),detail='Liberação: '+dateBR(g.releasedAt)+' · Gatilhos: '+u.triggerCodes.join(' + ')+(g.scheduled<date?' · Adiado desde '+dateBR(g.scheduled):'');
+  return '<div class="weekly-topic"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span><small>'+escapeHtml(detail)+'</small></div><button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="Estudo inicial">Abrir TEC</button></div>';
+ };
+ const revs=studyData.reviews.filter(r=>{
+  if(r.resetForRedo||!['D+1','D+7','D+30'].includes(r.stage))return false;
+  if(r.status==='Realizada')return r.plannedDate===date||r.doneDate===date;
+  return date===today?Boolean(r.plannedDate&&r.plannedDate<=today):
+   date>today&&r.plannedDate===date;
+ });
+ const rRow=r=>{
+  const u=findTopicUnit(r.subject,r.topic);
+  const detail=r.status==='Realizada'?'Realizada'+(r.doneDate?' em '+dateBR(r.doneDate):''):
+   'Pendente'+(r.plannedDate<date?' · Adiada desde '+dateBR(r.plannedDate):'');
+  return '<div class="daily-review-item"><div><strong>'+escapeHtml(r.stage)+'</strong><span>'+escapeHtml(visibleTopicTitle(r.topic))+'</span><small>'+escapeHtml(detail)+' · Prevista originalmente: '+dateBR(r.originalPlannedDate||r.plannedDate)+'</small></div>'+(u?'<button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="'+escapeHtml(r.stage)+'">Abrir</button>':'')+'</div>';
+ };
  const blank='<div class="emptytable">Nenhuma atividade programada para a data.</div>';
  const time=dailyRegisteredStudyMinutes(date);
+ const carryCount=A.filter(x=>x.origin).length+Q.filter(x=>x.origin).length+
+ scheduled.filter(u=>complementGate(u).scheduled<date).length+
+ revs.filter(r=>r.status!=='Realizada'&&r.plannedDate<date).length;
  return '<div class="daily-controls"><label for="dailyDate">Data</label><button type="button" data-daily-step="-1">‹ Anterior</button><input type="date" id="dailyDate" value="'+date+'"><button type="button" data-daily-step="1">Próximo ›</button><button type="button" data-daily-date="'+today+'">Hoje</button></div>'+
- '<div class="daily-weekstrip">'+days+'</div><p class="daily-note">Os estudos iniciais são distribuídos de domingo a quinta-feira, equilibrando a carga total de Aprofundamento e Questões. Sexta-feira é reservada às revisões; sábado não recebe estudos novos. Complementação (TEC) é liberada conforme os pré-requisitos.</p>'+
- '<div class="weekly-kpi">'+metricCard('Aprofundamentos do dia',A.length)+metricCard('Tópicos de Questões do dia',Q.length)+metricCard('Complementações liberadas para hoje',scheduled.length)+metricCard('Revisões na data',revs.length)+metricCard('Tempo líquido',time.known?clockMinutes(time.minutes):'N/I')+'</div>'+
+ '<div class="daily-weekstrip">'+days+'</div><p class="daily-note">Toda atividade que passou da data programada sem conclusão reaparece automaticamente no Cronograma do dia corrente e continua a ser transferida enquanto estiver pendente. As datas originais, os resultados e as metas permanecem preservados. Sexta-feira segue reservada a revisões; sábado não recebe novos estudos planejados.</p>'+
+ '<div class="weekly-kpi">'+metricCard('Aprofundamentos do dia',A.length)+metricCard('Tópicos de Questões do dia',Q.length)+metricCard('Complementações liberadas para hoje',scheduled.length)+metricCard('Revisões na agenda',revs.length)+metricCard('Pendências transferidas',carryCount)+metricCard('Tempo líquido',time.known?clockMinutes(time.minutes):'N/I')+'</div>'+
  panel('Estudos Iniciais — Aprofundamento',A.length+' nesta data.',A.length?A.map(row).join(''):blank)+
  panel('Estudos Iniciais — Questões',Q.length+' nesta data.',Q.length?Q.map(row).join(''):blank)+
  panel('Complementação (TEC) — agenda dinâmica',scheduled.length+' caderno(s) liberado(s) para esta data.',scheduled.length?scheduled.map(cRow).join(''):blank)+
- (overdue.length?panel('Complementações liberadas antes e não iniciadas','Pendências de cadernos TEC.',overdue.map(cRow).join('')):'')+
+ ''+
  panel('Revisões D+1, D+7 e D+30',revs.length+' ciclo(s) registrado(s).',revs.length?revs.map(rRow).join(''):blank);
 }
 
