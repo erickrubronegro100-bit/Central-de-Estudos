@@ -614,7 +614,7 @@ function ensureScheduledReviews(study){
   const originalReviewDate=shiftReviewDate(study.date,offset);
   const plannedDate=nextPermittedReviewDate(originalReviewDate);
   if(!plannedDate)continue;
-  const matches=studyData.reviews.filter(r=>r.stage===stage&&reviewMatchesStudy(r,study));
+  const matches=studyData.reviews.filter(r=>!r.resetForRedo&&r.stage===stage&&reviewMatchesStudy(r,study));
   if(matches.length){
    // Reagendamento ou revisão já realizada prevalece sobre automação; não duplicar.
    for(const old of matches){
@@ -2421,7 +2421,24 @@ function renderWorkspace(v){
   const all=studyData.reviews.filter(x=>!x.resetForRedo&&(!stage||x.stage===stage)&&(!flow||reviewInitialStudyFlow(x)===flow)&&(v.id!=="revisoes-dia"||x.plannedDate===todayISO()||x.doneDate===todayISO()));
   const counts=["Programadas","Realizadas","Pendentes"].map(label=>all.filter(x=>statusReview(x)===label).length);
   const choice=viewFilters[v.id]||"Programadas",shown=all.filter(x=>statusReview(x)===choice).slice().reverse();
-  body=(v.id==="revisoes-geral"?renderReviewGeneralPanels():"")+`<div class="workspace-metrics">${metricCard("Programadas",counts[0])}${metricCard("Realizadas",counts[1])}${metricCard("Pendentes",counts[2])}</div>${choiceBar(v.id,["Programadas","Realizadas","Pendentes"])}${actionsHtml("review")}${entryForm("review",v)}${panel((stage||v.title)+" · "+choice,"Revisões separadas por modalidade, em dias corridos.",listFor(shown,"review"))}`;
+  const groupedPanels=v.id==="revisoes-dia"?
+   [["A","Revisões — Aprofundamento"],["Q","Revisões — Questões"],["C","Revisões — Complementação (TEC)"]].map(([modality,title])=>{
+    const items=shown.filter(r=>reviewInitialStudyFlow(r)===modality);
+    return panel(title,items.length+" revisão(ões) "+choice.toLowerCase()+" nesta modalidade · D+1, D+7 e D+30.",listFor(items,"review"));
+   }).join("")+
+   (shown.some(r=>!["A","Q","C"].includes(reviewInitialStudyFlow(r)))?
+    panel("Revisões — Sem modalidade identificada","Revisões cujo estudo inicial não pôde ser classificado.",
+      listFor(shown.filter(r=>!["A","Q","C"].includes(reviewInitialStudyFlow(r))),"review")):""):
+   panel((stage||v.title)+" · "+choice,"Revisões separadas por modalidade, em dias corridos.",listFor(shown,"review"));
+  const modalitySummary=v.id==="revisoes-dia"?
+   '<div class="workspace-metrics">'+
+    metricCard("Aprofundamento",all.filter(r=>reviewInitialStudyFlow(r)==="A").length)+
+    metricCard("Questões",all.filter(r=>reviewInitialStudyFlow(r)==="Q").length)+
+    metricCard("Complementação (TEC)",all.filter(r=>reviewInitialStudyFlow(r)==="C").length)+
+   '</div>':"";
+  body=(v.id==="revisoes-geral"?renderReviewGeneralPanels():"")+
+   '<div class="workspace-metrics">'+metricCard("Programadas",counts[0])+metricCard("Realizadas",counts[1])+metricCard("Pendentes",counts[2])+'</div>'+
+   modalitySummary+choiceBar(v.id,["Programadas","Realizadas","Pendentes"])+actionsHtml("review")+entryForm("review",v)+groupedPanels;
  }else{
   const rawAttempts=subsetByView(v,studyData.attempts).filter(x=>!x.resetForRedo);
   const allAttempts=topicResults(rawAttempts),m=metricsAttempt(rawAttempts),has=m.all>0;
@@ -3333,6 +3350,17 @@ migrateCP36Once();
 applyNov04Records();
 applyLpLing3D7IndividualRecordOnce();
 applyNov08RecordsOnce();
+// Recupera D+1/D+7/D+30 dos estudos refeitos de CP 1 e CP 2 em 08/11/2026.
+// Revisões anteriores reiniciadas ficam preservadas no histórico, mas não bloqueiam novos ciclos.
+function syncNov08CpReviews(){
+ let changed=false;
+ for(const planId of ["A-006","A-016"]){
+  const study=studyData.studies.find(st=>st.planId===planId&&st.date==="2026-11-08"&&st.status==="Concluído"&&!st.resetForRedo);
+  if(study&&ensureScheduledReviews(study))changed=true;
+ }
+ if(changed)writeData();
+}
+syncNov08CpReviews();
 confirmTi6CompletedReview();
 closeSpecifiedReviewCycles();
 standardizeTopicNames();
