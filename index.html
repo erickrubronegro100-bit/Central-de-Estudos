@@ -607,7 +607,7 @@ function reviewMatchesStudy(r,study){
  return topicKey(r)===topicKey(study);
 }
 function ensureScheduledReviews(study){
- if(!study||study.status!=='Concluído')return false;
+ if(!study||study.status!=='Concluído'||['Q-038','C-RCCN-001'].includes(study.planId)||/^(?:DA\s*0*23|RCCN\/TEC\s*0*1)\b/i.test(String(study.topic||'')))return false;
  let modified=false;
  for(const [stage,offset] of [['D+1',1],['D+7',7],['D+30',30]]){
   if(study.planId==='Q-038'&&(stage==='D+7'||stage==='D+30'))continue;
@@ -1240,7 +1240,14 @@ function attemptHistoryHtml(rec){
   '<div class="platform-scroll" role="region" tabindex="0" aria-label="Histórico de sessões com resultados vinculados a estudos e revisões"><table class="platform-table"><thead><tr><th>Data</th><th>Etapa / contato</th><th>Situação</th><th>Origem</th><th>Q</th><th>AS</th><th>AI</th><th>ES</th><th>EI</th><th>Tempo</th></tr></thead><tbody>'+
   sessions.map(renderRow).join('')+'</tbody></table></div><p class="study-pedagogical">Os dados de questões são vinculados à sessão pela data e etapa informadas. Traço (—) significa ausência de informação individualizada, não zero. * Tempo informado com ressalva.</p></details>';
 }
-function visibleTopicTitle(value){return String(value||'').replace(/^([A-Z]+(?:\/[A-Z]+)?)\s*0*(\d+)\b/i,(_,p,n)=>p.toUpperCase()+' '+Number(n));}
+function visibleTopicTitle(value){
+ const raw=String(value||'').trim();
+ const m=raw.match(/^([A-Z]+(?:\/[A-Z]+)*)\s*0*(\d+)\b/i);
+ if(!m)return raw;
+ const code=m[1].toUpperCase()+' '+Number(m[2]);
+ const unit=planUnits.find(u=>u.code===code);
+ return unit?unit.code+' — '+unit.title:raw.replace(/^([A-Z]+(?:\/[A-Z]+)*)\s*0*(\d+)\b/i,(_,p,n)=>p.toUpperCase()+' '+Number(n)).replace(/\s+[-–—]\s+/,' — ');
+}
 function renderEntry(x,kind){
  const status=kind==='study'?statusStudy(x):kind==='review'?statusReview(x):'';
  const headline=visibleTopicTitle(x.topic||'Tópico não informado');
@@ -1651,7 +1658,7 @@ function renderStudyWorkspace(v){
 function setPlanDone(id,done){
  const unit=planById.get(id);if(!unit)return;
  const was=studyData.studies.find(x=>x.planId===id);
- if(done){const rec={id:was?.id||freshId(),planId:id,subject:unit.subject,topic:unit.code+' - '+unit.title,activity:unit.flow==='A'?'Aprofundamento':'Questões',status:'Concluído',date:was?.date||todayISO(),note:was?.note||''};if(was)Object.assign(was,rec);else studyData.studies.push(rec);ensureScheduledReviews(was||rec)}
+ if(done){const rec={id:was?.id||freshId(),planId:id,subject:unit.subject,topic:unit.code+' — '+unit.title,activity:unit.flow==='A'?'Aprofundamento':'Questões',status:'Concluído',date:was?.date||todayISO(),note:was?.note||''};if(was)Object.assign(was,rec);else studyData.studies.push(rec);ensureScheduledReviews(was||rec)}
  else studyData.studies=studyData.studies.filter(x=>x.planId!==id);
  writeData();renderWorkspace(workspaceById[activeView]);refreshOverview();toast(done?'Unidade marcada como concluída.':'Unidade retornou a Planejados.');
 }
@@ -2636,11 +2643,11 @@ function refreshOverview(){
  centralProgressCards()+
  '<div class="dash-kpi-grid">'+stats('UNIDADES CADASTRADAS',prog.all.total,'Distribuição por modalidade de estudo')+
  stats('UNIDADES CONCLUÍDAS',prog.all.done,'Execução efetiva')+
- stats('PREVISTO ATÉ HOJE',prog.all.expected,'Semana 1 ideal histórico, Semana 2 meta ajustada e semanas seguintes reprogramadas')+
+ stats('PREVISTO ATÉ HOJE',prog.all.expected,'Metas acumuladas de acordo com a programação vigente')+
  stats('SALDO REALIZADO − PREVISTO',(prog.all.done-prog.all.expected>0?'+':'')+(prog.all.done-prog.all.expected),'Atraso negativo · adiantamento positivo')+'</div>'+
  '<div class="dash-kpi-grid">'+
- stats('IDEAL HISTÓRICO A/Q/C',history.ideal,'Semanas 1 e 2 · '+history.idealA+' A + '+history.idealQ+' Q + '+history.idealC+' C')+
- stats('REALIZADO HISTÓRICO A/Q/C',history.done,'Semanas 1 e 2 · '+history.doneA+' A + '+history.doneQ+' Q + '+history.doneC+' C')+
+ stats('Ideal histórico A/Q/C — Até semana atual (Semana '+history.weekNumber+')',history.ideal,'Acumulado · '+history.idealA+' A + '+history.idealQ+' Q + '+history.idealC+' C')+
+ stats('Realizado histórico A/Q/C — Até semana atual (Semana '+history.weekNumber+')',history.done,'Acumulado · '+history.doneA+' A + '+history.doneQ+' Q + '+history.doneC+' C')+
  stats('DIFERENÇA HISTÓRICA A/Q/C',(history.diff>0?'+':'')+history.diff,'Realizado menos ideal histórico')+'</div>'+
  weeklySnapshot()+'</section>'+
  '<section class="dash-section"><div class="dash-titlebar"><div><h2>Revisões</h2><p>Histórico e datas por etapa D+1, D+7 e D+30.</p></div>'+nav('revisoes-dia','Revisões do dia')+'</div>'+
@@ -2690,11 +2697,14 @@ function weeklyBalanceForWeek(week,data,day=todayISO()){
  return {idealA,idealQ,idealC,doneA,doneQ,doneC,ideal,done,balance:done-ideal};
 }
 function weeklyHistoricalComparison(data=weeklyStudyState()){
- const weeks=data.weeks.filter(w=>w.historical),sum=k=>weeks.reduce((n,w)=>n+w[k],0);
+ // Acumulado dinâmico até a semana corrente, incluindo a própria semana.
+ const now=todayISO();
+ const weeks=data.weeks.filter(w=>w.index<=data.position.index&&w.start<=now);
+ const sum=k=>weeks.reduce((n,w)=>n+w[k],0);
  const idealA=sum('idealA'),idealQ=sum('idealQ'),idealC=sum('quotaC');
  const doneA=sum('doneA'),doneQ=sum('doneQ'),doneC=sum('doneC');
  const ideal=idealA+idealQ+idealC,done=doneA+doneQ+doneC;
- return {idealA,idealQ,idealC,doneA,doneQ,doneC,ideal,done,diff:done-ideal};
+ return {weekNumber:data.active.number,idealA,idealQ,idealC,doneA,doneQ,doneC,ideal,done,diff:done-ideal};
 }
 function centralProgressModel(day=todayISO()){
  const kinds=['A','C','Q'].map(flow=>{
@@ -2712,7 +2722,7 @@ function centralProgressCards(day=todayISO()){
  const bars=[['PROGRESSO GERAL',d.all],['APROFUNDAMENTO',d.A],['COMPLEMENTAÇÃO (TEC)',d.C],['QUESTÕES',d.Q]];
  return '<div class="study-progress-grid">'+bars.map(([title,data])=>{
   const done=data.done,goal=data.expected,total=data.total,diff=done-goal;
-  const isC=data.flow==='C',note=isC?'Previsto = cadernos programados até a data após liberação':'Previsto = ideal histórico na Semana 1, meta ajustada na Semana 2 e metas redistribuídas da Semana 3 em diante';
+  const isC=data.flow==='C',note=isC?'Previsto = cadernos liberados e programados até a data de referência':'Previsto = metas de estudo acumuladas até a data de referência do planejamento';
   const pct=x=>total?Math.min(100,Math.max(0,x/total*100)):0;
   const balance=diff<0?formatNum(-diff)+' unidade(s) atrás da meta':diff>0?formatNum(diff)+' unidade(s) adiantada(s)':'Meta atingida';
   return '<article class="study-progress-card"><h3>'+title+'</h3>'+
@@ -2731,7 +2741,7 @@ function weeklySnapshot(){
  weeklyProgress('APROFUNDAMENTO',w.doneA,w.quotaA)+
  weeklyProgress('QUESTÕES',w.doneQ,w.quotaQ)+
  weeklyProgress('COMPLEMENTAÇÃO (TEC)',w.doneC,w.quotaC)+'</div>'+
- '<div class="weekly-meta"><span>Ideal histórico A/Q/C (semanas 1 e 2): <strong>'+formatNum(history.ideal)+'</strong></span><span>Realizado histórico A/Q/C: <strong>'+formatNum(history.done)+'</strong></span><span>Diferença histórica: <strong>'+(history.diff>0?'+':'')+formatNum(history.diff)+'</strong></span><span>Complementações programadas na semana: <strong>'+formatNum(w.quotaC)+'</strong></span><span>Pendências anteriores: <strong>'+formatNum(d.backlog.length)+'</strong></span></div></section>';
+ '<div class="weekly-meta"><span>Ideal histórico A/Q/C — Até semana atual (Semana '+history.weekNumber+'): <strong>'+formatNum(history.ideal)+'</strong></span><span>Realizado histórico A/Q/C — Até semana atual (Semana '+history.weekNumber+'): <strong>'+formatNum(history.done)+'</strong></span><span>Diferença histórica: <strong>'+(history.diff>0?'+':'')+formatNum(history.diff)+'</strong></span><span>Complementações programadas na semana: <strong>'+formatNum(w.quotaC)+'</strong></span><span>Pendências anteriores: <strong>'+formatNum(d.backlog.length)+'</strong></span></div></section>';
 }
 function weeklySelectedDetails(data,w){
  const mode=['Todos','Pendentes','Concluídos'].includes(viewFilters['estudos-semanal'])?viewFilters['estudos-semanal']:'Todos';
@@ -2775,7 +2785,7 @@ function renderWeeklyWorkspace(){
  const history=weeklyHistoricalComparison(d),historicalDone=history.done,historicalIdeal=history.ideal;
  return weeklySnapshot()+
  '<p class="weekly-pause">As metas e os resultados da tabela correspondem às unidades atribuídas a cada semana. A referência ideal histórica original é exibida separadamente. O saldo da Semana 2 preserva o ideal histórico original e não utiliza a meta operacional ajustada em 05/11. Os Aprofundamentos pendentes foram redistribuídos equitativamente nas Semanas 3 a 11 e as Complementações pendentes da Semana 2 foram transferidas para 08/11. A Semana 1 inclui também um tópico de Questões de 19/10/2026, anterior ao seu início formal. O Saldo é acumulado por semana: soma do Realizado A/Q/C menos soma do Ideal A/Q/C (referências ideais A/Q originais e cadernos C programados). Para a semana em andamento, compara-se o ideal integral da semana com o realizado registrado até o momento. Valores positivos indicam adiantamento, negativos indicam atraso e semanas futuras não exibem saldo. As Complementações (TEC) entram automaticamente na semana de sua programação após liberação, sem alterar as metas originais de Aprofundamento e Questões.</p>'+
- '<div class="weekly-kpi">'+metricCard('Ideal histórico A/Q/C — Semanas 1 e 2',historicalIdeal)+metricCard('Realizado histórico A/Q/C — Semanas 1 e 2',historicalDone)+metricCard('Diferença histórica A/Q/C',(historicalDone-historicalIdeal>0?'+':'')+(historicalDone-historicalIdeal))+metricCard('Total de Aprofundamento',A.length)+metricCard('Total de Questões',Q.length)+metricCard('Complementação cadastrada',C.length)+'</div>'+
+ '<div class="weekly-kpi">'+metricCard('Ideal histórico A/Q/C — Até semana atual (Semana '+history.weekNumber+')',historicalIdeal)+metricCard('Realizado histórico A/Q/C — Até semana atual (Semana '+history.weekNumber+')',historicalDone)+metricCard('Diferença histórica A/Q/C',(historicalDone-historicalIdeal>0?'+':'')+(historicalDone-historicalIdeal))+metricCard('Total de Aprofundamento',A.length)+metricCard('Total de Questões',Q.length)+metricCard('Complementação cadastrada',C.length)+'</div>'+
  panel('Metas Semanais — Previsto × Realizado','As metas operacionais consideram a reprogramação de 05/11. O Saldo A/Q/C compara somente o ideal original acumulado e o realizado acumulado das três modalidades.','<div class="platform-scroll"><table class="platform-table weekly-table"><thead><tr><th>Semana</th><th>Período</th><th>Meta A</th><th>Feito A</th><th>Meta Q</th><th>Feito Q</th><th>Meta C</th><th>Feito C</th><th>Meta Total</th><th>Feito Total</th><th>Pendentes</th><th>Ideal histórico A/Q/C</th><th>Saldo A/Q/C</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
  weeklySelectedDetails(d,selected);
 }
@@ -2783,7 +2793,7 @@ function renderStudyGeneralPanels(){
  const d=centralProgressModel(),byFlow=[['Aprofundamento',d.A],['Complementação (TEC)',d.C],['Questões',d.Q]];
  const rows=byFlow.map(([n,v])=>'<tr><th>'+n+'</th><td>'+v.total+'</td><td>'+v.done+'</td><td>'+v.expected+'</td><td>'+(v.done-v.expected>0?'+':'')+(v.done-v.expected)+'</td></tr>').join('');
  return centralProgressCards()+weeklySnapshot()+
- panel('Consolidação das Modalidades','Previsto conforme as metas semanais: Semana 1 pelo ideal histórico, Semana 2 pela meta ajustada, semanas seguintes pelas metas A/Q redistribuídas e TEC programados.','<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Modalidade</th><th>Total</th><th>Concluídos</th><th>Esperados</th><th>Diferença</th></tr></thead><tbody>'+rows+'<tr><th>GERAL</th><td>'+d.all.total+'</td><td>'+d.all.done+'</td><td>'+d.all.expected+'</td><td>'+ (d.all.done-d.all.expected)+'</td></tr></tbody></table></div>')+
+ panel('Consolidação das Modalidades','Previsto conforme as metas de estudo acumuladas e as complementações liberadas e programadas até a data de referência.','<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Modalidade</th><th>Total</th><th>Concluídos</th><th>Esperados</th><th>Diferença</th></tr></thead><tbody>'+rows+'<tr><th>GERAL</th><td>'+d.all.total+'</td><td>'+d.all.done+'</td><td>'+d.all.expected+'</td><td>'+ (d.all.done-d.all.expected)+'</td></tr></tbody></table></div>')+
  '<div class="sector-links"><button class="dash-link" data-jump-view="estudos-semanal">Metas Semanais</button><button class="dash-link" data-jump-view="estudos-cronograma-dia">Cronograma diário</button><button class="dash-link" data-jump-view="estudos-geral">Sequência Integrada</button></div>';
 }
 function renderContinuousWorkspace(){
@@ -3153,11 +3163,123 @@ function applyLpLing3D7IndividualRecordOnce(){
  try{localStorage.setItem(LP3_D7_RECORD_KEY,'1');}catch(e){}
 }
 
+
+/* Atualização auditada: fechamento de 08/11/2026, nomenclatura comum,
+   confirmação TI 6 e encerramento das revisões DA 23/RCCN-TEC 1. */
+const NOV08_REPORT_KEY='central-estudos-fechamento-20261108-21-atividades-v1';
+const NOV08_REPORT_ROWS=[["A-012","ChatGPT","D+7",26,3,0,1,12],["A-011","ChatGPT","D+7",20,1,2,2,10],["A-010","ChatGPT","D+7",26,2,0,0,10],["A-006","ChatGPT","Estudo inicial",37,3,0,0,22],["A-021","ChatGPT","Estudo inicial",33,1,1,0,15],["A-022","ChatGPT","Estudo inicial",38,1,0,0,22],["A-016","ChatGPT","Estudo inicial",41,1,1,0,18],["A-023","ChatGPT","Estudo inicial",45,1,0,1,17],["A-024","ChatGPT","Estudo inicial",18,0,0,0,12],["Q-043","TEC","Estudo inicial",8,1,0,1,2],["Q-045","TEC","Estudo inicial",2,0,0,0,1],["Q-047","TEC","Estudo inicial",9,0,2,0,3],["Q-044","TEC","Estudo inicial",3,1,0,0,1],["Q-046","TEC","Estudo inicial",6,8,0,3,2],["C-PL-001","TEC","Estudo inicial",1,1,0,0,1],["C-LP-LING-001","TEC","Estudo inicial",1,0,0,0,1],["C-LP-LING-002","TEC","Estudo inicial",1,0,0,0,1],["C-LP-LING-003","TEC","Estudo inicial",1,1,0,1,2],["Q-024","TEC","D+7",3,1,0,0,1],["Q-021","TEC","D+7",9,0,0,0,1],["Q-023","TEC","D+7",2,0,0,2,1]];
+function applyNov08RecordsOnce(){
+ try{if(localStorage.getItem(NOV08_REPORT_KEY)==='1')return;}catch(e){}
+ const day='2026-11-08';
+ let changed=false;
+ for(const item of NOV08_REPORT_ROWS){
+  const [planId,source,stage,cs,cu,ws,wu,durationMinutes]=item;
+  const unit=planById.get(planId);
+  if(!unit)throw Error('Unidade do relatório não encontrada: '+planId);
+  const topic=unit.code+' — '+unit.title;
+  const slug=planId.toLowerCase().replace(/[^a-z0-9]+/g,'-');
+  let study=studyData.studies.find(s=>s.planId===planId&&s.date===day&&s.status==='Concluído'&&!s.resetForRedo);
+  if(stage==='Estudo inicial'&&!study){
+   study=studyData.studies.find(s=>s.planId===planId&&s.status==='Concluído'&&!s.resetForRedo);
+   if(!study){
+    study={id:'central-20261108-'+slug+'-estudo',planId,subject:unit.subject,topic,
+     activity:unit.flow==='C'?'Complementação (TEC)':unit.flow==='Q'?'Questões':'Aprofundamento',
+     status:'Concluído',date:day,source,durationMinutes,
+     contact:source==='TEC'?'1º contato':'Estudo inicial',completionConfirmed:true,
+     recordOrigin:'Relatório Final de Desempenho de 08/11/2026'};
+    studyData.studies.push(study);changed=true;
+    if(ensureScheduledReviews(study))changed=true;
+   }
+  }
+  if(!study)study=studyData.studies.find(s=>s.planId===planId&&s.status==='Concluído'&&!s.resetForRedo);
+  const contact=stage==='D+7'?(source==='TEC'?'3º contato':'Revisão D+7'):
+      source==='TEC'?'1º contato':'Estudo inicial';
+  const equivalent=a=>!a.resetForRedo&&a.date===day&&a.source===source&&
+    (a.planId===planId||(a.subject===unit.subject&&topicKey(a)===topicKey({subject:unit.subject,topic})))&&
+    (a.stage===stage||(stage==='D+7'&&stageForContact(a.contact)==='D+7'));
+  const matches=studyData.attempts.filter(equivalent);
+  const id='central-20261108-'+slug+'-'+(stage==='D+7'?'d7':'inicial')+'-'+(source==='TEC'?'tec':'chatgpt');
+  const record={planId,subject:unit.subject,topic,source,date:day,stage,contact,
+    cs,cu,ws,wu,correctOther:0,wrongOther:0,durationMinutes,
+    completionConfirmed:true,completionStatus:'Concluída',questionsAnswered:cs+cu+ws+wu,
+    ...(study?{studyId:study.id}:{}),
+    ...(source==='TEC'?{correctedErrors:ws+wu,insecureCorrectStudied:cu,insecureCorrectUnstudied:0}:{}),
+    recordOrigin:'Relatório Final de Desempenho de 08/11/2026'};
+  let target=matches[0];
+  if(!target){target={id};studyData.attempts.push(target);changed=true;}
+  for(const [key,value] of Object.entries(record)){
+   if(JSON.stringify(target[key])!==JSON.stringify(value)){target[key]=value;changed=true;}
+  }
+  if(target.platforms){delete target.platforms;changed=true;}
+  if(matches.length>1){
+   const duplicateIds=new Set(matches.slice(1).map(x=>x.id));
+   target.deduplicatedSessionIds=[...new Set([...(target.deduplicatedSessionIds||[]),...duplicateIds])];
+   studyData.attempts=studyData.attempts.filter(x=>!duplicateIds.has(x.id));
+   changed=true;
+  }
+  if(stage==='D+7'&&completeReviewFromContact(target))changed=true;
+ }
+ if(changed&&!writeData())return;
+ try{localStorage.setItem(NOV08_REPORT_KEY,'1')}catch(e){}
+}
+function confirmTi6CompletedReview(){
+ const key='central-estudos-ti6-d1-confirmada-20261108-v1';
+ try{if(localStorage.getItem(key)==='1')return;}catch(e){}
+ let changed=false;
+ for(const a of studyData.attempts.filter(a=>a.planId==='Q-033'&&a.date==='2026-11-03'&&
+    (a.stage==='D+1'||stageForContact(a.contact)==='D+1'))){
+  const fields={completionConfirmed:true,completionStatus:'Concluída',formalCompletion:'Confirmada',
+   reviewConfirmed:true,
+   pedagogicalNotes:'Revisão D+1 efetivamente realizada em 03/11/2026, com conclusão confirmada pelo estudante em 08/11/2026. Dois acertos inseguros permanecem registrados sem comprovação de estudo posterior.'};
+  for(const [k,v] of Object.entries(fields))if(a[k]!==v){a[k]=v;changed=true;}
+  if(completeReviewFromContact(a))changed=true;
+ }
+ if(changed&&!writeData())return;
+ try{localStorage.setItem(key,'1')}catch(e){}
+}
+function closeSpecifiedReviewCycles(){
+ const closedIds=new Set(['Q-038','C-RCCN-001']);
+ const banned=r=>{
+  if(closedIds.has(r.planId))return true;
+  const st=studyData.studies.find(s=>s.id===r.studyId);
+  if(st&&closedIds.has(st.planId))return true;
+  const raw=String(r.topic||'');
+  return r.subject==='DA'&&/^DA\s*0*23\b/i.test(raw)||
+         r.subject==='RCCN'&&/^RCCN\/TEC\s*0*1\b/i.test(raw);
+ };
+ const before=studyData.reviews.length;
+ studyData.reviews=studyData.reviews.filter(r=>r.status==='Realizada'||!banned(r));
+ if(before!==studyData.reviews.length)writeData();
+}
+function standardizeTopicNames(){
+ let changed=false;
+ const byCode=new Map(planUnits.map(u=>[u.code,u]));
+ for(const key of ['studies','reviews','attempts','classifications','pendencies']){
+  for(const row of studyData[key]){
+   if(!row||typeof row.topic!=='string')continue;
+   const match=row.topic.trim().match(/^([A-Z]+(?:\/[A-Z]+)*)\s*0*(\d+)\b/i);
+   const fromLabel=match?byCode.get(match[1].toUpperCase()+' '+Number(match[2])):null;
+   const fromPlan=planById.get(row.planId);
+   const related=studyData.studies.find(st=>st.id===row.studyId);
+   const fromStudy=related?planById.get(related.planId):null;
+   const unit=fromPlan||fromLabel||fromStudy;
+   if(!unit||(row.subject&&canonicalSubject(row.subject)!==canonicalSubject(unit.subject)))continue;
+   const canonical=unit.code+' — '+unit.title;
+   if(row.topic!==canonical){row.topic=canonical;changed=true;}
+  }
+ }
+ if(changed)writeData();
+}
+
 applyCentralMigrationOnce();
 migrateKnownTecContactOnce();
 migrateCP36Once();
 applyNov04Records();
 applyLpLing3D7IndividualRecordOnce();
+applyNov08RecordsOnce();
+confirmTi6CompletedReview();
+closeSpecifiedReviewCycles();
+standardizeTopicNames();
 reschedulePendingSaturdayReviews();
 rebuildWeeklyPlan();
 installComplementationEvents();
