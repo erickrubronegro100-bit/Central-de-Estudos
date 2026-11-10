@@ -1062,7 +1062,7 @@ function metricsAttempt(list){
  const nov09=list.filter(a=>a.date==='2026-11-09'&&a.source==='TEC'&&a.recordOrigin===NOV09_REPORT_ORIGIN);
  for(const [subject,known] of Object.entries(NOV09_TEC_SECURITY)){
   const expected=NOV09_TEC_ROWS.filter(row=>planById.get(row[0])?.subject===subject);
-  const rows=nov09.filter(a=>a.subject===subject);
+  const rows=nov09.filter(a=>a.subject===subject&&expected.some(e=>e[0]===a.planId&&e[1]===a.stage));
   if(rows.length!==expected.length||!expected.every(e=>rows.some(a=>a.planId===e[0]&&a.stage===e[1])))continue;
   const correct=rows.reduce((n,a)=>n+safeNum(a.correctOther),0);
   const wrong=rows.reduce((n,a)=>n+safeNum(a.wrongOther),0);
@@ -1607,31 +1607,49 @@ function renderReviewGeneralPanels(){
 }
 
 function renderNov09CloseoutPanel(){
- const day='2026-11-09',rows=studyData.attempts.filter(a=>a.date===day&&a.recordOrigin===NOV09_REPORT_ORIGIN&&!a.resetForRedo);
- if(rows.length!==39)return '';
+ const day='2026-11-09',rows=studyData.attempts.filter(a=>a.date===day&&!a.resetForRedo&&
+  (a.recordOrigin===NOV09_REPORT_ORIGIN||a.nov09SupplementChecked));
+ if(rows.length!==43)return '';
  const m=metricsAttempt(rows),duration=knownDurationStats(rows);
  const chat=rows.filter(a=>a.source==='ChatGPT'),tec=rows.filter(a=>a.source==='TEC');
- const valid=m.all===508&&m.correct===476&&m.cs===439&&m.cu===37&&m.ws===8&&m.wu===24&&
-   duration.minutes===160&&duration.unknown===0;
+ const cTime=knownDurationStats(chat),tTime=knownDurationStats(tec);
+ const valid=m.all===523&&m.correct===490&&m.cs===451&&m.cu===39&&m.ws===9&&m.wu===24&&
+  duration.minutes===163&&duration.unknown===1&&duration.known===42;
  const table=['DA','LP/LING','CP','RICD','AP','DC','PL','TI'].map(code=>{
   const rs=rows.filter(a=>a.subject===code),v=metricsAttempt(rs),time=knownDurationStats(rs);
   return '<tr><th>'+escapeHtml(subjectLabel(code))+'</th><td>'+v.all+'</td><td>'+v.correct+'</td><td>'+
-    (v.all-v.correct)+'</td><td>'+formatPercent(v.overall)+'</td><td>'+time.minutes+' min</td></tr>';
+   (v.all-v.correct)+'</td><td>'+formatPercent(v.overall)+'</td><td>'+time.minutes+' min'+
+   (time.unknown?' (+'+time.unknown+' N/I)':'')+'</td></tr>';
  }).join('');
+ const supplemental=NOV09_SUPPLEMENT_ROWS.map(spec=>{
+  const u=planById.get(spec.id);
+  const item=rows.find(r=>r.planId===spec.id&&r.stage==='Estudo inicial'&&r.source==='TEC');
+  if(!item)return '';
+  return '<tr><th>'+escapeHtml(u.code+' — '+u.title)+'</th><td>'+spec.q+'</td><td>'+
+   spec.cs+'</td><td>'+spec.cu+'</td><td>'+spec.ws+'</td><td>'+spec.wu+'</td><td>'+
+   (spec.cs+spec.cu)+'</td><td>'+(spec.minutes===null?'N/I':spec.minutes+' min')+'</td></tr>';
+ }).join('');
+ const discrepancy=rows.some(a=>a.nov09SupplementDiscrepancy);
  return panel('Relatório Final de Desempenho — 09/11/2026',
-  'DIA ENCERRADO · 8 disciplinas · 39 atividades concluídas · 1 revisão não realizada (TI 007).',
-  '<div class="weekly-kpi">'+metricCard('Atividades',rows.length)+
-  metricCard('ChatGPT',chat.length+' · '+chat.reduce((n,x)=>n+x.durationMinutes,0)+' min')+
-  metricCard('TEC',tec.length+' · '+tec.reduce((n,x)=>n+x.durationMinutes,0)+' min')+
-  metricCard('Tempo líquido',clockMinutes(duration.minutes))+
+  'DIA ENCERRADO · 8 disciplinas · 43 atividades concluídas · 1 revisão não realizada (TI 007).',
+  '<div class="weekly-kpi">'+metricCard('Atividades concluídas',rows.length)+
+  metricCard('ChatGPT',chat.length+' · '+cTime.minutes+' min')+
+  metricCard('TEC',tec.length+' · '+tTime.minutes+' min conhecido(s)')+
+  metricCard('Tempo líquido conhecido',clockMinutes(duration.minutes),duration.unknown+' atividade com duração N/I')+
   metricCard('Questões',m.all)+metricCard('Acertos / erros',m.correct+' / '+(m.all-m.correct))+
   metricCard('Aproveitamento',formatPercent(m.overall))+
   metricCard('Insegurança',formatPercent(m.all?(m.cu+m.wu)/m.all:null))+'</div>'+
   '<p class="daily-note">Segurança: '+m.cs+' AS · '+m.cu+' AI · '+m.ws+' ES · '+m.wu+
-  ' EI · '+(m.correctOther+m.wrongOther)+' sem classificação. TEC: segurança reconciliada por disciplina, sem atribuição individual por caderno.</p>'+
+  ' EI · '+(m.correctOther+m.wrongOther)+' sem classificação. TEC: segurança reconciliada por disciplina quando não disponível por caderno.</p>'+
   '<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Disciplina</th><th>Questões</th><th>Acertos</th><th>Erros</th><th>Aproveitamento</th><th>Tempo</th></tr></thead><tbody>'+table+'</tbody></table></div>'+
-  '<p class="daily-note">TI 007 — D+7 não realizada: questões TEC esgotadas, sem novo ciclo. '+
-  (valid?'Fechamento matemático conciliado.':'Atenção: o histórico local diverge do consolidado registrado; confira alterações manuais.')+'</p>');
+  '<details class="weekly-group"><summary>Conferência complementar — 4 estudos iniciais TEC, 15 questões</summary>'+
+  '<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Tópico</th><th>Q</th><th>AS</th><th>AI</th><th>ES</th><th>EI</th><th>Acertos</th><th>Tempo</th></tr></thead><tbody>'+
+  supplemental+'</tbody></table></div></details>'+
+  '<p class="daily-note">TI 9 — estudo inicial concluído, com tempo não informado. AP 04 — 9 min confirmados. '+
+  'TI 007 — D+7 não realizada por esgotamento de questões, sem novo ciclo. '+
+  (discrepancy?'Há diferenças entre um registro preexistente e o complemento: resultados originais preservados. ':
+   valid?'Conciliação matemática do fechamento confirmada.':
+   'Atenção: os números do histórico local divergem do consolidado de 09/11; confira eventuais alterações manuais.')+'</p>');
 }
 
 function renderPerformanceGeneralPanels(){
@@ -3482,6 +3500,83 @@ function applyNov09RecordsOnce(){
  try{localStorage.setItem(NOV09_REPORT_KEY,'1');}catch(e){}
 }
 
+
+/* Complemento de conferência — 09/11/2026.
+   Conteúdo vinculado aos mesmos estudos iniciais TEC. Não duplica sessões
+   preexistentes, nem converte tempo não informado em zero. */
+const NOV09_SUPPLEMENT_KEY='central-estudos-conferencia-complementar-20261109-quatro-iniciais-v1';
+const NOV09_SUPPLEMENT_ROWS=[{"id":"Q-053","q":6,"cs":6,"cu":0,"ws":0,"wu":0,"minutes":1},{"id":"Q-054","q":3,"cs":3,"cu":0,"ws":0,"wu":0,"minutes":1},{"id":"Q-055","q":2,"cs":1,"cu":1,"ws":0,"wu":0,"minutes":1},{"id":"Q-052","q":4,"cs":2,"cu":1,"ws":1,"wu":0,"minutes":null}];
+function applyNov09SupplementOnce(){
+ try{if(localStorage.getItem(NOV09_SUPPLEMENT_KEY)==='1')return;}catch(e){}
+ const day='2026-11-09',stage='Estudo inicial',source='TEC';
+ let changed=false;
+ for(const spec of NOV09_SUPPLEMENT_ROWS){
+  const u=planById.get(spec.id);
+  if(!u||u.flow!=='Q')throw Error('Unidade TEC complementar não encontrada: '+spec.id);
+  const topic=u.code+' — '+u.title;
+  const equivalentStudy=st=>st.planId===u.id&&st.status==='Concluído'&&!st.resetForRedo;
+  let study=studyData.studies.find(st=>equivalentStudy(st)&&st.date===day)||
+   studyData.studies.find(equivalentStudy);
+  if(!study){
+   study={id:'central-20261109-'+u.id.toLowerCase()+'-estudo',planId:u.id,
+    subject:u.subject,topic,activity:'Questões',status:'Concluído',date:day,source:'TEC',
+    contact:'1º contato',completionConfirmed:true,recordOrigin:NOV09_REPORT_ORIGIN,
+    ...(Number.isFinite(spec.minutes)?{durationMinutes:spec.minutes}:{})};
+   studyData.studies.push(study);changed=true;
+  }else{
+   // Uma conclusão já registrada não deve ter data ou resultado alterados.
+   if(!study.planId){study.planId=u.id;changed=true;}
+  }
+  if(study.date===day&&ensureScheduledReviews(study))changed=true;
+  const matches=studyData.attempts.filter(a=>!a.resetForRedo&&a.date===day&&a.source===source&&
+   (a.planId===u.id||(a.subject===u.subject&&topicKey(a)===topicKey({subject:u.subject,topic})))&&
+   (a.stage===stage||/^1[º°o]\s*contato/i.test(a.contact||'')));
+  let attempt=matches[0];
+  const fresh=!attempt;
+  if(!attempt){
+   attempt={id:'central-20261109-'+u.id.toLowerCase()+'-inicial-tec'};
+   studyData.attempts.push(attempt);changed=true;
+  }
+  const values={planId:u.id,subject:u.subject,topic,date:day,stage,source,contact:'1º contato',
+   cs:spec.cs,cu:spec.cu,ws:spec.ws,wu:spec.wu,correctOther:0,wrongOther:0,
+   questionsAnswered:spec.q,completionConfirmed:true,completionStatus:'Concluída',
+   ...(study?{studyId:study.id}:{}),
+   ...(Number.isFinite(spec.minutes)?{durationMinutes:spec.minutes}:{})};
+  // Se a sessão já existia no navegador, preservar resultados e avaliações.
+  // Preencher somente campos ausentes e sinalizar divergências na conferência.
+  const core=['cs','cu','ws','wu','correctOther','wrongOther'];
+  if(!fresh){
+   const existingQ=core.reduce((n,k)=>n+safeNum(attempt[k]),0);
+   const existingCorrect=safeNum(attempt.cs)+safeNum(attempt.cu)+safeNum(attempt.correctOther);
+   const expectedCorrect=spec.cs+spec.cu;
+   if(existingQ>0&&(existingQ!==spec.q||existingCorrect!==expectedCorrect||
+     core.some(k=>Number.isFinite(attempt[k])&&attempt[k]!==values[k]))){
+    attempt.nov09SupplementDiscrepancy='Os dados desta sessão preexistente diferem do relatório complementar; preservados sem sobrescrição.';
+    changed=true;
+   }
+  }
+  for(const [k,v] of Object.entries(values)){
+   if(k==='durationMinutes'&&Number.isFinite(attempt.durationMinutes))continue;
+   if(!fresh&&core.includes(k)&&Number.isFinite(attempt[k]))continue;
+   if(!fresh&&k==='questionsAnswered'&&Number.isFinite(attempt[k]))continue;
+   if(!fresh&&k==='topic'&&attempt[k])continue;
+   if(!fresh&&k==='contact'&&attempt[k])continue;
+   if(attempt[k]!==v){attempt[k]=v;changed=true;}
+  }
+  if(fresh){attempt.recordOrigin=NOV09_REPORT_ORIGIN;changed=true;}
+  if(!attempt.nov09SupplementChecked){attempt.nov09SupplementChecked=true;changed=true;}
+  if(matches.length>1){
+   // Contatos idênticos (data, unidade, fonte, etapa) não contam duas vezes.
+   const redundant=new Set(matches.slice(1).map(a=>a.id));
+   attempt.deduplicatedSessionIds=[...new Set([...(attempt.deduplicatedSessionIds||[]),...redundant])];
+   studyData.attempts=studyData.attempts.filter(a=>!redundant.has(a.id));
+   changed=true;
+  }
+ }
+ if(changed&&!writeData())return;
+ try{localStorage.setItem(NOV09_SUPPLEMENT_KEY,'1');}catch(e){}
+}
+
 function confirmTi6CompletedReview(){
  const key='central-estudos-ti6-d1-confirmada-20261108-v1';
  try{if(localStorage.getItem(key)==='1')return;}catch(e){}
@@ -3538,6 +3633,7 @@ applyNov04Records();
 applyLpLing3D7IndividualRecordOnce();
 applyNov08RecordsOnce();
 applyNov09RecordsOnce();
+applyNov09SupplementOnce();
 // Recupera D+1/D+7/D+30 dos estudos refeitos de CP 1 e CP 2 em 08/11/2026.
 // Revisões anteriores reiniciadas ficam preservadas no histórico, mas não bloqueiam novos ciclos.
 function syncNov08CpReviews(){
