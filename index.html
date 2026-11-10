@@ -3093,6 +3093,13 @@ function redistributeWeek3Aprofundamento(weeks){
   const first=quotas.slice(0,i).reduce((n,x)=>n+x,0);
   return [d,pending.slice(first,first+quotas[i])];
  }));
+ // Transferência explícita do RFIA 5 para 11/11, sem contar como estudo de 10/11.
+ const rfia5= A.find(u=>u.id==='A-027');
+ if(rfia5&&!completionOf(rfia5)){
+  for(const d of dates)aByDate[d]=aByDate[d].filter(u=>u.id!=='A-027');
+  if(!aByDate['2026-11-11'].some(u=>u.id==='A-027'))aByDate['2026-11-11'].push(rfia5);
+ }
+
  for(const u of fixed){
   const d=completionOf(u).date;
   (aByDate[d]||(aByDate[d]=[])).push(u);
@@ -3577,6 +3584,92 @@ function applyNov09SupplementOnce(){
  try{localStorage.setItem(NOV09_SUPPLEMENT_KEY,'1');}catch(e){}
 }
 
+
+/* Fechamento auditado de 10/11/2026: 20 atividades, segurança por sessão. 
+   Idempotente e não destrutivo para lançamentos anteriores. */
+const NOV10_REPORT_KEY='central-estudos-fechamento-20261110-20-atividades-v1';
+const NOV10_REPORT_ORIGIN='Relatório Diário de Desempenho — 10/11/2026';
+const NOV10_ROWS=[["A-017","D+7","ChatGPT",42,0,1,1,15],["A-019","D+7","ChatGPT",46,5,0,3,18],["A-018","D+7","ChatGPT",21,2,1,0,9],["A-015","D+7","ChatGPT",27,0,1,0,10],["A-030","Estudo inicial","ChatGPT",39,3,2,1,25],["A-020","Estudo inicial","ChatGPT",38,1,0,1,22],["A-026","Estudo inicial","ChatGPT",39,2,1,0,17],["A-029","Estudo inicial","ChatGPT",31,0,0,0,12],["A-025","Estudo inicial","ChatGPT",53,3,3,1,42],["A-028","Estudo inicial","ChatGPT",39,0,1,0,17],["Q-049","D+1","TEC",3,0,0,0,1],["Q-050","D+1","TEC",5,0,0,0,1],["Q-053","D+1","TEC",6,0,0,0,1],["Q-054","D+1","TEC",3,0,0,0,1],["Q-055","D+1","TEC",1,0,0,0,1],["Q-051","D+1","TEC",1,0,0,1,1],["Q-048","D+1","TEC",31,12,1,5,9],["Q-052","D+1","TEC",2,1,0,0,1],["C-LP-LING-004","D+1","TEC",3,0,1,1,4],["C-LP-LING-005","D+1","TEC",2,0,0,0,1]];
+function applyNov10RecordsOnce(){
+ try{if(localStorage.getItem(NOV10_REPORT_KEY)==='1')return;}catch(e){}
+ const day='2026-11-10';
+ const report=NOV10_ROWS;
+ let count=0,q=0,correct=0,minutes=0,changed=false;
+ for(const [planId,stage,source,cs,cu,ws,wu,durationMinutes] of report){
+  const unit=planById.get(planId);
+  if(!unit)throw Error('Plano de 10/11 não encontrado: '+planId);
+  const total=cs+cu+ws+wu;
+  count++;q+=total;correct+=cs+cu;minutes+=durationMinutes;
+  const topic=unit.code+' — '+unit.title,slug=planId.toLowerCase().replace(/[^a-z0-9]+/g,'-');
+  let study=studyData.studies.find(x=>x.planId===planId&&x.status==='Concluído'&&!x.resetForRedo&&x.date===day);
+  if(stage==='Estudo inicial'&&!study){
+   const earlier=studyData.studies.find(x=>x.planId===planId&&x.status==='Concluído'&&!x.resetForRedo);
+   if(!earlier){
+    study={id:'central-20261110-'+slug+'-estudo',planId,subject:unit.subject,topic,
+     activity:unit.flow==='C'?'Complementação (TEC)':unit.flow==='Q'?'Questões':'Aprofundamento',
+     status:'Concluído',date:day,source,contact:source==='TEC'?'1º contato':'Estudo inicial',
+     durationMinutes,completionConfirmed:true,recordOrigin:NOV10_REPORT_ORIGIN};
+    studyData.studies.push(study);changed=true;
+   }else if(earlier.date===day){study=earlier;}
+  }
+  if(study&&ensureScheduledReviews(study))changed=true;
+  if(!study)study=studyData.studies.find(x=>x.planId===planId&&x.status==='Concluído'&&!x.resetForRedo);
+  const contact=stage==='Estudo inicial'?(source==='TEC'?'1º contato':'Estudo inicial'):
+      source==='TEC'?(stage==='D+1'?'2º contato':'3º contato'):'Revisão '+stage;
+  const matches=studyData.attempts.filter(a=>!a.resetForRedo&&a.date===day&&a.source===source&&
+   (a.planId===planId||(a.subject===unit.subject&&topicKey(a)===topicKey({subject:unit.subject,topic})))&&
+   (a.stage===stage||stageForContact(a.contact)===stage));
+  let attempt=matches[0];
+  const fresh=!attempt;
+  if(!attempt){
+   attempt={id:'central-20261110-'+slug+'-'+stage.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+source.toLowerCase()};
+   studyData.attempts.push(attempt);changed=true;
+  }
+  const fields={planId,subject:unit.subject,topic,date:day,stage,source,contact,
+   cs,cu,ws,wu,correctOther:0,wrongOther:0,questionsAnswered:total,durationMinutes,
+   completionConfirmed:true,completionStatus:'Concluída',recordOrigin:NOV10_REPORT_ORIGIN,
+   ...(study?{studyId:study.id}:{})};
+  if(!fresh){
+   const oldQ=['cs','cu','ws','wu','correctOther','wrongOther'].reduce((n,k)=>n+safeNum(attempt[k]),0);
+   const discrepant=oldQ>0&&(oldQ!==total||['cs','cu','ws','wu'].some((k,i)=>Number.isFinite(attempt[k])&&attempt[k]!==[cs,cu,ws,wu][i]));
+   if(discrepant){
+    attempt.nov10Discrepancy='Sessão pré-existente divergente do relatório de 10/11; mantida sem sobrescrição.';
+    changed=true;continue;
+   }
+  }
+  for(const [key,value] of Object.entries(fields)){
+   if(!fresh&&key==='durationMinutes'&&Number.isFinite(attempt.durationMinutes))continue;
+   if(JSON.stringify(attempt[key])!==JSON.stringify(value)){attempt[key]=value;changed=true;}
+  }
+  if(attempt.platforms){delete attempt.platforms;changed=true;}
+  if(matches.length>1){
+   const ids=new Set(matches.slice(1).map(x=>x.id));
+   attempt.deduplicatedSessionIds=[...new Set([...(attempt.deduplicatedSessionIds||[]),...ids])];
+   studyData.attempts=studyData.attempts.filter(a=>!ids.has(a.id));changed=true;
+  }
+  if(stage!=='Estudo inicial'&&completeReviewFromContact(attempt))changed=true;
+ }
+ if(count!==20||q!==487||correct!==461||minutes!==208)throw Error('Fechamento de 10/11 não confere.');
+ // RFIA 5 foi transferido para 11/11 sem realização em 10/11.
+ const rfia=planById.get('A-027');
+ if(!rfia)throw Error('RFIA 5 não encontrado no planejamento.');
+ const unfinished=studyData.studies.some(x=>x.planId==='A-027'&&x.date===day&&x.status==='Concluído');
+ if(!unfinished){
+  const old=studyData.pendencies.find(x=>x.id==='central-20261110-rfia5-reprogramada');
+  if(!old){
+   studyData.pendencies.push({id:'central-20261110-rfia5-reprogramada',planId:'A-027',
+    subject:rfia.subject,topic:rfia.code+' — '+rfia.title,
+    status:'Pendente',date:'2026-11-11',plannedDate:'2026-11-11',
+    originalPlannedDate:'2026-11-10',activity:'Aprofundamento',
+    notes:'Estudo inicial transferido de 10/11 para 11/11/2026; não realizado em 10/11. Revisões a calcular após conclusão efetiva.',
+    recordOrigin:NOV10_REPORT_ORIGIN});
+   changed=true;
+  }
+ }
+ if(changed&&!writeData())return;
+ try{localStorage.setItem(NOV10_REPORT_KEY,'1')}catch(e){}
+}
+
 function confirmTi6CompletedReview(){
  const key='central-estudos-ti6-d1-confirmada-20261108-v1';
  try{if(localStorage.getItem(key)==='1')return;}catch(e){}
@@ -3634,6 +3727,7 @@ applyLpLing3D7IndividualRecordOnce();
 applyNov08RecordsOnce();
 applyNov09RecordsOnce();
 applyNov09SupplementOnce();
+applyNov10RecordsOnce();
 // Recupera D+1/D+7/D+30 dos estudos refeitos de CP 1 e CP 2 em 08/11/2026.
 // Revisões anteriores reiniciadas ficam preservadas no histórico, mas não bloqueiam novos ciclos.
 function syncNov08CpReviews(){
