@@ -375,6 +375,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 @media(max-width:560px){.daily-weekstrip{display:flex;flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x proximity}.daily-weekstrip button{flex:0 0 122px;scroll-snap-align:start}.execution-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.execution-hero.primary{grid-column:1/-1}.execution-hero strong{font-size:20px}.execution-flow{gap:5px}.execution-flow span{font-size:11px;padding:6px 9px}.review-stage-summary{grid-template-columns:1fr}.daily-controls{padding:10px}.daily-review-item,.weekly-topic{align-items:stretch}.daily-review-item button,.weekly-actions button{min-height:40px}.workspace-panel{overflow-wrap:anywhere}.chart-panel{padding:13px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 
+.review-deadlines{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:13px 0 18px}
+.review-deadlines>div{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 16px;border-left:3px solid var(--accent)}
+.review-deadlines>div:first-child{border-left-color:var(--danger)}
+.review-deadlines strong{font-size:15px;display:block;font-variant-numeric:tabular-nums}
+.review-deadlines small{color:var(--muted);font-size:12px;display:block;margin-top:3px}
+@media(max-width:560px){.review-deadlines{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -2600,7 +2606,10 @@ function renderWorkspace(v){
     metricCard("Questões",all.filter(r=>reviewInitialStudyFlow(r)==="Q").length)+
     metricCard("Complementação (TEC)",all.filter(r=>reviewInitialStudyFlow(r)==="C").length)+
    '</div>':"";
-  body=(v.id==="revisoes-geral"?renderReviewGeneralPanels():"")+
+  const urgent=all.filter(r=>r.status!=='Realizada'&&r.plannedDate&&r.plannedDate<todayISO()&&!r.closedNoFurtherTecReviews).length;
+  const todayDue=all.filter(r=>r.status!=='Realizada'&&r.plannedDate===todayISO()).length;
+  const reviewNotice='<div class="review-deadlines" role="status"><div><strong>'+urgent+' atrasada(s)</strong><small>Prazos anteriores à data atual, ainda sem conclusão</small></div><div><strong>'+todayDue+' prevista(s) para hoje</strong><small>D+1, D+7 e D+30 · datas originais preservadas</small></div></div>';
+  body=reviewNotice+(v.id==="revisoes-geral"?renderReviewGeneralPanels():"")+
    '<div class="workspace-metrics">'+metricCard("Programadas",counts[0])+metricCard("Realizadas",counts[1])+metricCard("Pendentes",counts[2])+metricCard("Não realizadas",counts[3])+'</div>'+
    modalitySummary+choiceBar(v.id,["Programadas","Realizadas","Pendentes","Não realizadas"])+actionsHtml("review")+entryForm("review",v)+groupedPanels;
  }else{
