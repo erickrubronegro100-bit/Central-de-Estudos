@@ -445,6 +445,52 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .dashboard-daily-actions{display:flex;gap:8px;flex-wrap:wrap;grid-column:1/-1}
 @media(max-width:920px){.dashboard-daily{grid-template-columns:1fr}}
 @media(max-width:540px){.dashboard-daily{padding:15px}.dashboard-daily-stats{gap:5px}.dashboard-daily-stats>div{padding:9px}.dashboard-daily-stats strong{font-size:19px}}
+
+/* Central de Estudos — equilíbrio cromático azul/verde e títulos em caixa de frase (11/11/2026). */
+:root{
+  --bg:#f1f6fa;--card:#fff;--text:#1d3444;--muted:#566e7c;--line:#d4e3eb;
+  --accent:#087eaa;--accent-soft:#e6f3fa;--navy:#0e3651;--navy2:#24788b;
+  --surface-tint:#ecf5f7;--focus-ring:#0095d4;--positive:#078e50;--positive-soft:#e6f7ed;
+  --shadow:0 9px 26px rgba(16,49,68,.075);--modalsurface:#fff;
+}
+:root[data-theme="dark"]{
+  --bg:#0b1b29;--card:#172e3c;--text:#eef8fb;--muted:#b1c8d4;--line:#315363;
+  --accent:#62c9ef;--accent-soft:#1b4256;--navy:#092a42;--navy2:#1b677d;
+  --surface-tint:#193c4a;--focus-ring:#77dcff;--positive:#64d898;--positive-soft:#1c4334;
+  --shadow:0 10px 30px rgba(0,0,0,.25);--modalsurface:#142d3d;
+}
+.side{background:linear-gradient(165deg,#0a3353 0%,#10475f 50%,#104f3d 100%);border-top:5px solid var(--camara-blue)}
+:root[data-theme="dark"] .side{background:linear-gradient(165deg,#09283f,#103b50 58%,#0b3b31)}
+.brand-line i:first-child{flex:1}.brand-line i:last-child{flex:1}
+.quicknav .navitem.active,.quicknav .navitem:hover,.navitem:hover,.navitem.active,.navsummary:hover{
+  background:linear-gradient(95deg,rgba(0,149,212,.20),rgba(0,177,66,.12));color:#fff;
+}
+.workitem.active{background:rgba(0,149,212,.17);border-left-color:var(--camara-blue)}
+.primary,.chip.active{background:#087fa9;border-color:#087fa9;color:#fff}
+.primary:hover{background:#096a8e;border-color:#096a8e}
+:root[data-theme="dark"] .primary{background:#087fa9;border-color:#087fa9;color:#fff}
+:root[data-theme="dark"] .chip.active{background:#195d7b;border-color:var(--camara-blue)}
+.dashboard-daily{border-color:var(--camara-blue);background:var(--accent-soft)}
+.execution-hero.primary{border-color:var(--camara-blue)}
+.execution-flow .step-active{border-color:var(--camara-blue)}
+.next-study{border-color:var(--camara-blue)}
+.review-deadlines>div:last-child{border-left-color:var(--camara-blue)}
+.study-progress-card:nth-child(odd),.dash-kpi:nth-child(odd),.workspace-stat:nth-child(odd){border-top:2px solid var(--camara-blue)}
+.study-progress-card:nth-child(even),.dash-kpi:nth-child(even),.workspace-stat:nth-child(even){border-top:2px solid var(--camara-green)}
+.study-progress-card:nth-child(even),.review-stage:nth-child(even){background:#f0f8f3}
+:root[data-theme="dark"] .study-progress-card:nth-child(even),
+:root[data-theme="dark"] .review-stage:nth-child(even){background:#1b392f}
+.study-progress-card:nth-child(odd) .study-bar:not(.expected) span{background:var(--camara-blue)}
+.study-progress-card:nth-child(even) .study-bar:not(.expected) span{background:var(--camara-green)}
+.study-progress-card .study-bar.expected span{background:var(--navy2);opacity:.78}
+.review-stage:nth-child(odd) .review-progress-track i{background:var(--camara-blue)}
+.review-stage:nth-child(even) .review-progress-track i{background:var(--camara-green)}
+.chart-bar{fill:var(--camara-green)}
+.chart-path{stroke:var(--camara-blue)}.chart-dot{fill:var(--camara-blue)}
+.daily-progress-track span{background:linear-gradient(90deg,var(--camara-blue),var(--camara-green))}
+.dash-kpi-label,.workspace-stat > span:first-child,.dashboard-daily .kicker,
+.workspace-eyebrow,.eyebrow{ text-transform:none;letter-spacing:.01em }
+
 </style>
 </head>
 <body>
@@ -1829,19 +1875,10 @@ function renderPerformanceGeneralPanels(){
  const totals=metricsAttempt(validAttempts);
  const insecurity=totals.all?(totals.cu+totals.wu)/totals.all:0;
  const rows=bySubject.map(({code,metric:m,topics})=>'<tr><th scope="row">'+escapeHtml(subjectLabel(code))+'</th><td>'+formatNum(topics)+'</td><td>'+formatNum(m.all)+'</td><td>'+formatNum(m.correct)+'</td><td>'+formatNum(m.all-m.correct)+'</td><td>'+formatPercent(m.overall)+'</td><td>'+formatPercent(m.all?(m.cu+m.wu)/m.all:0)+'</td></tr>').join('');
- const latest=validAttempts.map(a=>a.date).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x||'')).sort().at(-1);
- const latestRows=latest?validAttempts.filter(a=>a.date===latest):[];
- const recent=metricsAttempt(latestRows);
- const time=knownDurationStats(latestRows);
- const chatTime=knownDurationStats(latestRows.filter(a=>a.source==='ChatGPT'));
- const tecTime=knownDurationStats(latestRows.filter(a=>a.source==='TEC'));
- const lastLabel=latest?dateBR(latest):'Sem data';
-
- return performanceCharts(validAttempts)+confidenceChart(validAttempts)+'<div class="weekly-kpi">'+metricCard('Questões acumuladas',formatNum(totals.all))+metricCard('Acertos totais',formatNum(totals.correct))+metricCard('Erros totais',formatNum(totals.all-totals.correct))+metricCard('Aproveitamento',formatPercent(totals.overall))+metricCard('Insegurança declarada',formatPercent(insecurity))+metricCard('Tópicos avaliados',formatNum(topicResults(validAttempts).length))+'</div>'+
+ return performanceCharts(validAttempts)+confidenceChart(validAttempts)+
+ '<div class="weekly-kpi">'+metricCard('Questões acumuladas',formatNum(totals.all))+metricCard('Acertos totais',formatNum(totals.correct))+metricCard('Erros totais',formatNum(totals.all-totals.correct))+metricCard('Aproveitamento',formatPercent(totals.overall))+metricCard('Insegurança declarada',formatPercent(insecurity))+metricCard('Tópicos avaliados',formatNum(topicResults(validAttempts).length))+'</div>'+
  panel('Resultados por disciplina','Total de questões e segurança a partir de sessões distintas, sem duplicação.','<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Disciplina</th><th>Tópicos</th><th>Questões</th><th>Acertos</th><th>Erros</th><th>Aproveitamento</th><th>Insegurança</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
- '<div class="weekly-kpi">'+metricCard('Último dia com resultados',lastLabel)+metricCard('Questões nesse dia',formatNum(recent.all))+metricCard('Aproveitamento do dia',formatPercent(recent.overall))+metricCard('ChatGPT',formatNum(totals.chat)+' questões')+metricCard('TEC',formatNum(totals.tec)+' questões')+metricCard('Respostas inseguras',formatNum(totals.cu+totals.wu),'AI + EI')+'</div>'+
- '<div class="weekly-kpi">'+metricCard('Tempo líquido conhecido · '+lastLabel,time.known?clockMinutes(time.minutes):'N/I',formatNum(time.known)+' atividades com tempo'+(time.unknown?' · '+time.unknown+' N/I':''))+metricCard('Tempo ChatGPT · '+lastLabel,chatTime.known?clockMinutes(chatTime.minutes):'N/I')+metricCard('Tempo TEC · '+lastLabel,tecTime.known?clockMinutes(tecTime.minutes):'N/I')+'</div>'+
- '<p class="weekly-note">Aproveitamento bruto = (acertos seguros + inseguros + acertos sem classificação) ÷ questões válidas. Insegurança = (AI + EI) ÷ questões. Os minutos são somados por sessão, sem duplicar estudos/revisões e sem converter N/I em zero. Estes indicadores não são pontuação líquida CEBRASPE.</p>';
+ '<p class="weekly-note">Aproveitamento bruto = (acertos seguros + inseguros + acertos sem classificação) ÷ questões válidas. Insegurança = (AI + EI) ÷ questões. Estes indicadores não são pontuação líquida CEBRASPE.</p>';
 }
 
 function planOverlays(){return new Map(studyData.studies.filter(x=>x.planId&&planById.has(x.planId)).map(x=>[x.planId,x]))}
@@ -1957,7 +1994,7 @@ function renderCumulativeStudyTime(){
  return '<section class="dash-section" aria-label="Tempo líquido acumulado de estudo">'+
   '<div class="dash-titlebar"><div><h2>Tempo líquido acumulado de estudo</h2><p>Total acumulado dos estudos e das revisões registrados.</p></div></div>'+
   '<div class="dash-kpi-grid">'+
-  '<div class="dash-kpi"><span class="dash-kpi-label">TOTAL LÍQUIDO CONFIRMADO</span><strong>'+clockMinutes(data.total)+'</strong><small>'+formatNum(data.total)+' minutos documentados · mínimo confirmado</small></div>'+
+  '<div class="dash-kpi"><span class="dash-kpi-label">Total líquido confirmado</span><strong>'+clockMinutes(data.total)+'</strong><small>'+formatNum(data.total)+' minutos documentados · mínimo confirmado</small></div>'+
   '<div class="dash-kpi"><span class="dash-kpi-label">Último dia registrado</span><strong>'+(latest?clockMinutes(latest.minutes):'N/I')+'</strong><small>'+(latest?dateBR(latest.date):'Nenhum registro')+'</small></div>'+
   '<div class="dash-kpi"><span class="dash-kpi-label">Dias com tempo confirmado</span><strong>'+formatNum(data.days)+'</strong><small>Sem presumir minutos nos dias sem duração</small></div>'+
   '<div class="dash-kpi"><span class="dash-kpi-label">Após 03/11/2026</span><strong>'+clockMinutes(data.extraMinutes)+'</strong><small>'+formatNum(data.extraDays)+' dia(s) com tempo novo registrado</small></div></div>'+
@@ -2676,9 +2713,10 @@ function renderWorkspace(v){
   const urgent=all.filter(r=>r.status!=='Realizada'&&r.plannedDate&&r.plannedDate<todayISO()&&!r.closedNoFurtherTecReviews).length;
   const todayDue=all.filter(r=>r.status!=='Realizada'&&!r.closedNoFurtherTecReviews&&r.plannedDate===todayISO()).length;
   const reviewNotice='<div class="review-deadlines" role="status"><div><strong>'+urgent+' atrasada(s)</strong><small>Prazos anteriores à data atual, ainda sem conclusão</small></div><div><strong>'+todayDue+' prevista(s) para hoje</strong><small>D+1, D+7 e D+30 · datas originais preservadas</small></div></div>';
-  body=reviewNotice+(v.id==="revisoes-geral"?renderReviewGeneralPanels():"")+
-   '<div class="workspace-metrics">'+metricCard("Programadas",counts[0])+metricCard("Realizadas",counts[1])+metricCard("Pendentes",counts[2])+metricCard("Não realizadas",counts[3])+'</div>'+
-   modalitySummary+choiceBar(v.id,["Programadas","Realizadas","Pendentes","Não realizadas"])+actionsHtml("review")+entryForm("review",v)+groupedPanels;
+  const reviewSummary=reviewNotice+(v.id==="revisoes-geral"?renderReviewGeneralPanels():"")+
+   '<div class="workspace-metrics">'+metricCard("Programadas",counts[0])+metricCard("Realizadas",counts[1])+metricCard("Pendentes",counts[2])+metricCard("Não realizadas",counts[3])+'</div>';
+  body=v.id==="revisoes-geral"?reviewSummary:
+   reviewSummary+modalitySummary+choiceBar(v.id,["Programadas","Realizadas","Pendentes","Não realizadas"])+actionsHtml("review")+entryForm("review",v)+groupedPanels;
  }else{
   const rawAttempts=subsetByView(v,studyData.attempts).filter(x=>!x.resetForRedo);
   const allAttempts=topicResults(rawAttempts),m=metricsAttempt(rawAttempts),has=m.all>0;
@@ -2686,7 +2724,7 @@ function renderWorkspace(v){
   const f=viewFilters[v.id]||"Todos",shown=allAttempts.filter(x=>f==="Todos"||(f==="Pontos fortes"?domainCategory(x)==="Forte":domainCategory(x)==="Fraco")).slice().reverse();
   body=(v.id==="desempenho-geral"?renderPerformanceGeneralPanels():"")+`<div class="workspace-metrics performance-metrics">${metrics.map(([a,b])=>metricCard(a,b)).join("")}</div><p class="statusnote">Questões ChatGPT e TEC são acompanhadas separadamente. Os resultados válidos compõem os indicadores de desempenho, preservando o histórico.</p>${panel("Resultados por plataforma","Acertos e erros seguros/inseguros, sem duplicar modalidades.",platformTable(m))}${actionsHtml("attempt")}${entryForm("attempt",v)}${v.id==="desempenho-geral"?"":choiceBar(v.id,["Todos","Pontos fortes","Pontos fracos"])+panel("Resultados por tópico · "+f,"Dados das sessões efetivamente informadas.",listFor(shown,"attempt"))}`;
  }
- const note='<p class="workspace-note">Dados de execução ficam salvos neste navegador. O site não sincroniza automaticamente com outros aparelhos, ChatGPT ou TEC. Exporte e importe o histórico para mantê-lo seguro.</p>';
+ const note=v.id==="revisoes-geral"?"":'<p class="workspace-note">Dados de execução ficam salvos neste navegador. O site não sincroniza automaticamente com outros aparelhos, ChatGPT ou TEC. Exporte e importe o histórico para mantê-lo seguro.</p>';
  g("workspacePage").innerHTML=`<div class="workspace-eyebrow">${esc(v.section)} / ${esc(v.title)}</div><h1 id="workspaceTitle">${esc(v.title)}</h1><p class="workspace-summary">${esc(v.description)}</p>${body}${note}`;
  if(v.section==="Estudos"&&!["estudos-semanal","estudos-percurso","estudos-cronograma-dia"].includes(v.id))refreshPlanList(v);
 }
@@ -2904,28 +2942,28 @@ function refreshOverview(){
  const nav=(id,label)=>'<button class="dash-link" type="button" data-dashboard-view="'+id+'">'+escapeHtml(label)+'</button>';
  const stats=(name,val,desc)=>'<div class="dash-kpi"><span class="dash-kpi-label">'+escapeHtml(name)+'</span><strong>'+escapeHtml(String(val))+'</strong><small>'+escapeHtml(desc)+'</small></div>';
  root.innerHTML=dailyOverview+renderCumulativeStudyTime()+
- '<section class="dash-section"><div class="dash-titlebar"><div><h2>Estudos — Visão Geral</h2><p>Metas da programação semanal comparadas ao realizado, com ideal histórico A/Q/C. Complementações entram conforme sua liberação e programação.</p></div>'+nav('estudos-geral','Abrir Visão Geral')+'</div>'+
+ '<section class="dash-section"><div class="dash-titlebar"><div><h2>Estudos — Visão geral</h2><p>Metas da programação semanal comparadas ao realizado, com ideal histórico A/Q/C. Complementações entram conforme sua liberação e programação.</p></div>'+nav('estudos-geral','Abrir visão geral')+'</div>'+
  centralProgressCards()+
- '<div class="dash-kpi-grid">'+stats('UNIDADES CADASTRADAS',prog.all.total,'Distribuição por modalidade de estudo')+
- stats('UNIDADES CONCLUÍDAS',prog.all.done,'Execução efetiva')+
- stats('PREVISTO ATÉ HOJE',prog.all.expected,'Metas acumuladas de acordo com a programação vigente')+
- stats('SALDO REALIZADO − PREVISTO',(prog.all.done-prog.all.expected>0?'+':'')+(prog.all.done-prog.all.expected),'Atraso negativo · adiantamento positivo')+'</div>'+
+ '<div class="dash-kpi-grid">'+stats('Unidades cadastradas',prog.all.total,'Distribuição por modalidade de estudo')+
+ stats('Unidades concluídas',prog.all.done,'Execução efetiva')+
+ stats('Previsto até hoje',prog.all.expected,'Metas acumuladas de acordo com a programação vigente')+
+ stats('Saldo realizado − previsto',(prog.all.done-prog.all.expected>0?'+':'')+(prog.all.done-prog.all.expected),'Atraso negativo · adiantamento positivo')+'</div>'+
  '<div class="dash-kpi-grid">'+
  stats('Ideal histórico A/Q/C — Até semana atual (Semana '+history.weekNumber+')',history.ideal,'Acumulado · '+history.idealA+' A + '+history.idealQ+' Q + '+history.idealC+' C')+
  stats('Realizado histórico A/Q/C — Até semana atual (Semana '+history.weekNumber+')',history.done,'Acumulado · '+history.doneA+' A + '+history.doneQ+' Q + '+history.doneC+' C')+
- stats('DIFERENÇA HISTÓRICA A/Q/C',(history.diff>0?'+':'')+history.diff,'Realizado menos ideal histórico')+'</div>'+
+ stats('Diferença histórica A/Q/C',(history.diff>0?'+':'')+history.diff,'Realizado menos ideal histórico')+'</div>'+
  weeklySnapshot()+'</section>'+
  '<section class="dash-section"><div class="dash-titlebar"><div><h2>Revisões</h2><p>Histórico e datas por etapa D+1, D+7 e D+30.</p></div>'+nav('revisoes-dia','Revisões do dia')+'</div>'+
- '<div class="dash-kpi-grid">'+stats('REVISÕES REGISTRADAS',reviews.length,'Todas as etapas')+
- stats('REVISÕES REALIZADAS',reviews.filter(r=>r.status==='Realizada').length,'Conclusões registradas')+
- stats('REVISÕES ATRASADAS',reviews.filter(r=>statusReview(r)==='Pendentes').length,'Pendentes vencidas')+
- stats('REVISÕES DO DIA',reviews.filter(r=>r.plannedDate===today&&r.status!=='Realizada').length,'Previstas para hoje')+'</div>'+
- '<div class="platform-scroll"><table class="platform-table"><thead><tr><th>ETAPA</th><th>TOTAL</th><th>REALIZADAS</th><th>PROGRAMADAS</th><th>PENDENTES</th></tr></thead><tbody>'+stages+'</tbody></table></div></section>'+
+ '<div class="dash-kpi-grid">'+stats('Revisões registradas',reviews.length,'Todas as etapas')+
+ stats('Revisões realizadas',reviews.filter(r=>r.status==='Realizada').length,'Conclusões registradas')+
+ stats('Revisões atrasadas',reviews.filter(r=>statusReview(r)==='Pendentes').length,'Pendentes vencidas')+
+ stats('Revisões do dia',reviews.filter(r=>r.plannedDate===today&&r.status!=='Realizada').length,'Previstas para hoje')+'</div>'+
+ '<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Etapa</th><th>Total</th><th>Realizadas</th><th>Programadas</th><th>Pendentes</th></tr></thead><tbody>'+stages+'</tbody></table></div></section>'+
  '<section class="dash-section"><div class="dash-titlebar"><div><h2>Desempenho</h2><p>Acertos seguros e inseguros pontuam integralmente, sem duplicação de sessões e fontes.</p></div>'+nav('desempenho-geral','Desempenho detalhado')+'</div>'+
- '<div class="dash-kpi-grid">'+stats('QUESTÕES RESOLVIDAS',formatNum(metrics.all),'ChatGPT + TEC')+
- stats('ACERTOS',formatNum(metrics.correct),'Inclui acertos inseguros')+
- stats('ERROS',formatNum(metrics.all-metrics.correct),'Total de erros')+
- stats('APROVEITAMENTO',formatPercent(metrics.overall),'Acertos / questões')+'</div>'+platformTable(metrics)+'</section>'+
+ '<div class="dash-kpi-grid">'+stats('Questões resolvidas',formatNum(metrics.all),'ChatGPT + TEC')+
+ stats('Acertos',formatNum(metrics.correct),'Inclui acertos inseguros')+
+ stats('Erros',formatNum(metrics.all-metrics.correct),'Total de erros')+
+ stats('Aproveitamento',formatPercent(metrics.overall),'Acertos / questões')+'</div>'+platformTable(metrics)+'</section>'+
  '<p class="dash-note">Registros permanecem armazenados neste navegador. Alterações de planejamento não substituem o histórico nem realizam automaticamente tópicos ou revisões.</p>';
 }
 
@@ -2985,7 +3023,7 @@ function centralProgressModel(day=todayISO()){
 }
 function centralProgressCards(day=todayISO()){
  const d=centralProgressModel(day);
- const bars=[['PROGRESSO GERAL',d.all],['APROFUNDAMENTO',d.A],['COMPLEMENTAÇÃO (TEC)',d.C],['QUESTÕES',d.Q]];
+ const bars=[['Progresso geral',d.all],['Aprofundamento',d.A],['Complementação (TEC)',d.C],['Questões',d.Q]];
  return '<div class="study-progress-grid">'+bars.map(([title,data])=>{
   const done=data.done,goal=data.expected,total=data.total,diff=done-goal;
   const isC=data.flow==='C',note=isC?'Previsto = cadernos liberados e programados até a data de referência':'Previsto = metas de estudo acumuladas até a data de referência do planejamento';
@@ -2993,8 +3031,8 @@ function centralProgressCards(day=todayISO()){
   const balance=diff<0?formatNum(-diff)+' unidade(s) atrás da meta':diff>0?formatNum(diff)+' unidade(s) adiantada(s)':'Meta atingida';
   return '<article class="study-progress-card"><h3>'+title+'</h3>'+
    '<div class="study-mainline"><strong>'+formatNum(done)+' / '+formatNum(total)+'</strong><small>'+formatNum(total-done)+' restantes no cadastro</small></div>'+
-   '<div class="study-barline"><div><span>REALIZADO</span><strong>'+formatNum(done)+' · '+formatPercent(total?done/total:0)+'</strong></div><div class="study-bar"><span style="width:'+pct(done).toFixed(2)+'%"></span></div></div>'+
-   '<div class="study-barline"><div><span>'+(isC?'LIBERADO / ESPERADO':'ESPERADO')+'</span><strong>'+formatNum(goal)+' · '+formatPercent(total?goal/total:0)+'</strong></div><div class="study-bar expected"><span style="width:'+pct(goal).toFixed(2)+'%"></span></div></div>'+
+   '<div class="study-barline"><div><span>Realizado</span><strong>'+formatNum(done)+' · '+formatPercent(total?done/total:0)+'</strong></div><div class="study-bar"><span style="width:'+pct(done).toFixed(2)+'%"></span></div></div>'+
+   '<div class="study-barline"><div><span>'+(isC?'Liberado / esperado':'Esperado')+'</span><strong>'+formatNum(goal)+' · '+formatPercent(total?goal/total:0)+'</strong></div><div class="study-bar expected"><span style="width:'+pct(goal).toFixed(2)+'%"></span></div></div>'+
    '<p class="study-balance"><strong>'+escapeHtml(balance)+'</strong> · Diferença: '+(diff>0?'+':'')+formatNum(diff)+' unidade(s) ('+(diff>0?'+':'')+formatPercent(total?diff/total:0)+' do cadastro). '+note+'.'+(isC?' Pendentes liberadas: '+formatNum(d.complement.pending)+'.':'')+'</p></article>';
  }).join('')+'</div>';
 }
@@ -3003,10 +3041,10 @@ function weeklySnapshot(){
  const history=weeklyHistoricalComparison(d);
  return '<section class="weekly-panel"><div class="weekly-header"><div><h2>'+(pause?'Pausa · próxima meta: ':'Semana ')+w.number+' · '+weekRange(w)+'</h2><p>Metas atribuídas à semana · Complementação (TEC) por liberação</p></div><button type="button" class="dash-link" data-jump-view="estudos-semanal">Metas Semanais</button></div>'+
  '<div class="weekly-compact">'+
- weeklyProgress('TOTAL DA SEMANA',w.totalDoneWeek,w.quotaTotal)+
- weeklyProgress('APROFUNDAMENTO',w.doneA,w.quotaA)+
- weeklyProgress('QUESTÕES',w.doneQ,w.quotaQ)+
- weeklyProgress('COMPLEMENTAÇÃO (TEC)',w.doneC,w.quotaC)+'</div>'+
+ weeklyProgress('Total da semana',w.totalDoneWeek,w.quotaTotal)+
+ weeklyProgress('Aprofundamento',w.doneA,w.quotaA)+
+ weeklyProgress('Questões',w.doneQ,w.quotaQ)+
+ weeklyProgress('Complementação (TEC)',w.doneC,w.quotaC)+'</div>'+
  '<div class="weekly-meta"><span>Ideal histórico A/Q/C — Até semana atual (Semana '+history.weekNumber+'): <strong>'+formatNum(history.ideal)+'</strong></span><span>Realizado histórico A/Q/C — Até semana atual (Semana '+history.weekNumber+'): <strong>'+formatNum(history.done)+'</strong></span><span>Diferença histórica: <strong>'+(history.diff>0?'+':'')+formatNum(history.diff)+'</strong></span><span>Complementações programadas na semana: <strong>'+formatNum(w.quotaC)+'</strong></span><span>Pendências anteriores: <strong>'+formatNum(d.backlog.length)+'</strong></span></div></section>';
 }
 function weeklySelectedDetails(data,w){
