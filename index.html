@@ -2548,7 +2548,7 @@ function weeklySelectedDetails(data,w){
  const shownA=rows.filter(u=>u.flow==='A'),shownQ=rows.filter(u=>u.flow==='Q'),shownC=rows.filter(u=>u.flow==='C');
  const empty='<p class="weekly-empty">Nenhum tópico nesta categoria.</p>';
  return '<section class="weekly-selected"><h2>Semana '+w.number+' · '+weekRange(w)+'</h2>'+
- '<p class="weekly-note">Programação da semana: '+w.quotaA+' Aprofundamento, '+w.quotaQ+' Questões e '+w.quotaC+' Complementação (TEC) liberada. A meta de Complementação é dinâmica, sem cota fixa. Pendências transferidas da Semana 2 passam a integrar as metas das semanas seguintes.'+(w.number===4?' Semana 4: 9 dias corridos, com dois sábados sem estudos e sexta-feira reservada às revisões; são 6 dias de novos estudos.':' Apenas nesta Semana 3, os Aprofundamentos pendentes foram divididos entre terça e sexta; nas demais semanas, sexta fica reservada às revisões e sábado sem novos estudos.')+'</p>'+
+ '<p class="weekly-note">Programação da semana: '+w.quotaA+' Aprofundamento, '+w.quotaQ+' Questões e '+w.quotaC+' Complementação (TEC) liberada. A meta de Complementação é dinâmica, sem cota fixa. Pendências transferidas da Semana 2 passam a integrar as metas das semanas seguintes.'+(w.number===4?' Semana 4: 9 dias corridos, com dois sábados sem estudos e sexta-feira reservada às revisões; são 6 dias de novos estudos.':' Excepcionalmente nesta Semana 3, as pendências de Aprofundamento foram divididas em blocos sequenciais entre 12 e 13/11, preservando a ordem pedagógica; nas demais semanas, sexta fica reservada às revisões e sábado sem novos estudos.')+'</p>'+
  '<div class="weekly-kpi">'+
  metricCard('Aprofundamento realizado',w.doneA)+
  metricCard('Questões realizadas',w.doneQ)+
@@ -2808,52 +2808,49 @@ function buildWeeklyPlan(){
  }
  return weeks;
 }
-// Ajuste restrito à semana de 08 a 13/11/2026: preserva os
-// aprofundamentos concluídos até 09/11 e divide somente os
-// aprofundamentos pendentes da semana entre terça e sexta (10–13/11).
-// As semanas posteriores e as Questões conservam sua programação original.
+// Ajuste restrito à semana de 08 a 13/11/2026: respeita os estudos concluídos
+// e distribui o saldo de 11/11 para 12 e 13/11 em duas metades consecutivas,
+// preservando a sequência integrada dos aprofundamentos (A) e a ordem do TEC (Q).
+// As demais semanas e os ciclos D+1/D+7/D+30 permanecem inalterados.
 function redistributeWeek3Aprofundamento(weeks){
  const w=weeks.find(x=>x.index===2&&x.start==='2026-11-08'&&x.end==='2026-11-13');
  if(!w)throw Error('Semana 3 (08–13/11) não encontrada.');
  const dates=['2026-11-08','2026-11-09','2026-11-10','2026-11-11','2026-11-12','2026-11-13'];
  const aByDate=Object.fromEntries(dates.map(d=>[d,[]]));
  const qByDate=Object.fromEntries(dates.map(d=>[d,[]]));
- const remaining=[];
- // Data efetiva prevalece: não reagendar estudos concluídos.
+ const remainingA=[],remainingQ=[];
+ // Manter as datas efetivas de todos os estudos iniciais concluídos.
  for(const unit of w.units){
   const finished=completionOf(unit);
   if(finished&&finished.date&&finished.date<='2026-11-13'){
    const d=dates.includes(finished.date)?finished.date:dates[0];
    (unit.flow==='A'?aByDate:qByDate)[d].push(unit);
-  }else remaining.push(unit);
+  }else (unit.flow==='A'?remainingA:remainingQ).push(unit);
  }
- // O dia 11/11 está fechado. Toda pendência de estudos iniciais de 08 a 11/11
- // se soma ao que já estava previsto para 12 e 13/11, sem reiniciar revisões.
- const targets=['2026-11-12','2026-11-13'];
- const load=Object.fromEntries(targets.map(d=>[d,{weight:0,count:0}]));
- const weight=unit=>unit.flow==='A'?3:1;
- for(const d of targets)for(const unit of [...aByDate[d],...qByDate[d]]){
-  load[d].weight+=weight(unit);load[d].count++;
- }
- remaining.sort((a,b)=>a.flow.localeCompare(b.flow)||a.order-b.order);
- // Transferência nominal obrigatória de RFIA 5, não concluído em 11/11.
- const rfia5=remaining.find(u=>u.id==='A-027');
- if(rfia5){
-  aByDate['2026-11-12'].push(rfia5);
-  load['2026-11-12'].weight+=weight(rfia5);load['2026-11-12'].count++;
- }
- for(const unit of remaining){
-  if(unit.id==='A-027')continue;
-  const day=targets.slice().sort((a,b)=>load[a].weight-load[b].weight||
-   load[a].count-load[b].count||a.localeCompare(b))[0];
-  (unit.flow==='A'?aByDate:qByDate)[day].push(unit);
-  load[day].weight+=weight(unit);load[day].count++;
- }
- for(const day of dates){aByDate[day].sort((a,b)=>a.order-b.order);qByDate[day].sort((a,b)=>a.order-b.order)}
+ // REGRA PEDAGÓGICA: seguir a ordem original da sequência integrada de Aprofundamento.
+ // Não alternar dias por peso, matéria ou tempo: dividir por blocos consecutivos.
+ // Ex.: 18 tópicos pendentes -> primeiros 9 na quinta, próximos 9 na sexta.
+ const bySequence=(a,b)=>a.order-b.order;
+ remainingA.sort(bySequence);
+ const splitA=Math.ceil(remainingA.length/2);
+ aByDate['2026-11-12'].push(...remainingA.slice(0,splitA));
+ aByDate['2026-11-13'].push(...remainingA.slice(splitA));
+ // Questões TEC possuem sequência própria e não são inseridas entre os
+ // aprofundamentos; distribuir seu saldo também em blocos consecutivos.
+ remainingQ.sort(bySequence);
+ const splitQ=Math.ceil(remainingQ.length/2);
+ qByDate['2026-11-12'].push(...remainingQ.slice(0,splitQ));
+ qByDate['2026-11-13'].push(...remainingQ.slice(splitQ));
+ // RFIA 5 é a primeira unidade de aprofundamento pendente; sua posição
+ // na sequência (e não uma exceção fixa) determina 12/11.
+ for(const day of dates){aByDate[day].sort(bySequence);qByDate[day].sort(bySequence)}
  w.aByDate=aByDate;w.qByDate=qByDate;
  const assigned=dates.flatMap(d=>[...aByDate[d],...qByDate[d]].map(u=>u.id));
  if(assigned.length!==w.units.length||new Set(assigned).size!==w.units.length)
   throw Error('Redistribuição de 12 e 13/11 com duplicidade ou omissão.');
+ if(remainingA.some((u,i)=>i<splitA&&!aByDate['2026-11-12'].includes(u)||
+  i>=splitA&&!aByDate['2026-11-13'].includes(u)))
+  throw Error('A sequência integrada dos aprofundamentos foi interrompida.');
  return weeks;
 }
 function getWeekPosition(){
