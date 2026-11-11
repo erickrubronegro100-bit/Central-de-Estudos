@@ -37,6 +37,18 @@ Este arquivo registra as solicitações de organização e apresentação do sit
 - Correção de exibição de Complementação TEC (commit `3ae42e217bbb3227d70ab0ed506d7ed309df045d`): os 5 primeiros contatos concluídos em 11/11 permanecem visíveis como concluídos no Cronograma do dia, separados das pendências. Conferida a geração de 5 revisões D+1 para 12/11, 5 D+7 para 18/11 e 5 D+30 para 11/12. Não se alterou a lógica de conclusão de revisões, nem a sequência 9+9 dos estudos pendentes.
 - Publicação do Netlify: **não confirmada**. Alteração no GitHub não garante que o domínio indicado esteja mostrando esta versão.
 
+## 11/11/2026 — complemento definitivo (RCCN 16 e RCCN 17)
+
+- Corrigido o fechamento diário de 19 para **21 atividades** (6 Aprofundamentos, 4 Questões TEC, 5 Complementações TEC e 6 revisões D+1); 8 disciplinas, 21 tópicos distintos.
+- Totais definitivos conferidos: **417 questões; 380 AS; 26 AI; 7 ES; 4 EI; 406 acertos; 11 erros; 97,36% de aproveitamento; 7,19% de insegurança; 187 minutos líquidos (3h07)**.
+- Plataforma ChatGPT: 12 atividades, 397 questões, 388 acertos, 9 erros e 177 minutos. Plataforma TEC: 9 atividades, 20 questões, 18 acertos, 2 erros e 10 minutos.
+- Novos estudos efetivos em **11/11**: RCCN 16 (10 min, 28/28, Seguro, sem reforço), RCCN 17 (15 min, 28/30, Seguro, reforço pontual).
+- Ambos possuem **D+1 breve em 12/11**, D+7 em 18/11, D+30 em 11/12. Em RCCN 17, a D+1 deve abranger pelo menos **3 questões inéditas sobre o art. 60 e 3 sobre o art. 61** (mínimo 6 questões especificamente direcionadas a esses dispositivos).
+- Nova chave de importação idempotente v2 para incorporar o complemento sem duplicar o fechamento anterior nos navegadores que já importaram a versão v1. Testes: importação de 21 resultados, 15 estudos iniciais, geração dos ciclos e segunda execução sem duplicações.
+- Redistribuição Semana 3 (12–13/11) preserva os tópicos A/Q concluídos, sem mover RCCN 16 ou 17: **quinta 9 A + 4 Q = 13 estudos novos; sexta 9 A + 5 Q = 14 estudos novos**. A divisão 9+9 dos Aprofundamentos conserva a sequência pedagógica; o Q adicional de sexta compensa a carga maior de revisões D+1 na quinta.
+- **RFIA 5** permanece não concluído e programado para 12/11. As cinco Complementações TEC concluídas em 11/11 e suas revisões D+1 em 12/11 continuam preservadas.
+- Código atualizado no commit `0f9071442836bf2711fcdddb1f41af2589bf228b`. Publicação no Netlify não verificada; commit no GitHub não comprova versão visível no domínio.
+
 ## Política de manutenção
 
 Preservar estudos, revisões, tentativas, métricas, arquivos, links e calendários. Nunca transformar uma remoção visual em exclusão de histórico, salvo orientação expressa.
