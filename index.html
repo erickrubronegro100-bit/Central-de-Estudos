@@ -2059,6 +2059,8 @@ function complementSequence(){
  return result;
 }
 
+const integratedSequenceOrder=new Map(complementSequence().map((u,i)=>[u.id,i]));
+
 function completionOf(unit){
  const matches=studyData.studies.filter(x=>x.planId===unit.id&&x.status==="Concluído"&&!x.resetForRedo);
  if(!matches.length)return null;
@@ -2640,11 +2642,22 @@ function renderDailyStudyWorkspace(){
  const C=planUnits.filter(u=>u.flow==='C'),scheduled=C.filter(u=>{
   const g=complementGate(u);
   if(!['Liberado','Em andamento'].includes(g.status)||!g.scheduled)return false;
-  return g.scheduled===date&&date>=today||(date===today&&g.scheduled<date);
+  return (g.scheduled===date&&date>=today)||(date===today&&g.scheduled<date);
  });
+ // Complementações já concluídas têm de constar na data efetiva.
+ // A liberação de novos cadernos não substitui o histórico das conclusões.
+ const completedComplements=C.filter(u=>completed.get(u.id)?.date===date);
+ const displayedComplements=[...scheduled,...completedComplements].sort((a,b)=>
+  integratedSequenceOrder.get(a.id)-integratedSequenceOrder.get(b.id));
  const cRow=u=>{
-  const g=complementGate(u),detail='Liberação: '+dateBR(g.releasedAt)+' · Gatilhos: '+u.triggerCodes.join(' + ')+(g.scheduled<date?' · Adiado desde '+dateBR(g.scheduled):'');
-  return '<div class="weekly-topic"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span><small>'+escapeHtml(detail)+'</small></div><button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="Estudo inicial">Abrir TEC</button></div>';
+  const g=complementGate(u),done=completed.get(u.id)?.date===date;
+  const detail=done?'Concluído em '+dateBR(date)+' · 1º contato TEC':
+   'Liberação: '+dateBR(g.releasedAt)+' · Gatilhos: '+u.triggerCodes.join(' + ')+
+   (g.scheduled<date?' · Adiado desde '+dateBR(g.scheduled):'');
+  return '<div class="weekly-topic '+(done?'weekly-topic-done':'')+'"><div><strong>'+
+   escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span><small>'+
+   escapeHtml(detail)+'</small></div><button type="button" class="smallbtn" data-open-topic="'+
+   escapeHtml(u.id)+'" data-open-stage="Estudo inicial">'+(done?'Ver registro':'Abrir TEC')+'</button></div>';
  };
  const revs=studyData.reviews.filter(r=>{
   if(r.resetForRedo||!['D+1','D+7','D+30'].includes(r.stage))return false;
@@ -2678,15 +2691,15 @@ function renderDailyStudyWorkspace(){
  const countRevsDone=revs.filter(r=>r.status==='Realizada').length;
  const countStudiesDone=entries.filter(x=>completed.has(x.unit.id)).length;
  const actionableRevs=revs.filter(r=>r.status!=='Realizada'&&!r.closedNoFurtherTecReviews);
- const countPending=actionableRevs.length+entries.length-countStudiesDone+scheduled.filter(u=>!completed.has(u.id)).length;
+ const countPending=actionableRevs.length+entries.length-countStudiesDone+scheduled.length;
  const progressHeader='<div class="execution-summary" aria-label="Resumo da execução">'+
   '<div class="execution-hero primary"><span class="kicker">Seu roteiro de estudo</span><strong>'+dateBR(date)+'</strong><small>Revisões primeiro · estudos iniciais depois; Aprofundamento antes de Questões.</small></div>'+
   '<div class="execution-hero"><span class="kicker">Revisões</span><strong>'+countRevsDone+'/'+(countRevsDone+actionableRevs.length)+'</strong><small>Realizadas / previstas</small></div>'+
   '<div class="execution-hero"><span class="kicker">Estudos iniciais</span><strong>'+countStudiesDone+'/'+entries.length+'</strong><small>Concluídos / programados</small></div>'+
   '<div class="execution-hero"><span class="kicker">Pendentes</span><strong>'+countPending+'</strong><small>Inclui atividades transferidas</small></div></div>'+
   '<div class="execution-flow" aria-label="Ordem de execução"><span class="step-active">1. Revisões · Aprofundamento</span><span class="flow-arrow">›</span><span>2. Revisões · Questões / TEC</span><span class="flow-arrow">›</span><span>3. Estudos · Aprofundamento</span><span class="flow-arrow">›</span><span>4. Estudos · Questões / TEC</span></div>';
- const actionableTotal=actionableRevs.length+revs.filter(r=>r.status==='Realizada').length+entries.length+scheduled.length;
- const actionableDone=revs.filter(r=>r.status==='Realizada').length+countStudiesDone+scheduled.filter(u=>completed.has(u.id)).length;
+ const actionableTotal=actionableRevs.length+revs.filter(r=>r.status==='Realizada').length+entries.length+displayedComplements.length;
+ const actionableDone=revs.filter(r=>r.status==='Realizada').length+countStudiesDone+completedComplements.length;
  const completedPct=actionableTotal?Math.round(100*actionableDone/actionableTotal):0;
  const progress='<section class="daily-progress" aria-label="Progresso diário"><div class="daily-progress-top"><span>Progresso da agenda</span><small>'+actionableDone+'/'+actionableTotal+' atividades · '+completedPct+'% concluído</small></div><div class="daily-progress-track" role="progressbar" aria-label="Progresso diário" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+completedPct+'"><span style="width:'+completedPct+'%"></span></div></section>';
  const nextReview=[...revisionA,...revisionQ,...revisionC,...revisionOther].find(r=>r.status!=='Realizada'&&!r.closedNoFurtherTecReviews);
@@ -2703,8 +2716,8 @@ function renderDailyStudyWorkspace(){
  const originalHistorical=date<today?dailyStudyAssignments(date).units:[];
  const historyPanel=originalHistorical.length?'<details class="history-original"><summary>Programação original desta data · '+originalHistorical.length+' tópico(s)</summary><div class="daily-topic-list">'+originalHistorical.map(u=>{const record=completed.get(u.id);return '<div class="daily-review-item" data-state="'+(record?'done':'pending')+'"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span><small>'+(record?'Concluído em '+dateBR(record.date):'Não concluído na programação original')+'</small></div></div>'}).join('')+'</div></details>':'';
  return '<div class="daily-controls"><label for="dailyDate">Data</label><button type="button" data-daily-step="-1">‹ Anterior</button><input type="date" id="dailyDate" value="'+date+'"><button type="button" data-daily-step="1">Próximo ›</button><button type="button" data-daily-date="'+today+'">Hoje</button></div>'+
- '<div class="daily-weekstrip">'+days+'</div><p class="daily-note">Toda atividade que passou da data programada sem conclusão reaparece automaticamente no Cronograma do dia corrente e continua a ser transferida enquanto estiver pendente. As datas originais, os resultados e as metas permanecem preservados. Nesta semana (08–13/11), apenas os Aprofundamentos pendentes são distribuídos de terça a sexta (10–13/11). Questões e semanas seguintes preservam o calendário original. Sábado sem estudos novos.</p>'+
- progressHeader+progress+nextMarkup+historyPanel+'<div class="weekly-kpi">'+metricCard('Aprofundamentos do dia',A.length)+metricCard('Tópicos de Questões do dia',Q.length)+metricCard('Complementações liberadas para hoje',scheduled.length)+metricCard('Revisões na agenda',revs.length)+metricCard('Pendências transferidas',carryCount)+metricCard('Tempo líquido',time.known?clockMinutes(time.minutes):'N/I')+'</div>'+
+ '<div class="daily-weekstrip">'+days+'</div><p class="daily-note">Toda atividade que passou da data programada sem conclusão reaparece automaticamente no Cronograma do dia corrente e continua a ser transferida enquanto estiver pendente. As datas originais, os resultados e as metas permanecem preservados. Na semana de 08–13/11, os novos estudos pendentes foram redistribuídos entre 12 e 13/11 em blocos consecutivos, preservando a sequência integrada. As complementações concluídas e suas revisões permanecem em suas datas efetivas. Sábado sem estudos novos.</p>'+
+ progressHeader+progress+nextMarkup+historyPanel+'<div class="weekly-kpi">'+metricCard('Aprofundamentos do dia',A.length)+metricCard('Tópicos de Questões do dia',Q.length)+metricCard('Complementações do dia',displayedComplements.length)+metricCard('Revisões na agenda',revs.length)+metricCard('Pendências transferidas',carryCount)+metricCard('Tempo líquido',time.known?clockMinutes(time.minutes):'N/I')+'</div>'+
 
  '<div class="section-divider"><strong>1 · Revisões — realizar primeiro</strong></div>'+
  panel('Revisões — aprofundamento',uiQuantity(revisionA.length,'revisão','revisões')+' de estudos de Aprofundamento (D+1, D+7 e D+30).',revisionA.length?groupedReviewRows(revisionA.slice().sort((a,b)=>({'D+1':0,'D+7':1,'D+30':2}[a.stage]??3)-({'D+1':0,'D+7':1,'D+30':2}[b.stage]??3))):blank)+
@@ -2714,7 +2727,7 @@ function renderDailyStudyWorkspace(){
  '<div class="section-divider"><strong>2 · Estudos iniciais — após as revisões</strong></div>'+
  panel('Estudos iniciais — aprofundamento',A.length+' nesta data.',A.length?groupedInitialRows(A):blank)+
  panel('Estudos iniciais — questões',Q.length+' nesta data.',Q.length?groupedInitialRows(Q):blank)+
- panel('Complementação (TEC) — agenda dinâmica',scheduled.length+' caderno(s) liberado(s) para esta data.',scheduled.length?scheduled.map(cRow).join(''):blank);
+ panel('Complementação (TEC) — concluídas e programadas',completedComplements.length+' concluída(s) · '+scheduled.length+' pendente(s) para esta data.',displayedComplements.length?displayedComplements.map(cRow).join(''):blank);
 }
 
 // MIGRAÇÃO ADITIVA E IDPOTENTE DE CP 32 → 36, preservando histórico e IDs dos tópicos já existentes.
