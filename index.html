@@ -3484,7 +3484,8 @@ function applyNov11RecordsOnce(){
  const studyIds=new Map();
  const sameSession=(a,b)=>a.subject===b.subject&&topicKey(a)===topicKey(b)&&
   a.date===b.date&&a.source===b.source&&
-  (a.stage===b.stage||stageForContact(a.contact)===b.stage);
+  (a.stage===b.stage||stageForContact(a.contact)===b.stage||
+   (b.stage==='Estudo inicial'&&['1º contato','Estudo inicial'].includes(a.contact)));
  for(const item of initialNov11Records.activities){
   const unit=planById.get(item.planId);
   if(!unit)throw Error('Tópico não localizado no plano: '+item.planId);
@@ -3502,7 +3503,8 @@ function applyNov11RecordsOnce(){
     closureDate:initialNov11Records.date,reportId:initialNov11Records.reportId,
     ...(unit.id==='C-LP-LING-006'?{notes:initialNov11Records.insecurePartial}:{})};
    let existing=studyData.studies.find(x=>x.id===id||(
-    x.planId===unit.id&&x.date===seed.date&&x.status==='Concluído'&&!x.resetForRedo));
+    x.subject===seed.subject&&x.date===seed.date&&x.status==='Concluído'&&
+    !x.resetForRedo&&(x.planId===unit.id||topicKey(x)===topicKey(seed))));
    if(existing){
     for(const [key,value] of Object.entries(seed)){
      if(key==='id')continue;
