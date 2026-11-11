@@ -20,6 +20,7 @@ Este arquivo registra as solicitações de organização e apresentação do sit
 - Alteração 01: commit `5a4bc8899927fac8728457e7229717d532acbf87`.
 - Alterações 02 e 03: já constavam no código na revisão anterior a este registro.
 - Alterações 04 a 08: commit `e0f4ea8a478460c9af032b0e60202f8e865d95e0`.
+- Ajuste final da capitalização de “Visão geral” e “Quadro geral”: commit `81135a53bc54d5499b321c2a9082e561e5fa5fdf`.
 - O código JavaScript foi validado sintaticamente após a atualização.
 - A disponibilidade da versão publicada no Netlify precisa ser confirmada separadamente; commits no GitHub, por si só, não comprovam a publicação.
 
