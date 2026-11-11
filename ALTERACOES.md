@@ -24,6 +24,17 @@ Este arquivo registra as solicitações de organização e apresentação do sit
 - O código JavaScript foi validado sintaticamente após a atualização.
 - A disponibilidade da versão publicada no Netlify precisa ser confirmada separadamente; commits no GitHub, por si só, não comprovam a publicação.
 
+## 11/11/2026 — fechamento diário e reagendamento
+
+- Importados os 19 registros concluídos em 11/11 (4 estudos iniciais de aprofundamento, 4 estudos iniciais TEC, 5 complementações TEC e 6 revisões D+1), com 359 questões e 162 minutos líquidos.
+- Total conferido: 324 acertos seguros, 26 acertos inseguros, 5 erros seguros e 4 erros inseguros; 350/359 acertos (97,49%).
+- Importação idempotente por identidade de sessão, com equivalência para lançamentos manuais. Nenhum estudo histórico deve ser apagado ou contado duas vezes.
+- Dia 11/11 encerrado; pendências dos estudos iniciais redistribuídas entre 12 e 13/11, ponderando estudos aprofundados e TEC. RFIA 5 marcado para 12/11, ainda **não concluído**.
+- Revisões D+1, D+7 e D+30 mantêm suas datas-base; realizações de 11/11 são registradas nos ciclos correspondentes, sem reiniciar prazos.
+- Commits de código: `eafb6c56d9d567075226127942a48a90bcabe020`, `db151ccd75f5746bcc2cc929983dd745326c6604`.
+- Validação: correspondência dos 19 códigos no plano; soma de 359 questões/162 minutos; compilação sintática da rotina JavaScript; teste da redistribuição sem omissões nem duplicações.
+- Publicação do Netlify: **não confirmada**. Alteração no GitHub não garante que o domínio indicado esteja mostrando esta versão.
+
 ## Política de manutenção
 
 Preservar estudos, revisões, tentativas, métricas, arquivos, links e calendários. Nunca transformar uma remoção visual em exclusão de histórico, salvo orientação expressa.
