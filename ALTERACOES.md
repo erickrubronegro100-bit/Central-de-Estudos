@@ -34,6 +34,7 @@ Este arquivo registra as solicitações de organização e apresentação do sit
 - Commits de código: `eafb6c56d9d567075226127942a48a90bcabe020`, `db151ccd75f5746bcc2cc929983dd745326c6604`.
 - Validação: correspondência dos 19 códigos no plano; soma de 359 questões/162 minutos; compilação sintática da rotina JavaScript; teste da redistribuição sem omissões nem duplicações.
 - Correção da ordem do cronograma da Semana 3: commit `208b289b53188223e68bf4dfae9ec545e5f8305b`. Alterado exclusivamente o critério de divisão e a nota explicativa da semana, sem mexer em resultados ou revisões.
+- Correção de exibição de Complementação TEC (commit `3ae42e217bbb3227d70ab0ed506d7ed309df045d`): os 5 primeiros contatos concluídos em 11/11 permanecem visíveis como concluídos no Cronograma do dia, separados das pendências. Conferida a geração de 5 revisões D+1 para 12/11, 5 D+7 para 18/11 e 5 D+30 para 11/12. Não se alterou a lógica de conclusão de revisões, nem a sequência 9+9 dos estudos pendentes.
 - Publicação do Netlify: **não confirmada**. Alteração no GitHub não garante que o domínio indicado esteja mostrando esta versão.
 
 ## Política de manutenção
