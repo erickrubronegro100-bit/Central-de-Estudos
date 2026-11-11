@@ -434,6 +434,17 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .confidence-row strong{text-align:right;font-variant-numeric:tabular-nums}
 @media(max-width:600px){.review-stat-row{grid-template-columns:repeat(2,minmax(0,1fr))}.confidence-row{grid-template-columns:minmax(100px,1fr) 1.3fr 45px;gap:6px}.daily-progress-top{align-items:flex-start;flex-direction:column}}
 
+
+.dashboard-daily{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.3fr);gap:14px 24px;align-items:center;padding:22px 24px;border:1px solid var(--camara-green);background:var(--accent-soft);border-radius:17px;margin:4px 0 26px}
+.dashboard-daily .kicker{display:block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.dashboard-daily h2{font-size:23px;margin:7px 0 5px}.dashboard-daily p{color:var(--muted);font-size:12px;margin:0}
+.dashboard-daily-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.dashboard-daily-stats>div{background:var(--card);border:1px solid var(--line);padding:12px;border-radius:11px}
+.dashboard-daily-stats strong{display:block;font-size:23px;font-variant-numeric:tabular-nums}
+.dashboard-daily-stats small{color:var(--muted);font-size:11px;line-height:1.35;display:block}
+.dashboard-daily-actions{display:flex;gap:8px;flex-wrap:wrap;grid-column:1/-1}
+@media(max-width:920px){.dashboard-daily{grid-template-columns:1fr}}
+@media(max-width:540px){.dashboard-daily{padding:15px}.dashboard-daily-stats{gap:5px}.dashboard-daily-stats>div{padding:9px}.dashboard-daily-stats strong{font-size:19px}}
 </style>
 </head>
 <body>
@@ -2633,7 +2644,7 @@ function renderReviewGeneralPanels(){
    '<div class="review-progress-track" role="progressbar" aria-label="Revisões '+stage+' realizadas" aria-valuenow="'+done+'" aria-valuemin="0" aria-valuemax="'+rows.length+'"><i style="width:'+pct+'%"></i></div>'+
    '<small>'+pct+'% concluído nesta etapa</small></div>';
  }).join('');
- const due=reviews.filter(r=>r.plannedDate===todayISO()&&r.status!=='Realizada').length;
+ const due=reviews.filter(r=>r.plannedDate===todayISO()&&r.status!=='Realizada'&&!r.closedNoFurtherTecReviews).length;
  const overdue=reviews.filter(r=>statusReview(r)==='Pendentes').length;
  const summary='<div class="review-stage-summary">'+cards+'</div>';
  return summary+'<div class="weekly-kpi">'+metricCard('Vencendo hoje',due)+metricCard('Atrasadas',overdue)+
@@ -2667,7 +2678,7 @@ function renderWorkspace(v){
     metricCard("Complementação (TEC)",all.filter(r=>reviewInitialStudyFlow(r)==="C").length)+
    '</div>':"";
   const urgent=all.filter(r=>r.status!=='Realizada'&&r.plannedDate&&r.plannedDate<todayISO()&&!r.closedNoFurtherTecReviews).length;
-  const todayDue=all.filter(r=>r.status!=='Realizada'&&r.plannedDate===todayISO()).length;
+  const todayDue=all.filter(r=>r.status!=='Realizada'&&!r.closedNoFurtherTecReviews&&r.plannedDate===todayISO()).length;
   const reviewNotice='<div class="review-deadlines" role="status"><div><strong>'+urgent+' atrasada(s)</strong><small>Prazos anteriores à data atual, ainda sem conclusão</small></div><div><strong>'+todayDue+' prevista(s) para hoje</strong><small>D+1, D+7 e D+30 · datas originais preservadas</small></div></div>';
   body=reviewNotice+(v.id==="revisoes-geral"?renderReviewGeneralPanels():"")+
    '<div class="workspace-metrics">'+metricCard("Programadas",counts[0])+metricCard("Realizadas",counts[1])+metricCard("Pendentes",counts[2])+metricCard("Não realizadas",counts[3])+'</div>'+
@@ -2882,13 +2893,21 @@ function refreshOverview(){
  const prog=centralProgressModel(),history=weeklyHistoricalComparison(),reviews=studyData.reviews.filter(r=>!r.resetForRedo);
  const metrics=metricsAttempt(studyData.attempts.filter(a=>!a.resetForRedo));
  const today=todayISO();
+ const dueReviews=reviews.filter(r=>r.status!=='Realizada'&&!r.closedNoFurtherTecReviews&&r.plannedDate&&r.plannedDate<=today);
+ const todayUnits=dailyStudyAssignments(today).units;
+ const todayDone=todayUnits.filter(u=>Boolean(completionOf(u))).length;
+ const todayPending=todayUnits.length-todayDone;
+ const dailyOverview='<section class="dashboard-daily"><div><span class="kicker">Seu dia de estudo</span><h2>Agenda de '+dateBR(today)+'</h2><p>Revisões primeiro, aprofundamento antes de questões. Pendências mantêm suas datas originais.</p></div>'+
+  '<div class="dashboard-daily-stats"><div><strong>'+dueReviews.length+'</strong><small>Revisões a realizar</small></div><div><strong>'+todayPending+'</strong><small>Estudos previstos pendentes</small></div><div><strong>'+todayDone+'/'+todayUnits.length+'</strong><small>Estudos previstos concluídos</small></div></div>'+
+  '<div class="dashboard-daily-actions"><button class="primary" type="button" data-dashboard-view="estudos-cronograma-dia">Abrir cronograma</button><button class="smallbtn" type="button" data-dashboard-view="revisoes-dia">Ver revisões</button></div></section>';
+
  const stages=['D+1','D+7','D+30'].map(stage=>{
   const items=reviews.filter(r=>r.stage===stage);
   return '<tr><th>'+stage+'</th><td>'+items.length+'</td><td>'+items.filter(r=>r.status==='Realizada').length+'</td><td>'+items.filter(r=>statusReview(r)==='Programadas').length+'</td><td>'+items.filter(r=>statusReview(r)==='Pendentes').length+'</td></tr>';
  }).join('');
  const nav=(id,label)=>'<button class="dash-link" type="button" data-dashboard-view="'+id+'">'+escapeHtml(label)+'</button>';
  const stats=(name,val,desc)=>'<div class="dash-kpi"><span class="dash-kpi-label">'+escapeHtml(name)+'</span><strong>'+escapeHtml(String(val))+'</strong><small>'+escapeHtml(desc)+'</small></div>';
- root.innerHTML=renderCumulativeStudyTime()+
+ root.innerHTML=dailyOverview+renderCumulativeStudyTime()+
  '<section class="dash-section"><div class="dash-titlebar"><div><h2>Estudos — Visão Geral</h2><p>Metas da programação semanal comparadas ao realizado, com ideal histórico A/Q/C. Complementações entram conforme sua liberação e programação.</p></div>'+nav('estudos-geral','Abrir Visão Geral')+'</div>'+
  centralProgressCards()+
  '<div class="dash-kpi-grid">'+stats('UNIDADES CADASTRADAS',prog.all.total,'Distribuição por modalidade de estudo')+
@@ -3137,7 +3156,7 @@ function renderDailyStudyWorkspace(){
  const countPending=actionableRevs.length+entries.length-countStudiesDone+scheduled.filter(u=>!completed.has(u.id)).length;
  const progressHeader='<div class="execution-summary" aria-label="Resumo da execução">'+
   '<div class="execution-hero primary"><span class="kicker">Seu roteiro de estudo</span><strong>'+dateBR(date)+'</strong><small>Revisões primeiro · estudos iniciais depois; Aprofundamento antes de Questões.</small></div>'+
-  '<div class="execution-hero"><span class="kicker">Revisões</span><strong>'+countRevsDone+'/'+revs.length+'</strong><small>Realizadas / previstas</small></div>'+
+  '<div class="execution-hero"><span class="kicker">Revisões</span><strong>'+countRevsDone+'/'+(countRevsDone+actionableRevs.length)+'</strong><small>Realizadas / previstas</small></div>'+
   '<div class="execution-hero"><span class="kicker">Estudos iniciais</span><strong>'+countStudiesDone+'/'+entries.length+'</strong><small>Concluídos / programados</small></div>'+
   '<div class="execution-hero"><span class="kicker">Pendentes</span><strong>'+countPending+'</strong><small>Inclui atividades transferidas</small></div></div>'+
   '<div class="execution-flow" aria-label="Ordem de execução"><span class="step-active">1. Revisões · Aprofundamento</span><span class="flow-arrow">›</span><span>2. Revisões · Questões / TEC</span><span class="flow-arrow">›</span><span>3. Estudos · Aprofundamento</span><span class="flow-arrow">›</span><span>4. Estudos · Questões / TEC</span></div>';
