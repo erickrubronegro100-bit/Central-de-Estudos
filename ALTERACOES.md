@@ -49,6 +49,16 @@ Este arquivo registra as solicitações de organização e apresentação do sit
 - **RFIA 5** permanece não concluído e programado para 12/11. As cinco Complementações TEC concluídas em 11/11 e suas revisões D+1 em 12/11 continuam preservadas.
 - Código atualizado no commit `0f9071442836bf2711fcdddb1f41af2589bf228b`. Publicação no Netlify não verificada; commit no GitHub não comprova versão visível no domínio.
 
+## 12/11/2026 — quadro de progresso por matéria
+
+- Incluído em **Estudos → Visão geral** quadro de progresso por disciplina com cartões, barras percentuais, totais de tópicos, concluídos, pendentes e detalhamento por modalidade.
+- A contagem usa **663 unidades únicas** do cadastro (321 Aprofundamentos, 109 Complementações TEC e 233 Questões TEC), agrupadas pela disciplina de referência (`subject`) de cada unidade. A Complementação não é mostrada como uma disciplina separada.
+- Totais cadastrados: RICD 101, PL 36, RCCN 22, LP/LING 170, RFIA 54, CP 47, DC 40, DA 137, AP 17 e TI 39.
+- A conclusão é apurada por tópico cadastrado (`planId`) efetivamente concluído e não reaberto; revisões D+1/D+7/D+30 não somam tópico ao progresso.
+- Verificada a correspondência dos **109 códigos de Complementação TEC** à disciplina de referência no cadastro, sem IDs duplicados. Alguns cadernos possuem pré-requisitos encadeados ou interdisciplinares, mas a disciplina contabilizada continua sendo a indicada pelo próprio código do caderno.
+- Alteração exclusiva da interface e do cálculo de indicadores; histórico de estudos, resultados e calendário de revisões preservados.
+- Commit da mudança: `39a30938f7bb4c9a3d02bb7725e5f371ff7a0805`. A publicação no Netlify requer confirmação separada.
+
 ## Política de manutenção
 
 Preservar estudos, revisões, tentativas, métricas, arquivos, links e calendários. Nunca transformar uma remoção visual em exclusão de histórico, salvo orientação expressa.
