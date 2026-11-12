@@ -539,6 +539,30 @@ dialog.viewer,.block-viewer{width:min(1040px,100vw);max-width:100vw;height:100dv
 .viewactions{display:flex;flex-wrap:wrap}.viewtitle{font-size:20px}
 .dash-kpi strong,.workspace-stat strong{font-size:25px}.prompt-body{font-size:14px}.platform-table{font-size:12px}}
 
+
+/* 12/11/2026 — Progresso por matéria: Aprofundamento + Complementação TEC + Questões. */
+.subject-progress-section{margin:20px 0 26px}
+.subject-progress-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.subject-progress-heading h2{margin:0;font-size:17px;letter-spacing:-.025em}
+.subject-progress-heading p{margin:5px 0 0;max-width:760px;color:var(--muted);font-size:12px;line-height:1.65}
+.subject-progress-summary{font-size:12px;color:var(--muted);font-weight:650;white-space:nowrap}
+.subject-progress-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.subject-progress-card{min-width:0;border:1px solid var(--line);background:var(--card);border-radius:15px;padding:17px 18px;box-shadow:var(--shadow)}
+.subject-progress-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.subject-progress-card-title{min-width:0}
+.subject-progress-card-title h3{font-size:14px;font-weight:790;margin:0;color:var(--text);line-height:1.3}
+.subject-progress-card-title p{font-size:11px;color:var(--muted);margin:4px 0 0;line-height:1.45}
+.subject-progress-percent{font-weight:800;font-size:20px;color:var(--accent);white-space:nowrap;line-height:1.3;font-variant-numeric:tabular-nums}
+.subject-progress-count{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:14px 0 7px;font-variant-numeric:tabular-nums}
+.subject-progress-count strong{font-size:19px;letter-spacing:-.02em}
+.subject-progress-count span{font-size:11px;color:var(--muted)}
+.subject-progress-track{height:9px;border-radius:40px;background:var(--accent-soft);overflow:hidden}
+.subject-progress-fill{display:block;height:100%;border-radius:40px;background:linear-gradient(90deg,var(--accent),var(--positive));transition:width .25s ease}
+.subject-progress-breakdown{display:flex;gap:7px 14px;flex-wrap:wrap;border-top:1px solid var(--line);margin-top:13px;padding-top:10px;font-size:11px;color:var(--muted)}
+.subject-progress-breakdown strong{color:var(--text);font-variant-numeric:tabular-nums}
+@media(max-width:770px){.subject-progress-grid{grid-template-columns:1fr}}
+@media(max-width:470px){.subject-progress-card{padding:15px}.subject-progress-heading h2{font-size:16px}.subject-progress-percent{font-size:18px}}
+
 </style>
 </head>
 <body>
@@ -2586,10 +2610,65 @@ function renderWeeklyWorkspace(){
  panel('Metas semanais — Previsto × Realizado','As metas operacionais consideram a reprogramação de 05/11. O Saldo A/Q/C compara somente o ideal original acumulado e o realizado acumulado das três modalidades.','<div class="platform-scroll"><table class="platform-table weekly-table"><thead><tr><th>Semana</th><th>Período</th><th>Meta A</th><th>Feito A</th><th>Meta Q</th><th>Feito Q</th><th>Meta C</th><th>Feito C</th><th>Meta Total</th><th>Feito Total</th><th>Pendentes</th><th>Ideal histórico A/Q/C</th><th>Saldo A/Q/C</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
  weeklySelectedDetails(d,selected);
 }
+// Quadro por matéria: unidade cadastrada conta uma vez por ID; complemento TEC
+// integra o total da matéria de referência (subject), e revisão não soma tópico.
+function subjectProgressModel(day=todayISO()){
+ const rows=new Map(DISCIPLINES.map(subject=>[subject,{
+  subject,total:0,done:0,breakdown:{A:{total:0,done:0},C:{total:0,done:0},Q:{total:0,done:0}}
+ }]));
+ const seen=new Set();
+ for(const unit of planUnits){
+  if(seen.has(unit.id))continue;
+  seen.add(unit.id);
+  let rec=rows.get(unit.subject);
+  if(!rec){
+   rec={subject:unit.subject,total:0,done:0,
+    breakdown:{A:{total:0,done:0},C:{total:0,done:0},Q:{total:0,done:0}}};
+   rows.set(unit.subject,rec);
+  }
+  if(!rec.breakdown[unit.flow])continue;
+  const finished=completionOf(unit);
+  const isDone=Boolean(finished&&(!finished.date||finished.date<=day));
+  rec.total++;
+  rec.breakdown[unit.flow].total++;
+  if(isDone){rec.done++;rec.breakdown[unit.flow].done++}
+ }
+ return [...rows.values()].filter(r=>r.total>0).map(r=>({
+  ...r,pending:r.total-r.done,percent:r.total?100*r.done/r.total:0
+ }));
+}
+function renderSubjectProgress(){
+ const list=subjectProgressModel(),all=list.reduce((acc,r)=>{
+  acc.total+=r.total;acc.done+=r.done;return acc;
+ },{total:0,done:0});
+ const cards=list.map(r=>{
+  const progress=r.percent.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+  const pieces=[['A','Aprofundamento'],['C','Complementação TEC'],['Q','Questões TEC']]
+   .filter(([flow])=>r.breakdown[flow].total>0)
+   .map(([flow,label])=>'<span>'+escapeHtml(label)+': <strong>'+
+    formatNum(r.breakdown[flow].done)+'/'+formatNum(r.breakdown[flow].total)+'</strong></span>').join('');
+  return '<article class="subject-progress-card">'+
+   '<div class="subject-progress-card-head"><div class="subject-progress-card-title">'+
+   '<h3>'+escapeHtml(r.subject)+'</h3><p>'+escapeHtml(subjectLabel(r.subject))+'</p></div>'+
+   '<strong class="subject-progress-percent">'+escapeHtml(progress)+'</strong></div>'+
+   '<div class="subject-progress-count"><strong>'+formatNum(r.done)+' / '+formatNum(r.total)+
+   '</strong><span>'+formatNum(r.pending)+' pendente(s)</span></div>'+
+   '<div class="subject-progress-track" role="progressbar" aria-label="'+escapeHtml('Progresso de '+r.subject)+
+   '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+r.percent.toFixed(2)+'">'+
+   '<span class="subject-progress-fill" style="width:'+r.percent.toFixed(2)+'%"></span></div>'+
+   '<div class="subject-progress-breakdown">'+pieces+'</div></article>';
+ }).join('');
+ return '<section class="subject-progress-section" aria-label="Progresso por matéria">'+
+  '<div class="subject-progress-heading"><div><h2>Progresso por matéria</h2>'+
+  '<p>Percentual de tópicos concluídos em relação ao total cadastrado. As Complementações TEC integram a matéria correspondente; revisões não acrescentam unidades ao total.</p></div>'+
+  '<span class="subject-progress-summary">'+formatNum(all.done)+' de '+formatNum(all.total)+
+  ' tópicos concluídos</span></div><div class="subject-progress-grid">'+cards+'</div></section>';
+}
+
 function renderStudyGeneralPanels(){
  const d=centralProgressModel(),byFlow=[['Aprofundamento',d.A],['Complementação (TEC)',d.C],['Questões',d.Q]];
  const rows=byFlow.map(([n,v])=>'<tr><th>'+n+'</th><td>'+v.total+'</td><td>'+v.done+'</td><td>'+v.expected+'</td><td>'+(v.done-v.expected>0?'+':'')+(v.done-v.expected)+'</td></tr>').join('');
- return centralProgressCards()+weeklySnapshot()+
+ return centralProgressCards()+renderSubjectProgress()+weeklySnapshot()+
  panel('Consolidação das modalidades','Previsto conforme as metas de estudo acumuladas e as complementações liberadas e programadas até a data de referência.','<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Modalidade</th><th>Total</th><th>Concluídos</th><th>Esperados</th><th>Diferença</th></tr></thead><tbody>'+rows+'<tr><th>GERAL</th><td>'+d.all.total+'</td><td>'+d.all.done+'</td><td>'+d.all.expected+'</td><td>'+ (d.all.done-d.all.expected)+'</td></tr></tbody></table></div>')+
  '<div class="sector-links"><button class="dash-link" data-jump-view="estudos-semanal">Metas semanais</button><button class="dash-link" data-jump-view="estudos-cronograma-dia">Cronograma diário</button><button class="dash-link" data-jump-view="estudos-geral">Sequência integrada</button></div>';
 }
