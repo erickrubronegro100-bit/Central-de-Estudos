@@ -59,6 +59,16 @@ Este arquivo registra as solicitações de organização e apresentação do sit
 - Alteração exclusiva da interface e do cálculo de indicadores; histórico de estudos, resultados e calendário de revisões preservados.
 - Commit da mudança: `39a30938f7bb4c9a3d02bb7725e5f371ff7a0805`. A publicação no Netlify requer confirmação separada.
 
+## 12/11/2026 — fechamento definitivo e transferência para 13/11
+
+- Importação idempotente de **22 atividades concluídas** em 12/11: 10 ChatGPT e 12 TEC, incluindo 6 estudos iniciais, 1 complementação TEC e 15 revisões D+1.
+- Métricas: **341 questões**, 294 acertos seguros, 32 acertos inseguros, 7 erros seguros, 8 erros inseguros; 326 acertos (95,60%), insegurança de 11,73% e 180 minutos líquidos.
+- As unidades A/Q ainda não concluídas da Semana 3 passam integralmente para **13/11/2026**, preservando a ordem dos dois fluxos e o histórico das atividades realizadas em 12/11.
+- Complementações TEC liberadas e pendentes com data em 12/11 transferidas para 13/11; revisões abertas previstas em 12/11 também transferidas, conservando a data original e sem reiniciar os ciclos subsequentes.
+- Códigos conferidos com o cadastro de 663 unidades; nenhum ciclo realizado é reaberto. A importação preserva a identificação de segurança por questão e evita duplicidade de sessões existentes.
+- Implementação: commit `8916172cbbb653da6e5e0fbc5ec770e6df2d4ea6`; script JavaScript e dados JSON validados sintaticamente.
+- Publicação da versão no Netlify **não verificada**; somente a atualização da branch principal do GitHub foi confirmada.
+
 ## Política de manutenção
 
 Preservar estudos, revisões, tentativas, métricas, arquivos, links e calendários. Nunca transformar uma remoção visual em exclusão de histórico, salvo orientação expressa.
