@@ -69,6 +69,19 @@ Este arquivo registra as solicitações de organização e apresentação do sit
 - Implementação: commit `8916172cbbb653da6e5e0fbc5ec770e6df2d4ea6`; script JavaScript e dados JSON validados sintaticamente.
 - Publicação da versão no Netlify **não verificada**; somente a atualização da branch principal do GitHub foi confirmada.
 
+## 13/11/2026 — fechamento e novo regime de metas flexíveis
+
+- Importados de forma idempotente os **9 resultados concluídos de 13/11/2026**: 4 revisões D+1 de Aprofundamento, 2 revisões D+1 TEC e 3 estudos iniciais TEC, em 5 disciplinas.
+- Totais conferidos: **153 questões, 130 acertos seguros, 19 acertos inseguros, 1 erro seguro, 3 erros inseguros, 149 acertos, 97,39% e 71 minutos líquidos**. Atividade DA 36 D+1 não realizada não acrescenta resultado, questão ou tempo.
+- **DA 36:** preservado o estudo inicial TEC de 12/11; D+1 marcada não realizada por esgotamento das questões, com D+7/D+30 retiradas da programação. Histórico da ocorrência preservado; não criar novas revisões automaticamente.
+- **12 aprofundamentos pendentes no encerramento de 13/11:** integrar ao restante da sequência A e distribuir entre as metas das semanas seguintes até 15/01/2027, sem concentrá-los artificialmente em 14–22/11. Reequilibrar também o saldo pendente de Questões TEC, em seu próprio fluxo.
+- Nova regra de fechamento: quando uma semana acaba, conservar os estudos realmente realizados em seu período e recalcular a carga restante entre as semanas abertas, distribuindo por quotas equilibradas e preservando a ordem dos tópicos A e Q e as unidades CP ancoradas. O ideal histórico é independente das metas operacionais recalculadas.
+- Evitar alterações no meio da semana: congelar em armazenamento local a alocação vigente por índice da semana encerrada e conjunto dos tópicos concluídos antes do fechamento. Recalcular no próximo fechamento semanal ou diante de alteração efetiva no histórico fechado.
+- **Cronograma detalhado e agenda diária:** disponíveis somente para a primeira semana posterior à última encerrada. Depois do relatório definitivo de 13/11, o foco é **Semana 4 — 14 a 22/11**, com estudos novos em 15, 16, 17, 18, 19 e 22/11. Semanas futuras mostram apenas metas agregadas, a recalcular na virada semanal.
+- Ajustados os indicadores de previsão operacional para usar cotas recalculadas; comparativos do ideal original permanecem separados. Preservadas datas efetivas dos estudos, histórico e revisões já concluídas.
+- Validações: 9 registros e 153 questões conferidos contra cadastro; sintaxe dos 16 scripts e JSON da página verificada; teste isolado da redistribuição confirma unicidade, preservação de itens concluídos e estabilidade das metas durante uma semana ativa.
+- Publicação efetiva no Netlify **não confirmada** apenas pela atualização do repositório.
+
 ## Política de manutenção
 
 Preservar estudos, revisões, tentativas, métricas, arquivos, links e calendários. Nunca transformar uma remoção visual em exclusão de histórico, salvo orientação expressa.
