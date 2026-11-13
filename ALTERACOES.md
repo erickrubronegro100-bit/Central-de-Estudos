@@ -82,6 +82,14 @@ Este arquivo registra as solicitações de organização e apresentação do sit
 - Validações: 9 registros e 153 questões conferidos contra cadastro; sintaxe dos 16 scripts e JSON da página verificada; teste isolado da redistribuição confirma unicidade, preservação de itens concluídos e estabilidade das metas durante uma semana ativa.
 - Publicação efetiva no Netlify **não confirmada** apenas pela atualização do repositório.
 
+## 13/11/2026 — correção do indicador Esperado no progresso
+
+- O indicador **Esperado** (Aprofundamento e Questões TEC) foi corrigido para seguir o **ideal histórico original proporcional ao calendário**, usando `idealA` e `idealQ`, e não as cotas operacionais redistribuídas (`quotaA`/`quotaQ`) nem o número de tópicos efetivamente concluídos.
+- O **Realizado** continua a refletir apenas os estudos concluídos, e a diferença apresentada é Realizado − Esperado (ideal). Complementações TEC seguem o critério próprio de liberação/programação, sem cotas fixas.
+- Ajustadas as descrições do Quadro geral, indicadores de progresso e consolidação de modalidades para explicitar a distinção entre ideal histórico e metas semanais flexíveis.
+- Planejamento detalhado da próxima semana, metas futuras, históricos e datas de revisões não foram alterados.
+- Verificados os 16 blocos JavaScript/JSON da página, sem erros sintáticos.
+
 ## Política de manutenção
 
 Preservar estudos, revisões, tentativas, métricas, arquivos, links e calendários. Nunca transformar uma remoção visual em exclusão de histórico, salvo orientação expressa.

@@ -2589,8 +2589,8 @@ function refreshOverview(){
  centralProgressCards()+
  '<div class="dash-kpi-grid">'+stats('Unidades cadastradas',prog.all.total,'Distribuição por modalidade de estudo')+
  stats('Unidades concluídas',prog.all.done,'Execução efetiva')+
- stats('Previsto até hoje',prog.all.expected,'Metas acumuladas de acordo com a programação vigente')+
- stats('Saldo realizado − previsto',(prog.all.done-prog.all.expected>0?'+':'')+(prog.all.done-prog.all.expected),'Atraso negativo · adiantamento positivo')+'</div>'+
+ stats('Esperado até hoje',prog.all.expected,'Ideal histórico acumulado até a data de referência; complementações por liberação')+
+ stats('Saldo realizado − ideal',(prog.all.done-prog.all.expected>0?'+':'')+(prog.all.done-prog.all.expected),'Atraso negativo · adiantamento positivo')+'</div>'+
  '<div class="dash-kpi-grid">'+
  stats('Ideal histórico A/Q/C — Até semana atual (Semana '+history.weekNumber+')',history.ideal,'Acumulado · '+history.idealA+' A + '+history.idealQ+' Q + '+history.idealC+' C')+
  stats('Realizado histórico A/Q/C — Até semana atual (Semana '+history.weekNumber+')',history.done,'Acumulado · '+history.doneA+' A + '+history.doneQ+' Q + '+history.doneC+' C')+
@@ -2610,7 +2610,7 @@ function refreshOverview(){
  '<p class="dash-note">Registros permanecem armazenados neste navegador. Alterações de planejamento não substituem o histórico nem realizam automaticamente tópicos ou revisões.</p>';
 }
 
-// QUATRO PAINÉIS DE PROGRESSO — metas proporcionais (A/Q), complementações por liberação.
+// QUATRO PAINÉIS DE PROGRESSO — ideal histórico proporcional (A/Q), complementações por liberação.
 
 function weeklyExpectedProgressForDay(day=todayISO(),data=weeklyStudyState()){
  const weeks=data.weeks,result={A:0,Q:0,C:0};
@@ -2618,10 +2618,10 @@ function weeklyExpectedProgressForDay(day=todayISO(),data=weeklyStudyState()){
   if(day<w.start)continue;
   const days=plannedStudyDates(w.start,w.end);
   const fraction=day>=w.end?1:(days.length?days.filter(d=>d<=day).length/days.length:0);
-  // A previsão operacional acompanha as metas reequilibradas; o ideal histórico
-  // continua separado nos painéis de comparação histórica.
-  result.A+=w.quotaA*fraction;
-  result.Q+=w.quotaQ*fraction;
+  // "Esperado" nos painéis de progresso segue exclusivamente o ideal histórico
+  // original proporcional ao calendário, nunca a execução ou a meta reequilibrada.
+  result.A+=w.idealA*fraction;
+  result.Q+=w.idealQ*fraction;
   result.C+=w.complements.filter(u=>{
    const gate=complementGate(u),rec=completionOf(u);
    const planned=gate?.scheduled||gate?.releasedAt||rec?.plannedDate||rec?.date;
@@ -2670,7 +2670,7 @@ function centralProgressCards(day=todayISO()){
  const bars=[['Progresso geral',d.all],['Aprofundamento',d.A],['Complementação (TEC)',d.C],['Questões',d.Q]];
  return '<div class="study-progress-grid">'+bars.map(([title,data])=>{
   const done=data.done,goal=data.expected,total=data.total,diff=done-goal;
-  const isC=data.flow==='C',note=isC?'Previsto = cadernos liberados e programados até a data de referência':'Previsto = metas de estudo acumuladas até a data de referência do planejamento';
+  const isC=data.flow==='C',note=isC?'Previsto = cadernos liberados e programados até a data de referência':'Esperado = ideal histórico acumulado proporcionalmente até a data de referência, sem depender das metas redistribuídas ou do realizado';
   const pct=x=>total?Math.min(100,Math.max(0,x/total*100)):0;
   const balance=diff<0?uiQuantity(-diff,'unidade','unidades')+' abaixo da meta':diff>0?uiQuantity(diff,'unidade','unidades')+' acima da meta':'Meta atingida';
   return '<article class="study-progress-card"><h3>'+title+'</h3>'+
@@ -2802,7 +2802,7 @@ function renderStudyGeneralPanels(){
  const d=centralProgressModel(),byFlow=[['Aprofundamento',d.A],['Complementação (TEC)',d.C],['Questões',d.Q]];
  const rows=byFlow.map(([n,v])=>'<tr><th>'+n+'</th><td>'+v.total+'</td><td>'+v.done+'</td><td>'+v.expected+'</td><td>'+(v.done-v.expected>0?'+':'')+(v.done-v.expected)+'</td></tr>').join('');
  return centralProgressCards()+renderSubjectProgress()+weeklySnapshot()+
- panel('Consolidação das modalidades','Previsto conforme as metas de estudo acumuladas e as complementações liberadas e programadas até a data de referência.','<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Modalidade</th><th>Total</th><th>Concluídos</th><th>Esperados</th><th>Diferença</th></tr></thead><tbody>'+rows+'<tr><th>GERAL</th><td>'+d.all.total+'</td><td>'+d.all.done+'</td><td>'+d.all.expected+'</td><td>'+ (d.all.done-d.all.expected)+'</td></tr></tbody></table></div>')+
+ panel('Consolidação das modalidades','Esperado conforme o ideal histórico original proporcional até a data de referência; complementações TEC liberadas e programadas.','<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Modalidade</th><th>Total</th><th>Concluídos</th><th>Esperados</th><th>Diferença</th></tr></thead><tbody>'+rows+'<tr><th>GERAL</th><td>'+d.all.total+'</td><td>'+d.all.done+'</td><td>'+d.all.expected+'</td><td>'+ (d.all.done-d.all.expected)+'</td></tr></tbody></table></div>')+
  '<div class="sector-links"><button class="dash-link" data-jump-view="estudos-semanal">Metas semanais</button><button class="dash-link" data-jump-view="estudos-cronograma-dia">Cronograma diário</button><button class="dash-link" data-jump-view="estudos-geral">Sequência integrada</button></div>';
 }
 function renderContinuousWorkspace(){
@@ -3182,7 +3182,7 @@ function expectedInitialProgressForDay(day){
   if(day<w.start)break;
   const days=plannedStudyDates(w.start,w.end),elapsed=days.filter(d=>d<=day).length;
   const p=day>=w.end?1:elapsed/days.length;
-  result.A+=w.quotaA*p;result.Q+=w.quotaQ*p;
+  result.A+=w.idealA*p;result.Q+=w.idealQ*p;
   result.weekNumber=w.number;result.weekEnd=w.end;
  }
  result.A=Math.min(321,Math.round(result.A));
