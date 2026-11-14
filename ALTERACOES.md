@@ -90,6 +90,16 @@ Este arquivo registra as solicitações de organização e apresentação do sit
 - Planejamento detalhado da próxima semana, metas futuras, históricos e datas de revisões não foram alterados.
 - Verificados os 16 blocos JavaScript/JSON da página, sem erros sintáticos.
 
+## 14/11/2026 — Atualização dos limites de leitura nos comandos
+
+- **Estudo inicial:** até **10 minutos de leitura nas Etapas 1 a 3 somadas**, referência de **1.800 palavras** a 180 palavras/minuto, no lugar de 15 minutos/2.700 palavras.
+- **D+1:** até **5 minutos para as Etapas 3 e 4 somadas**. Teto nominal de 900 palavras a 180 palavras/minuto; RICD/RCCN mantêm a referência conservadora de 800 palavras.
+- **D+7:** até **2,5 minutos para as Etapas 3 e 4 somadas**. Teto nominal de 450 palavras a 180 palavras/minuto; RICD/RCCN mantêm a referência conservadora de 400 palavras.
+- Harmonizados **28 comandos** das seis disciplinas (RICD, RCCN, PL, CP, RFIA e LP/LING), incluindo os questionários de avaliação e as referências antigas de 30 minutos em CP/RFIA.
+- Corrigida também a regra de estudo inicial inserida automaticamente no comando personalizado de Ciência Política.
+- Mantidos os procedimentos de questões, ineditismo, correção seletiva e registros de resultado. O limite diz respeito à **leitura teórica**, não ao tempo líquido total da atividade. **D+30** permanece sem leitura teórica programada.
+- Não foram alterados planejamento, histórico, resultados, PDFs, links ou dados de revisões; publicação no Netlify requer verificação independente.
+
 ## Política de manutenção
 
 Preservar estudos, revisões, tentativas, métricas, arquivos, links e calendários. Nunca transformar uma remoção visual em exclusão de histórico, salvo orientação expressa.
