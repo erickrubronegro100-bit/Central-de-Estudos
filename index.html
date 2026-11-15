@@ -1700,10 +1700,78 @@ function rebalanceAfterClosedStudyWeek(weeks){
  return weeks;
 }
 
+
+function distributeNov16Aprofundamentos(weeks){
+ const w=weeks.find(x=>x.index===3&&x.start==='2026-11-14');
+ if(!w||lastClosedStudyWeekIndex(weeks)!==2)return weeks;
+ const dates=['2026-11-16','2026-11-17','2026-11-18','2026-11-19'],quotas=[8,8,8,9];
+ const order=(a,b)=>a.order-b.order;
+ const earlier=u=>{const day=completionOf(u)?.date;return Boolean(day&&day<'2026-11-16');};
+ const early=w.units.filter(u=>u.flow==='A'&&earlier(u)).sort(order);
+ let open=w.units.filter(u=>u.flow==='A'&&!earlier(u)).sort(order);
+ if(open.length!==33){
+  // Ajuste único da meta A (33), sem mexer nos Q, nem nas semanas encerradas.
+  const upcoming=weeks.filter(x=>x.index>=3),pool=upcoming.flatMap(x=>x.units.filter(u=>u.flow==='A'&&!earlier(u))).sort(order);
+  if(pool.length<33)throw Error('Aprofundamentos insuficientes para 16–19/11.');
+  open=pool.slice(0,33);
+  const tail=pool.slice(33),nextWeeks=upcoming.slice(1);
+  const partnerMap={'A-184':'A-CP-NEW-020','A-273':'A-CP-NEW-030','A-302':'A-CP-NEW-034','A-312':'A-CP-NEW-036'};
+  const poolById=new Map(tail.map(u=>[u.id,u])),taken=new Set(),groups=[];
+  for(const u of tail){
+   if(taken.has(u.id))continue;
+   const partner=poolById.get(partnerMap[u.id]),group=partner&&!taken.has(partner.id)?[u,partner]:[u];
+   group.forEach(v=>taken.add(v.id));groups.push(group);
+  }
+  const targets=evenQuotas(tail.length,nextWeeks.length);
+  let groupIndex=0,already=0;
+  for(let i=0;i<nextWeeks.length;i++){
+   const wNext=nextWeeks[i],selected=[],target=targets.slice(0,i+1).reduce((n,x)=>n+x,0);
+   if(i===nextWeeks.length-1){while(groupIndex<groups.length)selected.push(...groups[groupIndex++]);}
+   else{
+    while(groupIndex<groups.length&&already+selected.length+groups[groupIndex].length<=target)
+     selected.push(...groups[groupIndex++]);
+    if(groupIndex<groups.length&&groups[groupIndex].length===2){
+     const under=target-(already+selected.length),over=already+selected.length+2-target;
+     if(under>over)selected.push(...groups[groupIndex++]);
+    }
+   }
+   wNext.units=[...wNext.units.filter(u=>u.flow==='A'&&earlier(u)),...selected,...wNext.units.filter(u=>u.flow==='Q')];
+   wNext.quotaA=wNext.units.filter(u=>u.flow==='A').length;
+   wNext.quotaQ=wNext.units.filter(u=>u.flow==='Q').length;
+   already+=selected.length;
+  }
+  w.units=[...early,...open,...w.units.filter(u=>u.flow==='Q')];
+  w.quotaA=w.units.filter(u=>u.flow==='A').length;
+  w.quotaQ=w.units.filter(u=>u.flow==='Q').length;
+ }
+ if(open.length!==33)throw Error('Não foi possível fixar 33 aprofundamentos.');
+ const rfia=open.filter(u=>u.subject==='RFIA').sort(order),
+  others=open.filter(u=>u.subject!=='RFIA').sort(order),
+  rQuotas=evenQuotas(rfia.length,4),daily={};
+ let iR=0,iOther=0;
+ for(const u of early){const date=completionOf(u)?.date;if(date)(daily[date]||(daily[date]=[])).push(u);}
+ for(let i=0;i<4;i++){
+  const rCount=rQuotas[i],oCount=quotas[i]-rCount;
+  if(oCount<0)throw Error('RFIA excedeu a cota de um dia.');
+  daily[dates[i]]=[...rfia.slice(iR,iR+rCount),...others.slice(iOther,iOther+oCount)].sort(order);
+  iR+=rCount;iOther+=oCount;
+ }
+ if(iR!==rfia.length||iOther!==others.length||
+    dates.some((d,i)=>daily[d].length!==quotas[i])||
+    new Set(dates.flatMap(d=>daily[d].map(u=>u.id))).size!==33)
+  throw Error('Distribuição 8/8/8/9 incorreta.');
+ w.nov16InitialByDate=daily;
+ w.nov16InitialRFIA=rQuotas;
+ const all=weeks.flatMap(x=>x.units.map(u=>u.id)),expected=planUnits.filter(u=>u.flow==='A'||u.flow==='Q');
+ if(all.length!==expected.length||new Set(all).size!==all.length||
+    expected.some(u=>!all.includes(u.id)))throw Error('Tópicos omitidos ou duplicados no replanejamento.');
+ return weeks;
+}
+
 let studyWeeks=[];
 let weeklyUnitIndex=new Map();
 function rebuildWeeklyPlan(){
- studyWeeks=rebalanceAfterClosedStudyWeek(redistributeWeek3Aprofundamento(buildWeeklyPlan()));
+ studyWeeks=distributeNov16Aprofundamentos(rebalanceAfterClosedStudyWeek(redistributeWeek3Aprofundamento(buildWeeklyPlan())));
  weeklyUnitIndex=new Map(studyWeeks.flatMap(w=>w.units.map(u=>[u.id,w.index])));
 }
 function plannedStudyDates(start,end){
@@ -2705,7 +2773,7 @@ function weeklySelectedDetails(data,w){
  const shownA=rows.filter(u=>u.flow==='A'),shownQ=rows.filter(u=>u.flow==='Q'),shownC=rows.filter(u=>u.flow==='C');
  const empty='<p class="weekly-empty">Nenhum tópico nesta categoria.</p>';
  return '<section class="weekly-selected"><h2>Semana '+w.number+' · '+weekRange(w)+'</h2>'+
- '<p class="weekly-note">Cronograma detalhado somente para a primeira semana após a última encerrada. Meta de '+w.quotaA+' aprofundamentos, '+w.quotaQ+' tópicos de Questões e '+w.quotaC+' complementações TEC liberadas. Os 12 aprofundamentos restantes de 13/11 foram incorporados às metas das semanas futuras, preservando a sequência pedagógica; Complementação segue dinâmica. Sextas para revisões e sábados sem estudos iniciais.</p>'+
+ '<p class="weekly-note">Cronograma detalhado somente para a primeira semana após a última encerrada. Meta de '+w.quotaA+' aprofundamentos, '+w.quotaQ+' tópicos de Questões e '+w.quotaC+' complementações TEC liberadas. Os aprofundamentos remanescentes foram incorporados às metas futuras; os 33 pendentes da Semana 4 estão divididos entre 16 e 19/11 (8/8/8/9), com RFIA equilibrada e as demais matérias em sequência integrada; Complementação segue dinâmica. Sextas para revisões e sábados sem estudos iniciais.</p>'+
  '<div class="weekly-kpi">'+
  metricCard('Aprofundamento realizado',w.doneA)+
  metricCard('Questões realizadas',w.doneQ)+
@@ -2935,7 +3003,7 @@ function renderDailyStudyWorkspace(){
  const originalHistorical=date<today?dailyStudyAssignments(date).units:[];
  const historyPanel=originalHistorical.length?'<details class="history-original"><summary>Programação original desta data · '+originalHistorical.length+' tópico(s)</summary><div class="daily-topic-list">'+originalHistorical.map(u=>{const record=completed.get(u.id);return '<div class="daily-review-item" data-state="'+(record?'done':'pending')+'"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span><small>'+(record?'Concluído em '+dateBR(record.date):'Não concluído na programação original')+'</small></div></div>'}).join('')+'</div></details>':'';
  return '<div class="daily-controls"><label for="dailyDate">Data · Semana '+planWeek.number+'</label><button type="button" data-daily-step="-1">‹ Anterior</button><input type="date" id="dailyDate" min="'+studyDays[0]+'" max="'+studyDays.at(-1)+'" value="'+date+'"><button type="button" data-daily-step="1">Próximo ›</button><button type="button" data-daily-date="'+studyDays[0]+'">Início da semana</button></div>'+
- '<div class="daily-weekstrip">'+days+'</div><p class="daily-note">Cronograma detalhado apenas da Semana '+planWeek.number+' ('+weekRange(planWeek)+'), primeira semana após a última encerrada. Os tópicos pendentes das semanas encerradas já integram as novas metas; o detalhamento dos dias de semanas posteriores será liberado apenas após o fechamento da semana anterior. Revisões mantêm suas datas próprias. Sextas reservadas às revisões; sábados sem estudos novos.</p>'+
+ '<div class="daily-weekstrip">'+days+'</div><p class="daily-note">Cronograma detalhado apenas da Semana '+planWeek.number+' ('+weekRange(planWeek)+'), primeira semana após a última encerrada. Os tópicos pendentes das semanas encerradas já integram as novas metas; o detalhamento dos dias de semanas posteriores será liberado apenas após o fechamento da semana anterior. Na Semana 4, os 33 aprofundamentos pendentes estão distribuídos em 16–19/11 (8/8/8/9), com RFIA equilibrada e demais disciplinas na ordem integrada. Questões TEC seguem cronograma próprio. Revisões mantêm suas datas próprias. Sextas reservadas às revisões; sábados sem estudos novos.</p>'+
  progressHeader+progress+nextMarkup+historyPanel+'<div class="weekly-kpi">'+metricCard('Aprofundamentos do dia',A.length)+metricCard('Tópicos de Questões do dia',Q.length)+metricCard('Complementações do dia',displayedComplements.length)+metricCard('Revisões na agenda',revs.length)+metricCard('Pendências transferidas',carryCount)+metricCard('Tempo líquido',time.known?clockMinutes(time.minutes):'N/I')+'</div>'+
 
  '<div class="section-divider"><strong>1 · Revisões — realizar primeiro</strong></div>'+
@@ -3105,6 +3173,17 @@ function dailyStudyAssignments(date){
  if(week.index===2){
   const a=week.aByDate?.[date]||[],q=week.qByDate?.[date]||[];
   return {week,configured:Boolean(a.length||q.length),units:[...a,...q],day:0,carriedCount:0};
+ }
+
+ if(week.index===3&&week.nov16InitialByDate){
+  const days=plannedStudyDates(week.start,week.end),ix=days.indexOf(date);
+  if(ix<0)return {week,configured:false,units:[],day:-1,carriedCount:0};
+  const tec=week.units.filter(u=>u.flow==='Q'),parts=evenQuotas(tec.length,days.length);
+  const from=parts.slice(0,ix).reduce((n,x)=>n+x,0);
+  const normalTec=tec.slice(from,from+parts[ix]);
+  const deepening=week.nov16InitialByDate[date]||[];
+  return {week,configured:Boolean(deepening.length||normalTec.length),
+   units:[...deepening,...normalTec],day:ix,carriedCount:0};
  }
  if(dow===5||dow===6||dateBetween(date,'2026-11-23','2026-11-28'))return {week,configured:false,units:[]};
  if(week.index===0||week.index===1){
