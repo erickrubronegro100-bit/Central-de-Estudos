@@ -100,6 +100,16 @@ Este arquivo registra as solicitações de organização e apresentação do sit
 - Mantidos os procedimentos de questões, ineditismo, correção seletiva e registros de resultado. O limite diz respeito à **leitura teórica**, não ao tempo líquido total da atividade. **D+30** permanece sem leitura teórica programada.
 - Não foram alterados planejamento, histórico, resultados, PDFs, links ou dados de revisões; publicação no Netlify requer verificação independente.
 
+## 15/11/2026 — RFIA: ampliação dos tetos de leitura
+
+- Aplicado **somente a RFIA**, sem alterações aos comandos das demais matérias.
+- **Estudo inicial (Etapas 1–3 somadas):** 10 → **20 minutos**, com teto nominal de **3.600 palavras** a 180 palavras/minuto.
+- **Revisão D+1 (Etapas 3–4 somadas):** 5 → **10 minutos**, teto nominal de **1.800 palavras**.
+- **Revisão D+7 (Etapas 3–4 somadas):** 2,5 → **5 minutos**, teto nominal de **900 palavras**.
+- Harmonizados os questionários RFIA de avaliação do estudo inicial e da revisão com os novos limites.
+- **Revisão D+30**, quantidade de questões, correções, histórico, planejamento, PDFs, links e cronograma preservados. Limites continuam se referindo à leitura, não ao tempo líquido total de estudo.
+- Alteração confirmada no GitHub; publicação efetiva no Netlify não verificada nesta etapa.
+
 ## Política de manutenção
 
 Preservar estudos, revisões, tentativas, métricas, arquivos, links e calendários. Nunca transformar uma remoção visual em exclusão de histórico, salvo orientação expressa.
