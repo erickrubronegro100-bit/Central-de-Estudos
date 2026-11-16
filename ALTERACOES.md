@@ -145,6 +145,15 @@ Este arquivo registra as solicitações de organização e apresentação do sit
 - D+30 preservada em 08/12/2026, profundidade Normal, sem leitura teórica; reforços de três questões inéditas para art. 9º, caput, e três para art. 9º, § 4º.
 - Indicadores e aviso de pendência atualizados no painel de desempenho. Publicação no Netlify não verificada por este commit.
 
+
+## 16/11/2026 — correção do tempo líquido do dia 15/11
+
+- Confirmação expressa do estudante: **15/11/2026 teve apenas 1h21min (81 minutos) de tempo líquido total**, não 2h28min (148 minutos).
+- Preservadas as durações individuais de RFIA 5 (25 min), LP/LING 14 (17 min) e CP 5 (25 min) como dados documentais complementares, mas os 67 minutos não devem ser somados novamente ao total diário de 81 minutos.
+- Ajustado o cálculo do tempo líquido diário, do tempo acumulado, da média e do cronograma do dia: quando o relatório oficial de 23 atividades está carregado, adota-se seu total confirmado de 81 minutos, sem contabilizar os complementos novamente.
+- Mantidas as 23 atividades oficiais, 240 questões e 226 acertos do fechamento principal; nenhum dado individual, revisão ou data efetiva foi removido. D+7 de RICD 10 segue concluída em 15/11.
+- Validada a sintaxe de todos os scripts e a conservação de 23 lançamentos oficiais e três complementos. Publicação no Netlify não verificada.
+
 ## Política de manutenção
 
 Preservar estudos, revisões, tentativas, métricas, arquivos, links e calendários. Nunca transformar uma remoção visual em exclusão de histórico, salvo orientação expressa.
