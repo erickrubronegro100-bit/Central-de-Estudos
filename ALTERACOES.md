@@ -110,6 +110,19 @@ Este arquivo registra as solicitações de organização e apresentação do sit
 - **Revisão D+30**, quantidade de questões, correções, histórico, planejamento, PDFs, links e cronograma preservados. Limites continuam se referindo à leitura, não ao tempo líquido total de estudo.
 - Alteração confirmada no GitHub; publicação efetiva no Netlify não verificada nesta etapa.
 
+## 15/11/2026 — Fechamento diário e redistribuição de 33 aprofundamentos
+
+- **Relatório diário recebido:** 23 atividades executadas (6 ChatGPT e 17 TEC), 240 questões, 226 acertos, 14 erros, 32 respostas inseguras, 94,17% de aproveitamento e 81 minutos conhecidos. Importação **idempotente**, com validação das somas e vinculação aos tópicos do plano.
+- **RICD 10 D+7:** execução material incluída provisoriamente na estatística do relatório, mas sem atribuição de data efetiva confirmada ou conclusão formal. A tentativa informa que 15/11 é **data de referência**, não data efetiva comprovada. Não se converte automaticamente em revisão realizada.
+- **Complementos individuais confirmados fora do relatório diário:** RFIA 5 (40 questões, 35 acertos, 5 erros, 25 min), LP/LING 14 (40, 36, 4, 17 min) e CP 5 (42, 41, 1, 25 min). As três atividades ficam registradas separadamente, com identificação de origem e segurança de erros não informada (sem inventar ES/EI). O subtotal original do relatório, de 23 atividades e 240 questões, permanece documentado, sem confusão com os 3 complementos.
+- **TEC LP/LING/TEC 1 — Artigo e LP/LING/TEC 2 — Substantivo:** revisão D+7 de 15/11 não realizada por falta de itens inéditos; futuras D+30 encerradas conforme a observação literal do usuário. Nenhuma questão, duração ou contato foi criado. Histórico anterior preservado.
+- **RFIA 6, 7 e 8:** registrados como pendências de estudo inicial de 15/11, sem falsa conclusão ou questões respondidas.
+- **Cronograma da Semana 4:** os **33 aprofundamentos pendentes** são distribuídos apenas entre segunda 16/11 (8), terça 17/11 (8), quarta 18/11 (8) e quinta 19/11 (9). Os tópicos RFIA ficam divididos de forma tão igual quanto possível, mantendo sua ordem interna; as outras disciplinas mantêm blocos consecutivos na sequência pedagógica integrada. As Questões TEC possuem planejamento próprio e não integram a contagem de 33 aprofundamentos.
+- Caso a alocação semanal em cache não tenha exatamente 33 aprofundamentos livres, redistribuir o excesso ou complemento entre as semanas futuras, sem duplicar/omitir unidades e mantendo os vínculos de CP.
+- Preservados os registros anteriores a 15/11, seus tempos, datas efetivas, revisões concluídas, cronograma D+1/D+7/D+30, links e PDFs.
+- **Verificações:** 23 lançamentos oficiais e 3 complementares importados em teste isolado sem duplicação; 240 questões/226 acertos/81 min no subtotal oficial, 362 questões/338 acertos/148 min no conjunto com complementos. Revisão RICD 10 testada como não formalmente concluída; teste isolado da divisão 8/8/8/9 e unicidade de 554 unidades A/Q validado. Sintaxe do JavaScript conferida.
+- Alteração concluída no código do GitHub. A publicação efetiva no Netlify permanece não verificada.
+
 ## Política de manutenção
 
 Preservar estudos, revisões, tentativas, métricas, arquivos, links e calendários. Nunca transformar uma remoção visual em exclusão de histórico, salvo orientação expressa.
