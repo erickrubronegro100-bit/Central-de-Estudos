@@ -135,6 +135,16 @@ Este arquivo registra as solicitações de organização e apresentação do sit
 - Inclusão idempotente por nova chave local: atualiza somente metadados da tentativa e revisões já vinculadas. Confirmações manuais de conclusão pré-existentes são preservadas. Painel de desempenho exibe a ressalva e os detalhes auditados.
 - Validação: scripts e blocos JSON compilados/analisados sem erro; conferidas as somas originais da importação e a integridade dos sete itens classificados. Publicação no Netlify não confirmada por esta alteração.
 
+
+## 15/11/2026 — conclusão formal da D+7 de RICD 10
+
+- Confirmação expressa do estudante de que a revisão D+7 de RICD 10 — Dos Líderes ocorreu em **15/11/2026**. Revisão marcada **Realizada** no cronograma do dia e **Concluída** no histórico.
+- Data efetiva, confirmação de conclusão e situação formal atualizadas no mesmo registro; eliminada a ressalva anteriormente válida sobre data e status desconhecidos.
+- **Sem acréscimo aos totais:** RICD 10 permanece com 30 questões, 28 acertos, 2 erros e 13 minutos. Fechamento principal de 15/11: **23 atividades, 240 questões, 226 acertos, 14 erros e 81 minutos conhecidos**.
+- Migração idempotente v2 aplicada sobre a importação original e o complemento individual. Reutiliza a tentativa e a revisão programada de 15/11; não cria bateria nova.
+- D+30 preservada em 08/12/2026, profundidade Normal, sem leitura teórica; reforços de três questões inéditas para art. 9º, caput, e três para art. 9º, § 4º.
+- Indicadores e aviso de pendência atualizados no painel de desempenho. Publicação no Netlify não verificada por este commit.
+
 ## Política de manutenção
 
 Preservar estudos, revisões, tentativas, métricas, arquivos, links e calendários. Nunca transformar uma remoção visual em exclusão de histórico, salvo orientação expressa.
