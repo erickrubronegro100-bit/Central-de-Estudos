@@ -154,6 +154,18 @@ Este arquivo registra as solicitações de organização e apresentação do sit
 - Mantidas as 23 atividades oficiais, 240 questões e 226 acertos do fechamento principal; nenhum dado individual, revisão ou data efetiva foi removido. D+7 de RICD 10 segue concluída em 15/11.
 - Validada a sintaxe de todos os scripts e a conservação de 23 lançamentos oficiais e três complementos. Publicação no Netlify não verificada.
 
+
+## 16/11/2026 — fechamento e redistribuição dos estudos de 17 a 20/11
+
+- Recebido o **relatório diário fechado de 16/11**: 29 atividades executadas (8 ChatGPT, 21 TEC), 475 questões, 438 acertos, 37 erros, 409 AS, 29 AI, 10 ES, 27 EI e **200 minutos líquidos (3h20)**. Importação por identidade de sessão, preservando registros anteriores. LP/LING 14 D+1 permanece com conclusão material declarada, mas **data efetiva não confirmada**.
+- Estudos iniciais concluídos em 16/11: **PL 19, PL 20, PL 21, LP/LING 15, LP/LING 16** (A); **DA 41, DA 42, DA 43, TI 12** (Q); complementações **LP/LING/TEC 12 e CP/TEC 1** (C). Os demais 18 lançamentos são revisões e não consomem a meta de estudos iniciais.
+- **TI 11 (Q-065) e RCCN/TEC 3 (C-RCCN-003):** D+1 TEC não realizada por esgotamento de questões; D+7 e D+30 encerradas, mantendo os primeiros contatos históricos.
+- Categorias AS/AI/ES/EI registradas por disciplina/plataforma conforme o relatório; por sessão individual, apenas quantidade de questões e acertos/erros foi fornecida. A apresentação agregada reconcilia a segurança somente quando todos os registros do grupo estão presentes, sem inventar classificações por questão.
+- **Semana 4 (14–22/11):** todas as unidades A/Q **ainda não realizadas** da meta operacional corrente, incluindo as que estavam pendentes em 16/11, foram redistribuídas entre **terça 17, quarta 18, quinta 19 e sexta 20/11**. Cotas de quantidade total são equitativas (diferença máxima de uma unidade), e cada fluxo A e Q segue por **blocos consecutivos da sequência original integrada**, sem alternância arbitrária de disciplinas.
+- Os estudos já concluídos permanecem nas **datas efetivas**. Nenhum A/Q é introduzido ou retirado das metas de semanas futuras, nem se duplica ou omite unidade. Revisões D+1/D+7/D+30 mantêm sua programação normativa. A sexta-feira **20/11** é exceção expressa à regra regular de sexta apenas para revisões, limitada a esta semana.
+- Complementações TEC **já liberadas** com programação até 20/11 são distribuídas para 17–20/11 respeitando a liberação prévia e a ordem integrada, sem antecipar cadernos bloqueados. Novas complementações seguem sendo liberadas pelos seus gatilhos pedagógicos.
+- Verificação pré-publicação: totais 29/475/438/200, categorias 409/29/10/27, idempotência por sessão, código JavaScript e JSON sintaticamente válidos. Publicação no Netlify exige verificação separada.
+
 ## Política de manutenção
 
 Preservar estudos, revisões, tentativas, métricas, arquivos, links e calendários. Nunca transformar uma remoção visual em exclusão de histórico, salvo orientação expressa.
