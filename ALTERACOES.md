@@ -166,6 +166,13 @@ Este arquivo registra as solicitações de organização e apresentação do sit
 - Complementações TEC **já liberadas** com programação até 20/11 são distribuídas para 17–20/11 respeitando a liberação prévia e a ordem integrada, sem antecipar cadernos bloqueados. Novas complementações seguem sendo liberadas pelos seus gatilhos pedagógicos.
 - Verificação pré-publicação: totais 29/475/438/200, categorias 409/29/10/27, idempotência por sessão, código JavaScript e JSON sintaticamente válidos. Publicação no Netlify exige verificação separada.
 
+
+## 16/11/2026 — remoção visual do painel complementar RICD 10 em Desempenho
+
+- Removido exclusivamente o painel **“RICD 10 — relatório complementar D+7”** de **Desempenho → Quadro geral**, incluindo a tabela individual de erros/inseguranças e suas notas de auditoria expostas no painel.
+- Preservados o relatório complementar estruturado e os metadados históricos no registro da tentativa, a revisão D+7 concluída em 15/11, o agendamento D+30 de 08/12, os 30 itens/13 minutos da atividade e os totais de desempenho. O aviso geral de fechamento de 15/11 e os indicadores agregados continuam disponíveis.
+- Sem alteração na programação da Semana 4, cronogramas, PDFs ou outros resultados. Código JavaScript validado sintaticamente; publicação no Netlify a verificar separadamente.
+
 ## Política de manutenção
 
 Preservar estudos, revisões, tentativas, métricas, arquivos, links e calendários. Nunca transformar uma remoção visual em exclusão de histórico, salvo orientação expressa.

@@ -1989,20 +1989,9 @@ function renderPerformanceGeneralPanels(){
  const nov15Official=validAttempts.filter(a=>a.recordOrigin==='relatorio-diario-20261115-auditado-com-ressalva');
  const nov15Supplement=validAttempts.filter(a=>a.recordOrigin==='RIP individual 15/11');
  const nov15Status=nov15Official.length?'<p class="weekly-note"><strong>15/11/2026 — fechamento oficial:</strong> '+nov15Official.length+' atividades, 240 questões e 81 minutos líquidos totais confirmados (1h21min); os 67 minutos informados nos três complementos não são adicionais. A D+7 de RICD 10 foi concluída em 15/11/2026, com data efetiva confirmada e cronograma atualizado; não houve novo lançamento. '+nov15Supplement.length+' estudos iniciais confirmados separadamente (CP 5, LP/LING 14 e RFIA 5) permanecem complementares, sem alterar o subtotal original.</p>':'';
- const ricd10=validAttempts.find(a=>a.planId==='A-023'&&a.stage==='D+7'&&a.complementaryAuditId==='RICD10-D7-complemento-20261115-v1');
- const audit=ricd10?.complementaryAudit;
- const auditHtml=audit?panel('RICD 10 — relatório complementar D+7',
-  'Aprofundamento · arts. 9º a 11-A · atualização do registro existente, sem nova contabilização',
-  '<p><strong>Execução material:</strong> integralmente confirmada. <strong>Data efetiva:</strong> 15/11/2026 (confirmada). <strong>Situação formal:</strong> Concluída. Data programada: 15/11/2026.</p>'+
-  '<p><strong>Resultado:</strong> 30 questões · 23 AS · 5 AI · 1 ES · 1 EI · 28 acertos (93,33%) · insegurança 20,00% · 13 min · domínio Seguro · reforço Pontual.</p>'+
-  '<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Questão</th><th>Classificação</th><th>Dispositivo</th><th>Conteúdo</th></tr></thead><tbody>'+
-  audit.occurrences.map(x=>'<tr><td>'+escapeHtml(x.q)+'</td><td>'+escapeHtml(x.type)+'</td><td>'+escapeHtml(x.reference)+'</td><td>'+escapeHtml(x.content)+'</td></tr>').join('')+
-  '</tbody></table></div>'+
-  '<p><strong>Auditoria metodológica:</strong> parcialmente conforme (Etapas 3 e 4 excederam 400 palavras; tempo específico de leitura não aferido).</p>'+
-  '<p><strong>D+30 — 08/12/2026:</strong> Normal, sem leitura teórica. Pelo menos 3 questões inéditas do art. 9º, caput, e 3 do art. 9º, § 4º; reforço complementar das inseguranças. Sem revisão extraordinária ou D+60.</p>'+
-  '<p class="weekly-note">Fechamento de 15/11/2026 confirmado: 23 atividades no relatório principal, 240 questões, 226 acertos, 14 erros e 81 minutos líquidos totais. Os três relatórios complementares registram 67 minutos individuais não cumulativos. RICD 10 — D+7 consta como realizada no cronograma do dia. Os três estudos complementares permanecem contabilizados separadamente, sem duplicação.</p>'
- ): '';
- return nov15Status+auditHtml+performanceCharts(validAttempts)+confidenceChart(validAttempts)+
+ // Detalhamento individual de RICD 10 preservado no registro da tentativa;
+ // o painel complementar não integra mais o Quadro geral de Desempenho.
+ return nov15Status+performanceCharts(validAttempts)+confidenceChart(validAttempts)+
  '<div class="weekly-kpi">'+metricCard('Questões acumuladas',formatNum(totals.all))+metricCard('Acertos totais',formatNum(totals.correct))+metricCard('Erros totais',formatNum(totals.all-totals.correct))+metricCard('Aproveitamento',formatPercent(totals.overall))+metricCard('Insegurança declarada',formatPercent(insecurity))+metricCard('Tópicos avaliados',formatNum(topicResults(validAttempts).length))+'</div>'+
  panel('Resultados por disciplina','Total de questões e segurança a partir de sessões distintas, sem duplicação.','<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Disciplina</th><th>Tópicos</th><th>Questões</th><th>Acertos</th><th>Erros</th><th>Aproveitamento</th><th>Insegurança</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
  '<p class="weekly-note">Aproveitamento bruto = (acertos seguros + inseguros + acertos sem classificação) ÷ questões válidas. Insegurança = (AI + EI) ÷ questões. Estes indicadores não são pontuação líquida CEBRASPE.</p>';
