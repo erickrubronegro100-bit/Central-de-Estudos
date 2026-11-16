@@ -123,6 +123,18 @@ Este arquivo registra as solicitações de organização e apresentação do sit
 - **Verificações:** 23 lançamentos oficiais e 3 complementares importados em teste isolado sem duplicação; 240 questões/226 acertos/81 min no subtotal oficial, 362 questões/338 acertos/148 min no conjunto com complementos. Revisão RICD 10 testada como não formalmente concluída; teste isolado da divisão 8/8/8/9 e unicidade de 554 unidades A/Q validado. Sintaxe do JavaScript conferida.
 - Alteração concluída no código do GitHub. A publicação efetiva no Netlify permanece não verificada.
 
+
+## 15/11/2026 — complemento auditado de RICD 10 (D+7)
+
+- Incorporado o **relatório complementar individual de RICD 10 — Dos Líderes (arts. 9º a 11-A), revisão D+7**, no mesmo lançamento provisório de 15/11; não foram criadas atividades, tentativas ou tempos adicionais.
+- Resultado preservado: **30 questões, 23 AS, 5 AI, 1 ES, 1 EI, 28 acertos, 2 erros, 93,33% de aproveitamento, 20,00% de insegurança, 13 minutos**. Q02 (erro seguro, art. 9º, caput), Q05 (erro inseguro, art. 9º, § 4º) e AI Q01/Q06/Q11/Q22/Q30 documentados; correções e leitura normativa integralmente declaradas.
+- **Execução material integralmente confirmada**; **data efetiva não confirmada** e **situação formal não informada**, sem transformar automaticamente o relatório em revisão formalmente realizada.
+- Domínio **Seguro**, retenção semelhante à D+1, recuperação fácil/autônoma, reforço **Pontual**. Conformidade **parcial**: Etapas 3–4 acima das 400 palavras de referência, sem comprovação de extrapolação do tempo de leitura.
+- **D+30 em 08/12/2026, Normal, sem leitura teórica nem quadro geral**. Mínimo de 3 questões inéditas para art. 9º, caput (Q02), e 3 para art. 9º, § 4º (Q05), mais reforços complementares dos dispositivos das cinco inseguranças. Sem D+60 ou revisão extraordinária automática.
+- Totais do relatório de 15/11 não alterados: 23 atividades, 240 questões, 226 acertos e 81 minutos (RICD 10 provisório). Subtotal com data efetiva confirmada, sem RICD 10: 22 atividades, 210 questões, 198 acertos e 68 minutos. São visões alternativas, não cumulativas.
+- Inclusão idempotente por nova chave local: atualiza somente metadados da tentativa e revisões já vinculadas. Confirmações manuais de conclusão pré-existentes são preservadas. Painel de desempenho exibe a ressalva e os detalhes auditados.
+- Validação: scripts e blocos JSON compilados/analisados sem erro; conferidas as somas originais da importação e a integridade dos sete itens classificados. Publicação no Netlify não confirmada por esta alteração.
+
 ## Política de manutenção
 
 Preservar estudos, revisões, tentativas, métricas, arquivos, links e calendários. Nunca transformar uma remoção visual em exclusão de histórico, salvo orientação expressa.
