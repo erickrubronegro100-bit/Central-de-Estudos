@@ -1905,7 +1905,10 @@ function renderPerformanceGeneralPanels(){
  const totals=metricsAttempt(validAttempts);
  const insecurity=totals.all?(totals.cu+totals.wu)/totals.all:0;
  const rows=bySubject.map(({code,metric:m,topics})=>'<tr><th scope="row">'+escapeHtml(subjectLabel(code))+'</th><td>'+formatNum(topics)+'</td><td>'+formatNum(m.all)+'</td><td>'+formatNum(m.correct)+'</td><td>'+formatNum(m.all-m.correct)+'</td><td>'+formatPercent(m.overall)+'</td><td>'+formatPercent(m.all?(m.cu+m.wu)/m.all:0)+'</td></tr>').join('');
- return performanceCharts(validAttempts)+confidenceChart(validAttempts)+
+ const nov15Official=validAttempts.filter(a=>a.recordOrigin==='relatorio-diario-20261115-auditado-com-ressalva');
+ const nov15Supplement=validAttempts.filter(a=>a.recordOrigin==='RIP individual 15/11');
+ const nov15Status=nov15Official.length?'<p class="weekly-note"><strong>15/11/2026 — fechamento oficial:</strong> '+nov15Official.length+' atividades, 240 questões e 81 minutos conhecidos no relatório recebido. A D+7 de RICD 10 integra provisoriamente esse subtotal, com confirmação formal pendente. '+nov15Supplement.length+' estudos iniciais confirmados separadamente (CP 5, LP/LING 14 e RFIA 5) são lançados como complementares, sem alterar o subtotal documental original.</p>':'';
+ return nov15Status+performanceCharts(validAttempts)+confidenceChart(validAttempts)+
  '<div class="weekly-kpi">'+metricCard('Questões acumuladas',formatNum(totals.all))+metricCard('Acertos totais',formatNum(totals.correct))+metricCard('Erros totais',formatNum(totals.all-totals.correct))+metricCard('Aproveitamento',formatPercent(totals.overall))+metricCard('Insegurança declarada',formatPercent(insecurity))+metricCard('Tópicos avaliados',formatNum(topicResults(validAttempts).length))+'</div>'+
  panel('Resultados por disciplina','Total de questões e segurança a partir de sessões distintas, sem duplicação.','<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Disciplina</th><th>Tópicos</th><th>Questões</th><th>Acertos</th><th>Erros</th><th>Aproveitamento</th><th>Insegurança</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
  '<p class="weekly-note">Aproveitamento bruto = (acertos seguros + inseguros + acertos sem classificação) ÷ questões válidas. Insegurança = (AI + EI) ÷ questões. Estes indicadores não são pontuação líquida CEBRASPE.</p>';
@@ -4134,12 +4137,12 @@ function importNov15Report(){
     recordOrigin:extra?'RIP individual 15/11':p.reportId,executionReported:true,
     ...(extra?{notIncludedInDailyReport:true,domain:extra.domain,reinforcement:extra.reinforcement,
       nextReviewDepth:extra.nextDepth,pedagogicalNotes:extra.notes}:{}),
-    ...(provisional?{dateIsReportReference:true,effectiveDateConfirmed:false,
+    ...(provisional?{completionConfirmed:false,dateIsReportReference:true,effectiveDateConfirmed:false,
       provisionalInDailyReport:true,formalCompletion:'Pendente de confirmação',
       pedagogicalNotes:'Execução material confirmada; data efetiva e situação formal pendentes.'}:
       {completionConfirmed:true,completionStatus:'Concluída',formalCompletion:'Confirmada'})};
    for(const [k,v]of Object.entries(fields)){
-    if(provisional&&a.completionConfirmed===true&&(k==='formalCompletion'))continue;
+    if(provisional&&a.completionConfirmed===true&&(k==='formalCompletion'||k==='completionConfirmed'))continue;
     if(JSON.stringify(a[k])!==JSON.stringify(v)){a[k]=v;dirty=true;}
    }
    if(a.platforms){delete a.platforms;dirty=true;}
@@ -4171,7 +4174,7 @@ function importNov15Report(){
    if(row?.status==='Realizada')continue;
    if(!row){row={id:'central-20261115-'+planId.toLowerCase()+'-'+stage.toLowerCase().replace('+','')+'-encerrada'};studyData.reviews.push(row);dirty=true;}
    const fields={planId,studyId:study?.id||planId,subject:u.subject,topic,stage,status:'Não realizada',
-    plannedDate:row.plannedDate||(stage==='D+7'?'2026-11-15':'2026-12-08'),doneDate:'',
+    plannedDate:row.plannedDate||(stage==='D+7'?'2026-11-15':(study?.date?nextPermittedReviewDate(shiftReviewDate(study.date,30)):'')),doneDate:'',
     completionConfirmed:false,wasNotPerformed:true,closedNoFurtherTecReviews:true,
     notPerformedReason:'Não foi e não será realizada mais nenhuma revisão deste tópico por falta de questões no TEC',
     recordOrigin:p.reportId,...(stage==='D+7'?{notPerformedDate:p.date}:{futureReviewCancelled:true})};
