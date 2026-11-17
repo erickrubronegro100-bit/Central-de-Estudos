@@ -173,6 +173,15 @@ Este arquivo registra as solicitações de organização e apresentação do sit
 - Preservados o relatório complementar estruturado e os metadados históricos no registro da tentativa, a revisão D+7 concluída em 15/11, o agendamento D+30 de 08/12, os 30 itens/13 minutos da atividade e os totais de desempenho. O aviso geral de fechamento de 15/11 e os indicadores agregados continuam disponíveis.
 - Sem alteração na programação da Semana 4, cronogramas, PDFs ou outros resultados. Código JavaScript validado sintaticamente; publicação no Netlify a verificar separadamente.
 
+
+## 17/11/2026 — confirmação de LP/LING 14 D+1 em 16/11
+
+- Por confirmação expressa do estudante em 17/11, a revisão **D+1 de LP/LING 14 — Emprego do hífen** foi **realizada em 16/11/2026**. Eliminada a pendência de data efetiva do fechamento de 16/11.
+- O cronograma de **16/11** marca a revisão como **Realizada**, com `doneDate=2026-11-16`, `completionConfirmed=true` e `effectiveDateConfirmed=true`, inclusive em navegadores que já importaram o registro provisório.
+- Dados preexistentes preservados: **32 questões, 28 acertos, 4 erros e 13 minutos**, sem criar ou contar novamente tentativa ou tempo. O fechamento de 16/11 permanece com **29 atividades, 475 questões e 200 minutos**.
+- Migração local idempotente v2 e correção do relatório de origem para futuras instalações; D+7 e D+30 já programadas não são modificadas.
+- Scripts JavaScript e blocos JSON validados sintaticamente; versão Netlify sujeita a verificação separada.
+
 ## Política de manutenção
 
 Preservar estudos, revisões, tentativas, métricas, arquivos, links e calendários. Nunca transformar uma remoção visual em exclusão de histórico, salvo orientação expressa.
