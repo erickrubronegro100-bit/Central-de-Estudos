@@ -2,6 +2,20 @@
 
 Este arquivo registra as solicitações de organização e apresentação do site. Alterações de interface não eliminam dados históricos dos estudos.
 
+## 17/11/2026 — Metodologia definitiva e densidades (comandos integrados)
+
+- Aplicada a metodologia definitiva CEBRASPE a todas as modalidades, com o novo comando geral **GERAL-01** e atualização dos **6 comandos teóricos de estudo inicial**, **14 comandos de revisão**, comandos de estudos exclusivos TEC, Complementação TEC e relatório diário.
+- Questionário individual pós-estudo inicial integrado como **Etapa 6** dos comandos principais; questionário de revisão incorporado como **Etapa 5**. Bateria de questões e correção continuam nas etapas próprias. Os **12 questionários teóricos separados** permaneceram cadastrados para rastreabilidade e foram arquivados da navegação ativa, com redirecionamento para seus respectivos comandos integrados. Resultado: **26 comandos ativos** e **12 históricos**.
+- Metodologia: estudo inicial com teoria proporcional à densidade (curto/médio/denso, referência conjunta 5/7min30s/10min; RFIA 10/15/20min), bateria de 10/20/30 itens mínimos CEBRASPE conforme disciplina/escopo, correção obrigatória de erros e acertos inseguros, avaliação individual sem presumir realização.
+- D+1 e D+7: recuperação ativa com quantidades predefinidas, questões inéditas, correções completas, teoria pontual somente se necessária e **sem resumo ou revisão passiva independente**; tempos-alvo flexíveis de 10 e 5 minutos.
+- D+30: bateria seletiva somente para erros, acertos inseguros e conteúdos ⭐ anteriores; **mínimo de uma questão inédita por ponto elegível**, sem teto, permitindo dispensa por ausência de elegíveis; não aplica automaticamente antigas quantidades fixas à D+30.
+- Densidades cadastradas para **308 tópicos teóricos ativos**, sem mexer em código, prioridade ou ordem: RICD 88 (34 curtos/32 médios/22 densos); RCCN 16 (7/5/4); PL 27 (8/12/7); CP 36 (2/17/17); RFIA 54 (4/26/24); LP/LING 87 (5/24/58). Legislação integrada: **49 curtos, 49 médios e 33 densos**, total 131.
+- Harness de qualidade: CP e RFIA **8/6/5/4** por estágio (estudo inicial, D+1, D+7 e D+30); RICD/RCCN/PL **6/5/4/3**; adaptações em LP/LING sem novas baterias automáticas.
+- Na lista de Aprofundamento e nos comandos personalizados, exibidas densidade e referência de duração teórica. Comandos de questionário não aparecem como botão duplicado nos blocos teóricos.
+- Esclarecimento no painel geral: **RICD totaliza 101 unidades porque há 88 tópicos teóricos e 13 cadernos RICD/TEC**. Revisões não somam tópicos.
+- Histórico preservado: 663 unidades originais (650 ativas), 157 LP/LING, 131 legislativas, 11 CP/TEC, registros anteriores de estudo, revisão, desempenho, tempo e agendamentos no HTML/localStorage. Não houve alteração de metas, datas-base, status de estudos ou resultados.
+- Auditorias antes da publicação: mapeamento de densidades 308/308, 26 comandos ativos/12 históricos, JavaScript sintaticamente válido; publicação efetiva no Netlify sujeita a conferência separada.
+
 ## 17/11/2026 — Reorganização LP/LING e sequência legislativa (RICD/PL/RCCN)
 
 - **LP/LING:** 100 unidades teóricas originais → **87 unidades ativas** após 10 aglutinações (13 códigos incorporados), mantendo os 13 IDs e códigos históricos arquivados, não exibidos como atividades independentes.
