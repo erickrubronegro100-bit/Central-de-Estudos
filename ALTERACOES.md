@@ -2,6 +2,18 @@
 
 Este arquivo registra as solicitações de organização e apresentação do site. Alterações de interface não eliminam dados históricos dos estudos.
 
+## 17/11/2026 — Reorganização LP/LING e sequência legislativa (RICD/PL/RCCN)
+
+- **LP/LING:** 100 unidades teóricas originais → **87 unidades ativas** após 10 aglutinações (13 códigos incorporados), mantendo os 13 IDs e códigos históricos arquivados, não exibidos como atividades independentes.
+- **LP/LING/TEC:** **70 cadernos mantidos**, numerados 1–70 e reclassificados em sua categoria pedagógica como “Estudos Iniciais – Questões”, preservado o fluxo técnico C, os registros e os ciclos de revisão. Quatro vínculos remapeados: LP/LING/TEC 50 (LP/LING 55 → LP/LING 53); LP/LING/TEC 59 (LP/LING 75 → LP/LING 74); LP/LING/TEC 60 (LP/LING 77 → LP/LING 76); LP/LING/TEC 64 (LP/LING 87 → LP/LING 86).
+- **Sequência LP/LING:** 157 unidades ativas (87 teoria + 70 TEC), derivadas da sequência integrada existente com exclusão das 13 unidades históricas autônomas e preservação da ordem dos cadernos e dos gatilhos. **CSV de referência ainda não localizado:** pendente apenas confronto literal com o arquivo externo solicitado.
+- **PDFs:** os dez IDs do Drive fornecidos correspondem aos já cadastrados; mantidos e padronizados os dez links principais. Todos os demais 77 links teóricos foram mantidos. Os 87 IDs de PDFs ativos foram confrontados com o conteúdo da pasta conectada do Drive e encontrados (acessibilidade anônima não comprovada).
+- **RICD/PL/RCCN:** 131 códigos e IDs preservados, com os 100 primeiros do bloco prioritário e 31 do residual na exata sequência numérica fornecida, sem alteração de títulos nem numeração original dos PDFs.
+- **Histórico:** nenhum estudo, revisão, resultado, tempo líquido, autoavaliação ou registro de tentativa foi excluído ou regravado. Tópicos aglutinados estudados parcialmente não contam como bloco concluído, exceto quando todas as partes históricas estejam concluídas.
+- **Planejamento:** datas-base, janela final, regras de revisão e metas fixadas por código não foram modificadas; a distribuição operacional por semanas da própria aplicação pode recalcular quantidades e ordem das unidades pendentes em função do catálogo atualizado.
+- **Validações:** 650 unidades ativas no total; LP/LING 87+70=157; 131 legislativas em blocos 100/31; 13 códigos LP arquivados; dez títulos; 70 gatilhos válidos; JavaScript sintaticamente válido.
+- **Netlify:** publicação requer verificação separada.
+
 ## 11/11/2026
 
 | Nº | Área | Alteração | Situação |
