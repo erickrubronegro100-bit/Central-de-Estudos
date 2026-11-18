@@ -5523,8 +5523,9 @@ standardizeTopicNames();
    const rows=p.weeks.map(x=>{
       const assigned=x.optional?x.units:covDates(x.start,x.end).flatMap(d=>covDailyUnits(x,d));
       const done=assigned.filter(u=>completionOf(u)).length,load=covWeekLoad(x);
+      const pending=assigned.length-done;
       return '<tr><th>'+escapeHtml(x.title)+'</th><td>'+dateBR(x.start)+' a '+dateBR(x.end)+
-        '</td><td>'+assigned.length+'</td><td>'+done+'</td><td>'+assigned.length-done+
+        '</td><td>'+assigned.length+'</td><td>'+done+'</td><td>'+pending+
         '</td><td>'+Math.ceil(load.projection)+' / '+load.budget+' min'+
         (load.overload?' · SOBRECARGA':'')+'</td></tr>';
    }).join('');

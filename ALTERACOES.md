@@ -1,5 +1,14 @@
 # Registro de alterações — Central de Estudos
 
+## 18/11/2026 — Correção de NaN no planejamento semanal
+
+- Corrigida precedência de operadores na geração das células de **Pendentes**: o valor agora é calculado numericamente antes de concatenar com HTML.
+- A expressão anterior tentava subtrair a contagem de concluídos de uma string contendo tags HTML, produzindo **NaN** e estrutura de tabela quebrada em todos os nove blocos.
+- A tabela volta a exibir corretamente **Bloco**, **Período**, **Unidades**, **Concluídas**, **Pendentes** e **Projeção/capacidade**, sem alterar a origem dos indicadores.
+- Conferências estáticas: 18 blocos de script validados, todos os blocos JSON históricos sem mudanças; simulações de quatro cenários de contagem (inclusive zero e conclusão integral) sem NaN.
+- O deploy do Netlify deve ser verificado após a atualização do GitHub.
+
+
 ## 18/11/2026 — Refinamento visual e linguagem geral do cronograma
 
 - O seletor de dias do **Cronograma de estudos do dia** foi redesenhado com cartões responsivos, dia selecionado em destaque, indicação de hoje e contagem singular/plural de tópicos. Estilos compatíveis com os temas claro e escuro, navegação por teclado e preferência por movimento reduzido.
