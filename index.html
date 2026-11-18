@@ -1298,13 +1298,24 @@ applyNov03Records();
 
 function freshId(){return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8)}
 function reviewIsSkipped(r){return r.status==='Pulada'||r.skipped===true}
+function requiresAdaptiveD1(r){
+ if(r.adaptiveRequired||!r.adaptiveOptional)return true;
+ const u=planById.get(r.planId)||findTopicUnit(r.subject,r.topic);
+ const study=studyData.studies.find(x=>!x.resetForRedo&&x.status==='Concluído'&&
+   ((u&&x.planId===u.id)||(r.studyId&&x.id===r.studyId)));
+ if(!study)return false;
+ const attempts=studyData.attempts.filter(a=>!a.resetForRedo&&a.date===study.date&&
+   ((u&&a.planId===u.id)||(a.subject===study.subject&&topicKey(a)===topicKey(study)))&&
+   (a.stage==='Estudo inicial'||!a.stage&&!stageForContact(a.contact)));
+ return attempts.some(a=>safeNum(a.cu)+safeNum(a.ws)+safeNum(a.wu)>0);
+}
 function statusReview(r){
  if(r.resetForRedo)return 'Reiniciada';
  if(r.status==='Realizada')return 'Realizadas';
  if(r.closedNoFurtherTecReviews)return 'Não realizadas';
  if(reviewIsSkipped(r))return 'Puladas';
  if(r.stage==='D+30')return 'Facultativas';
- if(r.stage==='D+1'&&r.adaptiveOptional&&!r.adaptiveRequired)return 'Programadas';
+ if(r.stage==='D+1'&&r.adaptiveOptional&&!requiresAdaptiveD1(r))return 'Programadas';
  if(r.proposed)return 'Programadas';
  return r.status==='Pendente'||(r.plannedDate&&r.plannedDate<todayISO())?'Pendentes':'Programadas';
 }
@@ -3156,7 +3167,7 @@ function renderDailyStudyWorkspace(){
    escapeHtml(u.id)+'" data-open-stage="Estudo inicial">'+(done?'Ver registro':'Abrir TEC')+'</button></div>';
  };
  const revs=studyData.reviews.filter(r=>{
-  if(r.resetForRedo||!['D+1','D+7'].includes(r.stage)||reviewIsSkipped(r))return false;
+  if(r.resetForRedo||!['D+1','D+7'].includes(r.stage)||reviewIsSkipped(r)||r.stage==='D+1'&&r.adaptiveOptional&&!requiresAdaptiveD1(r))return false;
   if(r.closedNoFurtherTecReviews)return r.plannedDate===date;
   if(r.status==='Realizada')return r.plannedDate===date||r.doneDate===date;
   return date===today?Boolean(r.plannedDate&&r.plannedDate<=today):
@@ -3176,7 +3187,7 @@ function renderDailyStudyWorkspace(){
  const rRow=r=>{
   const u=findTopicUnit(r.subject,r.topic);
   const detail=r.closedNoFurtherTecReviews?'Não realizada: esgotamento das questões TEC; ciclo encerrado':r.status==='Realizada'?'Realizada'+(r.doneDate?' em '+dateBR(r.doneDate):''):
-   (r.stage==='D+1'&&r.adaptiveOptional&&!r.adaptiveRequired?'Adaptativa (não obrigatória)':'Pendente')+(r.plannedDate<date?' · Adiada desde '+dateBR(r.plannedDate):'');
+   (r.stage==='D+1'&&r.adaptiveOptional&&!requiresAdaptiveD1(r)?'Adaptativa (não obrigatória)':'Pendente')+(r.plannedDate<date?' · Adiada desde '+dateBR(r.plannedDate):'');
   return '<div class="daily-review-item" data-state="'+(r.status==='Realizada'?'done':r.closedNoFurtherTecReviews?'done':r.plannedDate<date?'late':'pending')+'"><div><strong>'+escapeHtml(r.stage)+'</strong><span>'+escapeHtml(visibleTopicTitle(r.topic))+'</span><small>'+escapeHtml(detail)+' · Prevista originalmente: '+dateBR(r.originalPlannedDate||r.plannedDate)+'</small></div>'+(u?'<button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="'+escapeHtml(r.stage)+'">Abrir</button>':'')+(r.stage==='D+1'&&r.status!=='Realizada'?'<button type="button" class="smallbtn" data-skip-review="'+escapeHtml(r.id)+'">Pular</button>':'')+'</div>';
  };
  const blank='<div class="emptytable">Nenhuma atividade programada para a data.</div>';
@@ -4762,6 +4773,8 @@ reschedulePendingSaturdayReviews();
 
 /* Importação idempotente do relatório de 17/11, sem duplicar sessões do navegador. */
 function importNov17RecordsOnce(){
+ const key='central-estudos-importacao-relatorio-20261117-v1';
+ try{if(localStorage.getItem(key)==='1')return;}catch(e){}
  const specs=[
  ["PL 19","D+1",14,38,2,1,2,"Seguro","Pontual","Erros Q19/Q30/Q31; inseguranças Q11/Q28"],
  ["LP/LING 15","D+1",11,25,1,2,0,"Seguro","Pontual","Erros Q11/Q13; insegurança Q26"],
@@ -4805,6 +4818,7 @@ function importNov17RecordsOnce(){
   }
  }
  if(changes)writeData();
+ try{localStorage.setItem(key,'1')}catch(e){}
 }
 importNov17RecordsOnce();
 
