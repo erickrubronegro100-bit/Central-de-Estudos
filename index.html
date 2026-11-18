@@ -1920,13 +1920,18 @@ function rebuildWeeklyPlan(){
   const main=planUnits.filter(u=>u.flow==='A'&&u.legislativePhase!=='Residual').sort((a,b)=>a.order-b.order);
   const remaining=main.filter(u=>!done.has(u.id));
   const doneInWeek=w=>main.filter(u=>{const d=done.get(u.id)?.date;return d&&dateBetween(d,w.start,w.end)});
-  let active=studyWeeks.slice(last+1),futurePool=remaining;
+  let active=studyWeeks.slice(last+1),futurePool=remaining,futureQPool=null,qGoals=[];
   if(last===2){
    const w=studyWeeks[3],dates=['2026-11-18','2026-11-19','2026-11-20'];
    const already=doneInWeek(w),recent=already.filter(u=>done.get(u.id).date>='2026-11-18').length;
    const chosen=remaining.slice(0,Math.max(0,9-recent));
    futurePool=remaining.slice(chosen.length);
-   const q=w.units.filter(u=>u.flow==='Q');
+   const qSource=studyWeeks.slice(3).flatMap(week=>week.units.filter(u=>u.flow==='Q'));
+   const finishedQ=qSource.filter(u=>{const day=completionOf(u)?.date;return day&&dateBetween(day,w.start,w.end)});
+   const allPendingQ=qSource.filter(u=>!completionOf(u));
+   const qChosen=allPendingQ.slice(0,Math.max(0,9-finishedQ.length));
+   futureQPool=allPendingQ.slice(qChosen.length);
+   const q=[...finishedQ,...qChosen];
    w.units=[...already,...chosen,...q];w.quotaA=already.length+chosen.length;w.quotaQ=q.length;
    const byDate={};
    for(const u of [...already,...q].filter(u=>completionOf(u))){
@@ -1951,6 +1956,7 @@ function rebuildWeeklyPlan(){
     Q:dates.map(d=>(byDate[d]||[]).filter(u=>u.flow==='Q').length),
     remainingA:chosen.length,completedFrom18:recent,remainingQ:pendingQ.length};
    active=studyWeeks.slice(4);
+   qGoals=evenQuotas(futureQPool.length,active.length);
   }
   const pairs={'A-184':'A-CP-NEW-020','A-273':'A-CP-NEW-030','A-302':'A-CP-NEW-034','A-312':'A-CP-NEW-036'};
   const byId=new Map(futurePool.map(u=>[u.id,u])),used=new Set(),groups=[];
@@ -1960,7 +1966,7 @@ function rebuildWeeklyPlan(){
    for(const x of group)used.add(x.id);groups.push(group);
   }
   const targets=evenQuotas(futurePool.length,active.length);
-  let ig=0,allocated=0;
+  let ig=0,allocated=0,allocatedQ=0;
   for(let i=0;i<active.length;i++){
    const w=active[i],selected=[],target=targets.slice(0,i+1).reduce((n,x)=>n+x,0);
    if(i===active.length-1)while(ig<groups.length)selected.push(...groups[ig++]);
@@ -1972,15 +1978,22 @@ function rebuildWeeklyPlan(){
      if(deficit>excess)selected.push(...groups[ig++]);
     }
    }
-   const finished=doneInWeek(w),q=w.units.filter(u=>u.flow==='Q');
+   const finished=doneInWeek(w);
+   const q=futureQPool===null?w.units.filter(u=>u.flow==='Q'):
+    [...planUnits.filter(u=>u.flow==='Q'&&completionOf(u)&&dateBetween(completionOf(u).date,w.start,w.end)),
+     ...futureQPool.slice(allocatedQ,allocatedQ+qGoals[i])];
    w.units=[...finished,...selected,...q];
    w.quotaA=finished.length+selected.length;w.quotaQ=q.length;
-   allocated+=selected.length;
+   allocated+=selected.length;if(futureQPool!==null)allocatedQ+=qGoals[i];
   }
-  if(allocated!==futurePool.length)throw Error('Metas principais: tópicos omitidos.');
+  if(allocated!==futurePool.length||(futureQPool!==null&&allocatedQ!==futureQPool.length))
+   throw Error('Metas principais: tópicos A/Q omitidos.');
   const allMain=studyWeeks.flatMap(w=>w.units.filter(u=>u.flow==='A'&&u.legislativePhase!=='Residual').map(u=>u.id));
   const unique=new Set(allMain);
   if(allMain.length!==unique.size||main.some(u=>!unique.has(u.id)))throw Error('Metas principais: tópicos duplicados ou ausentes.');
+  const allQ=studyWeeks.flatMap(w=>w.units.filter(u=>u.flow==='Q').map(u=>u.id));
+  if(allQ.length!==new Set(allQ).size||planUnits.some(u=>u.flow==='Q'&&!allQ.includes(u.id)))
+   throw Error('Metas de Questões: tópico ausente ou duplicado.');
   if(last===2){
    const w=studyWeeks[3],days=['2026-11-18','2026-11-19','2026-11-20'];
    if(days.flatMap(d=>w.nov17To20ByDate[d]||[]).filter(u=>u.flow==='A'&&!done.has(u.id)).length!==
