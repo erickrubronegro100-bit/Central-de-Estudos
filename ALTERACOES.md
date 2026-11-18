@@ -1,5 +1,15 @@
 # Registro de alterações — Central de Estudos
 
+## 18/11/2026 — Adaptação final da metodologia (D+30 preservada)
+
+- **Decisão da Semana 4:** operacionalmente encerrada desde 18/11/2026, sem lançar conclusão fictícia. Os saldos de Aprofundamento/Questões são redistribuídos dinamicamente entre as Semanas 5 a 11; mantidas a pausa de 23 a 28/11, a sequência integrada e as datas históricas efetivas.
+- **Revisões adaptativas:** preservada a programação de uma revisão principal D+1 ou D+7 conforme prioridade, desempenho e dificuldades, e revisão adicional somente quando justificada. A versão verificada já possui reconciliação após registro de questões, sem substituir registros históricos.
+- **Comandos D+1 e D+7:** normalizada a regra de execução exclusivamente por questões inéditas, resultado geral, correção fundamentada apenas dos erros/acertos inseguros e avaliação breve, sem leitura teórica, resumo ou quadro de conteúdo independente. As Etapas 1 e 2, os quantitativos, o ineditismo e as regras de correção não foram reduzidos. Comandos unificados de RICD/RCCN mantêm suas instruções históricas de D+30.
+- **D+30:** comando, filtros de elegibilidade, agendamentos facultativos e indicadores não modificados. Os quatro comandos exclusivos de D+30 permaneceram idênticos.
+- **Tempo livre:** reconciliado o cálculo de 180 minutos com tempo já registrado, estudos A, revisões e a reserva diária única de TEC (18 minutos como referência para Questões Q/Complementações C); pendências anteriores TEC podem demandar uma sessão estimada adicional. Estimativa prospectiva considera uma revisão futura D+1 ou D+7 nas sugestões de antecipação, sem agendamento fictício.
+- **Última semana:** acrescentadas sugestões facultativas de revisão seletiva P1/P2 com priorização por erros, inseguranças e ⭐ documentados, aproveitando os comandos existentes. Os 31 residuais continuam separados e opcionais.
+- **Validações:** sintaxe do script verificada; planData preservado; 37 comandos mantidos; Etapas 1 e 2 inalteradas; sete semanas simuladas com totais diários iguais às metas e sextas não vazias; testes da escolha D+1/D+7 e do encerramento da Semana 4 aprovados. **As metas reais dependem dos registros locais do navegador; o deploy Netlify é independente deste registro.**
+
 ## 18/11/2026 — Metodologia definitiva: revisões adaptativas, Semana 4, tempo e comandos
 
 > Esta entrada substitui as regras operacionais incompatíveis das entradas anteriores; os registros antigos permanecem como histórico de evolução, não como instruções vigentes.
