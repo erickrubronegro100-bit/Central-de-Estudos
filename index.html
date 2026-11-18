@@ -3338,12 +3338,28 @@ function residualComplementPanel(date,completed){
  if(!dateBetween(date,'2027-01-10','2027-01-15'))return '';
  const units=planUnits.filter(u=>u.flow==='A'&&u.legislativePhase==='Residual'&&!completed.has(u.id))
   .sort((a,b)=>(a.legislativeRank||0)-(b.legislativeRank||0));
+ const focus=planUnits.filter(u=>u.flow==='A'&&/^P[12]$/.test(u.priority||'')&&u.legislativePhase!=='Residual'&&completed.has(u.id))
+  .map(u=>{
+   const study=studyData.studies.find(s=>s.planId===u.id&&s.status==='Concluído'&&!s.resetForRedo);
+   const result=study?studyReviewDecision(study):{errors:0,insecurity:0,stars:false};
+   return {u,result,score:(u.priority==='P1'?10:5)+result.errors*3+result.insecurity*2+(result.stars?5:0)};
+  }).sort((a,b)=>b.score-a.score||a.u.order-b.u.order).slice(0,15);
+ const finalOptional='<details class="history-original"><summary>Revisão final seletiva · '+
+  focus.length+' sugestões facultativas</summary>'+
+  '<p class="weekly-note">Priorizar P1/P2, erros, inseguranças e ⭐. Reutiliza o comando de questões e correções D+7; não agenda ou conclui automaticamente qualquer revisão.</p>'+
+  (focus.length?focus.map(x=>'<div class="daily-review-item"><div><strong>'+
+   escapeHtml(x.u.code)+' · '+escapeHtml(x.u.priority)+'</strong><span>'+escapeHtml(x.u.title)+
+   '</span><small>Erros: '+x.result.errors+' · Inseguranças: '+x.result.insecurity+
+   (x.result.stars?' · ⭐':'')+'</small></div><button type="button" class="smallbtn" data-open-topic="'+
+   escapeHtml(x.u.id)+'" data-open-stage="D+7">Abrir questões</button></div>').join(''):
+   '<p class="weekly-note">Não há tópicos P1/P2 concluídos para selecionar.</p>')+'</details>';
+ 
  return '<details class="history-original"><summary>Aproveitar — Complementação · '+units.length+' tópicos residuais opcionais</summary>'+
   '<p class="weekly-note">Última semana pré-prova. Esses tópicos não integram as metas obrigatórias.</p>'+
   units.map(u=>'<div class="daily-review-item"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span></div>'+
   '<button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="Estudo inicial">Abrir bloco</button></div>').join('')+
   '<p class="weekly-note">Revisão final geral seletiva, também facultativa: priorize P1/P2, erros recorrentes, acertos inseguros e conteúdos ⭐. Use as revisões já existentes, sem criar conclusão automática.</p>'+
-  '<button type="button" class="smallbtn" data-jump-view="revisoes-geral">Consultar revisões para seleção final</button></details>';
+  '<button type="button" class="smallbtn" data-jump-view="revisoes-geral">Consultar revisões para seleção final</button></details>'+finalOptional;
 }
 
 function renderDailyStudyWorkspace(){
