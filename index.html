@@ -1946,10 +1946,10 @@ function rebuildWeeklyPlan(){
     cursor+=take;
    }
    if(cursor<chosen.length)byDate['2026-11-20'].push(...chosen.slice(cursor));
-   const pendingQ=q.filter(u=>!completionOf(u)),qGoals=evenQuotas(pendingQ.length,dates.length);
+   const pendingQ=q.filter(u=>!completionOf(u)),qDailyGoals=evenQuotas(pendingQ.length,dates.length);
    let iq=0;
    for(let i=0;i<dates.length;i++){
-    (byDate[dates[i]]||(byDate[dates[i]]=[])).push(...pendingQ.slice(iq,iq+qGoals[i]));iq+=qGoals[i];
+    (byDate[dates[i]]||(byDate[dates[i]]=[])).push(...pendingQ.slice(iq,iq+qDailyGoals[i]));iq+=qDailyGoals[i];
    }
    w.nov17To20ByDate=byDate;
    w.nov17To20Quotas={dates,A:dates.map(d=>(byDate[d]||[]).filter(u=>u.flow==='A').length),
