@@ -1,5 +1,16 @@
 # Registro de alterações — Central de Estudos
 
+## 18/11/2026 — Refinamento visual e linguagem geral do cronograma
+
+- O seletor de dias do **Cronograma de estudos do dia** foi redesenhado com cartões responsivos, dia selecionado em destaque, indicação de hoje e contagem singular/plural de tópicos. Estilos compatíveis com os temas claro e escuro, navegação por teclado e preferência por movimento reduzido.
+- O painel extenso **Plano de cobertura 2026–2027 / Próximo dia de estudo** foi retirado da **Visão geral**, mantendo os indicadores úteis, a evolução das disciplinas e atalhos compactos para cronograma, revisões, metas, percurso e desempenho.
+- Textos apresentados ao usuário foram simplificados: **Revisões do dia**, **Estudos do dia**, **TEC**, **Antecipar estudos**, **D+30 opcionais**, **Planejamento semanal** e **Etapa final**.
+- Foram ocultadas nas principais telas referências operacionais às datas de origem e destino das antecipações, datas fixas de replanejamento e justificativas técnicas de remanejamento. As datas efetivas de atividades e as datas necessárias à execução de revisões continuam disponíveis.
+- Mantidos integralmente o calendário, os identificadores, a sequência pedagógica, as regras de revisão, as estimativas de tempo, os comandos e os dados históricos. As datas originais continuam salvas para auditoria, mas não são exibidas como detalhes desnecessários.
+- Testes: sintaxe de 18 blocos de script; integridade dos 17 blocos JSON; catálogo intacto com **663 entradas** e **31 residuais** (ranks 101–131); três cartões de dia simulados, dia ativo identificado, contagens 3/1/0 corretamente flexionadas; painel principal atual sem o hero antigo.
+- Publicação em Netlify depende da execução e confirmação do deploy, independente do commit na branch principal.
+
+
 ## 17/11/2026 — Aproveitar tempo livre e D+30 opcional
 
 - Botão **Aproveitar tempo livre** no Cronograma de estudos do dia, acionado manualmente. Exibe saldo diário, estudos reais, atividades restantes, TEC, revisões obrigatórias, número de tópicos antecipáveis, D+30 elegíveis e capacidade potencial da última semana.

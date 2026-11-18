@@ -563,6 +563,38 @@ dialog.viewer,.block-viewer{width:min(1040px,100vw);max-width:100vw;height:100dv
 @media(max-width:770px){.subject-progress-grid{grid-template-columns:1fr}}
 @media(max-width:470px){.subject-progress-card{padding:15px}.subject-progress-heading h2{font-size:16px}.subject-progress-percent{font-size:18px}}
 
+
+/* Cronograma diário — cartões de navegação por dia */
+.daily-days{display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;margin:0 0 22px}
+.daily-days .daily-day-chip{
+ appearance:none;position:relative;display:flex;flex:1 1 178px;max-width:244px;
+ min-width:0;min-height:118px;flex-direction:column;align-items:stretch;
+ justify-content:space-between;gap:10px;padding:15px 17px;
+ border:1px solid var(--line);border-radius:16px;
+ background:linear-gradient(155deg,var(--card),var(--surface-tint));
+ color:var(--text);text-align:left;cursor:pointer;box-shadow:var(--shadow);
+ font-family:inherit;font-weight:500;line-height:1.25;
+ transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+.daily-days .daily-day-chip:hover{transform:translateY(-2px);border-color:var(--accent);box-shadow:0 12px 27px rgba(11,57,86,.16)}
+.daily-day-chip-top,.daily-day-chip-footer{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%}
+.daily-day-chip-weekday{font-size:11px;font-weight:800;letter-spacing:.075em;text-transform:uppercase;color:var(--muted)}
+.daily-day-chip-today{padding:3px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:10px;font-weight:800;line-height:1.4}
+.daily-day-chip-date{display:flex;align-items:baseline;gap:8px;font-size:27px;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.daily-day-chip-year{font-size:12px;font-weight:650;color:var(--muted);letter-spacing:0}
+.daily-day-chip-footer{font-size:12px;color:var(--muted);font-weight:600}
+.daily-day-chip-active{font-size:11px;font-weight:800}
+.daily-day-chip-action{font-size:11px;font-weight:650;opacity:.85}
+.daily-days .daily-day-chip[aria-pressed="true"]{background:linear-gradient(128deg,var(--navy),var(--navy2));border-color:var(--accent);color:#fff;box-shadow:0 12px 25px rgba(9,69,110,.24)}
+.daily-day-chip[aria-pressed="true"] .daily-day-chip-weekday,
+.daily-day-chip[aria-pressed="true"] .daily-day-chip-year,
+.daily-day-chip[aria-pressed="true"] .daily-day-chip-footer{color:#e1f4ff}
+.daily-day-chip[aria-pressed="true"] .daily-day-chip-today{background:rgba(255,255,255,.17);color:#fff}
+.daily-days .daily-day-chip:focus-visible{outline:3px solid var(--focus-ring);outline-offset:3px}
+@media(max-width:540px){.daily-days{gap:9px}.daily-days .daily-day-chip{flex-basis:145px;max-width:none;min-height:104px;padding:12px 13px;border-radius:14px}.daily-day-chip-date{font-size:23px}}
+@media(max-width:360px){.daily-days .daily-day-chip{flex-basis:100%;min-height:96px}}
+@media(prefers-reduced-motion:reduce){.daily-days .daily-day-chip{transition:none}.daily-days .daily-day-chip:hover{transform:none}}
+
 </style>
 </head>
 <body>
@@ -4628,15 +4660,15 @@ standardizeTopicNames();
  const COV_KEY='central-estudos-cobertura-adaptativa-20261118-v1';
  const COV_NOT='Não programada — decisão estratégica';
  const COV_DAYS=[
-  {start:'2026-11-18',end:'2026-11-20',target:9,title:'Semana atual · 9 tópicos'},
-  {start:'2026-11-22',end:'2026-11-27',target:32,title:'Semana principal 1 · 32 tópicos'},
-  {start:'2026-11-29',end:'2026-12-04',target:32,title:'Semana principal 2 · 32 tópicos'},
-  {start:'2026-12-06',end:'2026-12-11',target:32,title:'Semana principal 3 · 32 tópicos'},
-  {start:'2026-12-13',end:'2026-12-18',target:32,title:'Semana principal 4 · 32 tópicos'},
-  {start:'2026-12-20',end:'2026-12-25',target:31,title:'Semana principal 5 · 31 tópicos'},
-  {start:'2026-12-27',end:'2027-01-01',target:31,title:'Semana principal 6 · 31 tópicos'},
-  {start:'2027-01-03',end:'2027-01-08',target:31,title:'Semana principal 7 · 31 tópicos'},
-  {start:'2027-01-10',end:'2027-01-16',target:0,title:'Última semana — tópicos residuais opcionais',optional:true}
+  {start:'2026-11-18',end:'2026-11-20',target:9,title:'Semana 1'},
+  {start:'2026-11-22',end:'2026-11-27',target:32,title:'Semana 2'},
+  {start:'2026-11-29',end:'2026-12-04',target:32,title:'Semana 3'},
+  {start:'2026-12-06',end:'2026-12-11',target:32,title:'Semana 4'},
+  {start:'2026-12-13',end:'2026-12-18',target:32,title:'Semana 5'},
+  {start:'2026-12-20',end:'2026-12-25',target:31,title:'Semana 6'},
+  {start:'2026-12-27',end:'2027-01-01',target:31,title:'Semana 7'},
+  {start:'2027-01-03',end:'2027-01-08',target:31,title:'Semana 8'},
+  {start:'2027-01-10',end:'2027-01-16',target:0,title:'Etapa final — atividades opcionais',optional:true}
  ];
  const COV_REFERENCE={daily:180,weekly:1080,tecLow:15,tecHigh:20,question:8,correction:3};
  let covMemory=null;
@@ -4804,8 +4836,7 @@ standardizeTopicNames();
  }
  function covReviewLine(r){
   return '<div class="weekly-topic"><div><strong>'+escapeHtml(r.stage)+' · '+escapeHtml(r.subject)+'</strong>'+
-   '<span>'+escapeHtml(r.topic||'Tópico')+'</span><small>Programada '+dateBR(r.plannedDate)+
-   (r.originalPlannedDate&&r.originalPlannedDate!==r.plannedDate?' · Referência '+dateBR(r.originalPlannedDate):'')+
+   '<span>'+escapeHtml(r.topic||'Tópico')+'</span><small>Revisão prevista: '+dateBR(r.plannedDate)+
    '</small></div><button class="smallbtn" type="button" data-open-topic="'+escapeHtml(findTopicUnit(r.subject,r.topic)?.id||'')+
    '" data-open-stage="'+escapeHtml(r.stage)+'">Abrir revisão</button></div>';
  }
@@ -4835,13 +4866,33 @@ standardizeTopicNames();
    panel('Planejamento teórico · 9 + 221 + 31','Aulas em sequência pedagógica, 7 semanas principais e última semana opcional. Sábado livre. A coluna de tempo é projeção, não tempo realizado.',
     '<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Bloco</th><th>Período</th><th>Meta</th><th>Unidades</th><th>Realizadas</th><th>Pendentes</th><th>Carga prevista / disponível</th><th>Tempo real registrado</th><th>Aulas + questões + correção</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
    (wl.overload||wl.overloadedDays.length?'<p class="daily-note"><strong>Alerta de sobrecarga:</strong> a previsão semanal é '+wl.projection+' min para '+wl.budget+' min disponíveis; dias acima de 3h: '+(wl.overloadedDays.join(', ')||'nenhum isoladamente')+'. Redistribua sem reduzir questões ou correções.</p>':'')+
-   panel('Bloco em destaque — '+w.title,'Período de '+dateBR(w.start)+' a '+dateBR(w.end)+'. '+m.remaining+' unidades não concluídas.',
-    '<details class="weekly-group" open><summary>'+escapeHtml(w.optional?'Última semana — tópicos residuais opcionais':'Lista completa na sequência pedagógica')+'</summary>'+currentRows+'</details>')+
+   panel('Estudos da semana','Período de '+dateBR(w.start)+' a '+dateBR(w.end)+'. '+m.remaining+' unidades não concluídas.',
+    '<details class="weekly-group" open><summary>'+escapeHtml(w.optional?'Etapa final — atividades opcionais':'Lista completa na sequência pedagógica')+'</summary>'+currentRows+'</details>')+
    (!w.optional?covCapacityPanel(current,covDailyUnits(w,current)):'')+
    (!w.optional?'<details class="weekly-group"><summary>Prévia dos 31 residuais opcionais (10–16/01/2027)</summary>'+
       plan.residual.map(u=>covUnitRow(u,true)).join('')+'</details>':'')+
    '<p class="daily-note">Questões TEC (DC/DA/AP/TI e Complementação) permanecem com controle próprio; reservar diariamente 15–20 minutos dentro das 3 horas.</p>';
  }
+
+ function covDayTabs(days,selected,week){
+  const names=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const today=todayISO();
+  return days.map(d=>{
+   const count=covDailyUnits(week,d).length;
+   const date=dateBR(d),current=d===selected;
+   return '<button type="button" class="daily-day-chip" data-cov-day="'+d+
+    '" aria-pressed="'+current+'" aria-label="'+names[covDateDow(d)]+', '+date+
+    ', '+count+' '+(count===1?'tópico':'tópicos')+'">'+
+    '<span class="daily-day-chip-top"><span class="daily-day-chip-weekday">'+names[covDateDow(d)]+'</span>'+
+    (d===today?'<span class="daily-day-chip-today">Hoje</span>':'')+'</span>'+
+    '<span class="daily-day-chip-date">'+date.slice(0,5)+
+    '<span class="daily-day-chip-year">'+d.slice(0,4)+'</span></span>'+
+    '<span class="daily-day-chip-footer"><span>'+count+' '+(count===1?'tópico':'tópicos')+'</span>'+
+    (current?'<span class="daily-day-chip-active">Selecionado</span>':'<span class="daily-day-chip-action">Ver dia</span>')+
+    '</span></button>';
+  }).join('');
+ }
+
  function covDailyView(){
   const plan=covWeeks(),today=todayISO(),w=covCurrentWeek(plan.weeks,today);
   if(w.optional)return '<p class="daily-note">Última semana pré-prova: não há metas teóricas obrigatórias. Acesse Metas semanais para escolher os 31 tópicos residuais opcionais.</p>'+covCapacityPanel(today,[]);
@@ -4854,9 +4905,7 @@ standardizeTopicNames();
   const beforeInWeek=w.units.filter(u=>!completionOf(u)&&!base.some(x=>x.id===u.id)&&
    days.some(d=>d<date&&covDailyUnits(w,d).some(x=>x.id===u.id)));
   const backlog=[...new Map([...backlogs,...beforeInWeek].map(u=>[u.id,u])).values()];
-  const tabs=days.map(d=>'<button type="button" data-cov-day="'+d+'" aria-pressed="'+(d===date)+'">'+
-   ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][covDateDow(d)]+' · '+dateBR(d)+
-   '<small>'+covDailyUnits(w,d).length+' tópico(s)</small></button>').join('');
+  const tabs=covDayTabs(days,date,w);
   const revs=covScheduledReviews(date);
   const tec=planUnits.filter(u=>u.flow==='C').filter(u=>{
    const gate=complementGate(u);
@@ -4894,20 +4943,13 @@ standardizeTopicNames();
  }
  function covDashboard(){
   const plan=covWeeks(),w=covCurrentWeek(plan.weeks);
-  const today=todayISO(),date=covDates(w.start,w.end).find(d=>d>=today)||w.end;
-  const u=covDailyUnits(w,date),reviews=covScheduledReviews(date),progress=plan.main.filter(u=>completionOf(u)).length;
-  return covIssueText(plan)+
-   '<section class="dashboard-daily"><div><span class="kicker">Plano de cobertura 2026–2027</span>'+
-   '<h2>Próximo dia de estudo · '+dateBR(date)+'</h2>'+
-   '<p>Revisões primeiro · '+u.length+' estudos teóricos · '+reviews.length+' revisões · TEC 15–20 min</p></div>'+
-   '<div class="dashboard-daily-stats"><div><strong>'+reviews.length+'</strong><small>Revisões programadas</small></div>'+
-   '<div><strong>'+u.filter(x=>!completionOf(x)).length+'</strong><small>Estudos pendentes do dia</small></div>'+
-   '<div><strong>'+progress+'/'+plan.main.length+'</strong><small>Principais concluídos</small></div></div>'+
-   '<div class="dashboard-daily-actions"><button class="primary" data-dashboard-view="estudos-cronograma-dia">Abrir cronograma</button>'+
-   '<button class="smallbtn" data-dashboard-view="revisoes-geral">Revisões adaptativas</button></div></section>'+
-   covSnapshot()+centralProgressCards()+renderSubjectProgress()+
-   covCapacityPanel(date,u)+renderCumulativeStudyTime()+
-   '<div class="sector-links"><button class="dash-link" data-dashboard-view="estudos-semanal">Metas semanais</button>'+
+  const day=covDates(w.start,w.end).find(d=>d>=todayISO())||w.end;
+  return covIssueText(plan)+covSnapshot()+centralProgressCards()+renderSubjectProgress()+
+   covCapacityPanel(day,[])+renderCumulativeStudyTime()+
+   '<div class="sector-links">'+
+   '<button class="dash-link" data-dashboard-view="estudos-cronograma-dia">Cronograma do dia</button>'+
+   '<button class="dash-link" data-dashboard-view="revisoes-geral">Revisões</button>'+
+   '<button class="dash-link" data-dashboard-view="estudos-semanal">Metas semanais</button>'+
    '<button class="dash-link" data-dashboard-view="estudos-percurso">Percurso pedagógico</button>'+
    '<button class="dash-link" data-dashboard-view="desempenho-geral">Desempenho histórico</button></div>';
  }
@@ -5382,26 +5424,26 @@ standardizeTopicNames();
  function covOptionalEntry(info){
    const u=info.unit;
    return '<div class="weekly-topic"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+
-     '</span><small>'+COV_OPT+' · marco '+dateBR(info.original)+' · erros '+info.evidence.errors+
+     '</span><small>'+COV_OPT+' · elegível · erros '+info.evidence.errors+
      ' · acertos inseguros '+info.evidence.insecure+(info.evidence.stars?' · ⭐':'')+'</small></div>'+
      '<button class="smallbtn" type="button" data-cov-opt-open="'+escapeHtml(u.id)+'">Realizar D+30 opcional</button></div>';
  }
  function covSuggestions(day){
    const b=covDailyCapacity(day),advance=covNextAdvances(day,b.free),optional=covD30Eligible(day);
-   return '<section class="weekly-panel"><div class="weekly-header"><div><h2>Aproveitamento facultativo</h2>'+
-     '<p>Saldo estimado: '+Math.floor(b.free)+' min; nenhuma tarefa é adicionada automaticamente.</p></div></div>'+
-     panel('4. Antecipação teórica',advance.length+' tópico(s) futuros cabem no saldo previsto.',
+   return '<section class="weekly-panel"><div class="weekly-header"><div><h2>Sugestões para o tempo livre</h2>'+
+     '<p>Tempo livre estimado: '+Math.floor(b.free)+' min; escolha como aproveitá-lo.</p></div></div>'+
+     panel('Antecipar estudos',advance.length+' tópico(s) futuros cabem no saldo previsto.',
        advance.length?advance.map(x=>{
          const u=x.unit,risk=covUpcomingRisk(day).filter(r=>r.over);
          return '<div class="weekly-topic"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+
            '</span><small>Prioridade '+escapeHtml(u.priority||'N/I')+' · '+escapeHtml(u.density||'N/I')+
            ' · '+Math.ceil(x.cost)+' min estimados (teoria '+covTheoryMinutes(u)+' + questões 8 + correção '+
-           covCorrectionReference().toFixed(1).replace('.',',')+') · origem '+dateBR(x.original)+
-           (risk.length?' · Possível sobrecarga de revisões: '+risk.map(r=>dateBR(r.day)).join(', '):'')+
+           covCorrectionReference().toFixed(1).replace('.',',')+') · pronto para antecipação'+
+           (risk.length?' · Atenção: revisões podem aumentar a carga dos próximos dias':'')+
            '</small></div><button class="smallbtn" type="button" data-cov-advance="'+escapeHtml(u.id)+
            '" data-cov-target="'+day+'">Antecipar este tópico</button></div>';
        }).join(''):'<p class="daily-note">Sem antecipação possível dentro do tempo livre ou da sequência disponível.</p>')+
-     panel('5. Revisões D+30 facultativas',optional.length+' disponível(is), sem atraso se não realizadas.',
+     panel('D+30 opcionais',optional.length+' disponível(is), sem atraso se não realizadas.',
        optional.length&&b.free>=11?optional.map(covOptionalEntry).join(''):
         '<p class="daily-note">'+(optional.length?'Há D+30 elegíveis, mas não há 11 minutos de margem estimada.':'Nenhuma D+30 elegível encontrada.')+'</p>')+
      '<p class="daily-note">Você pode encerrar o dia com tempo livre. D+30 não realizada não vira pendência.</p></section>';
@@ -5423,9 +5465,9 @@ standardizeTopicNames();
        '</strong> · '+escapeHtml(x.u.title)+'<small> Prioridade '+escapeHtml(x.u.priority||'N/I')+
        ' · erros '+x.ev.errors+' · acertos inseguros '+x.ev.insecure+(x.ev.stars?' · ⭐':'')+
        '</small></span></label>').join('');
-   return '<p class="daily-note">10 a 16/01/2027 · semana pré-prova facultativa. Sábado permanece livre.</p>'+
+   return '<p class="daily-note">Etapa final de preparação: estudos opcionais e revisão seletiva. Sábado livre.</p>'+
      '<div class="weekly-kpi">'+metricCard('Residuais opcionais',31)+
-     metricCard('Capacidade estimada da semana',Math.floor(last.free)+' min','TEC e revisões projetadas descontados')+
+     metricCard('Capacidade potencial da fase final',Math.floor(last.free)+' min','TEC e revisões projetadas descontados')+
      metricCard('Principais pendentes',last.pending,'Risco de ocupação da semana final')+
      metricCard('Seleções para revisão geral',selected.size,'Sem execução automática')+'</div>'+
      panel('Grupo A — Tópicos residuais opcionais','31 unidades, ordem pedagógica original; estudo parcial ou completo.',
@@ -5446,28 +5488,26 @@ standardizeTopicNames();
       const gate=complementGate(u);
       return gate?.ready&&(gate.scheduled===date||completionOf(u)?.date===date);
    });
-   const tabs=days.map(d=>'<button type="button" data-cov-day="'+d+'" aria-pressed="'+(d===date)+'">'+
-      ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][covDateDow(d)]+' · '+dateBR(d)+
-      '<small>'+covDailyUnits(w,d).length+' tópico(s)</small></button>').join('');
+   const tabs=covDayTabs(days,date,w);
    const moved=units.filter(u=>Boolean(covAdvanceMap()[u.id]));
    return covIssueText(p)+'<div class="daily-days">'+tabs+'</div>'+
      '<div class="weekly-kpi">'+metricCard('Estudos previstos',units.length)+
      metricCard('Estudos concluídos',units.filter(u=>completionOf(u)).length)+
      metricCard('Revisões obrigatórias',revs.length)+
      metricCard('Pendências anteriores',backlog.length)+'</div>'+
-     panel('1. Revisões obrigatórias',revs.length+' revisão(ões) programada(s) ou atrasada(s).',
+     panel('Revisões do dia',revs.length+' revisão(ões) programada(s) ou atrasada(s).',
        revs.length?revs.map(covReviewLine).join(''):'<p class="daily-note">Nenhuma revisão obrigatória para a data.</p>')+
-     panel('2. Estudos iniciais — '+dateBR(date),'Inclui somente os remanejamentos confirmados.',
+     panel('Estudos do dia','Tópicos previstos, em sequência pedagógica.',
        units.length?units.map(u=>covUnitRow(u)).join(''):'<p class="daily-note">Nenhuma unidade prevista.</p>')+
-     (moved.length?'<details class="weekly-group"><summary>Antecipações confirmadas · '+moved.length+'</summary>'+
+     (moved.length?'<details class="weekly-group"><summary>Estudos antecipados · '+moved.length+'</summary>'+
        moved.map(u=>'<div class="weekly-topic"><div><strong>'+escapeHtml(u.code)+
-          '</strong><span>Origem '+dateBR(covAdvanceMap()[u.id].original)+' · destino '+dateBR(date)+'</span></div>'+
+          '</strong><span>Incluído no cronograma deste dia</span></div>'+
           (completionOf(u)?'<small>Já concluído</small>':
           '<button class="smallbtn" type="button" data-cov-undo="'+escapeHtml(u.id)+'">Desfazer antecipação</button>')+
          '</div>').join('')+'</details>':'')+
      (backlog.length?'<details class="weekly-group"><summary>Pendências anteriores · '+backlog.length+'</summary>'+
        backlog.map(u=>covUnitRow(u)).join('')+'</details>':'')+
-     panel('3. TEC — 15 a 20 minutos','Reserva já incluída no cálculo; filtros e cadernos originais preservados.',
+     panel('TEC — 15 a 20 minutos','Filtros de questões conforme a programação.',
        tec.length?tec.map(u=>'<div class="weekly-topic"><div><strong>'+escapeHtml(u.code)+
          '</strong><span>'+escapeHtml(u.title)+'</span></div><button class="smallbtn" data-open-topic="'+
          escapeHtml(u.id)+'">Abrir TEC</button></div>').join(''):
@@ -5493,10 +5533,10 @@ standardizeTopicNames();
       metricCard('Principais concluídos',p.main.filter(u=>completionOf(u)).length)+
       metricCard('Residuais opcionais',p.residual.length)+
       metricCard('Capacidade final projetada',Math.floor(last.free)+' min')+'</div>'+
-      panel('Distribuição semanal atualizada','Um tópico antecipado deixa sua data futura original, sem duplicar registros.',
+      panel('Planejamento semanal','Distribuição atual dos estudos, em sequência pedagógica.',
         '<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Bloco</th><th>Período</th><th>Unidades</th><th>Concluídas</th><th>Pendentes</th><th>Projeção/capacidade</th></tr></thead><tbody>'+
         rows+'</tbody></table></div>')+
-      (w.optional?covLastWeekPanel():panel('Bloco em destaque — '+w.title,
+      (w.optional?covLastWeekPanel():panel('Estudos da semana',
          'Tópicos na sequência efetivamente atribuída a esta semana.',
          here.map(u=>covUnitRow(u)).join(''))+
        covCapacityPanel(covDates(w.start,w.end).find(d=>d>=today)||w.end,[])+
@@ -5507,13 +5547,13 @@ standardizeTopicNames();
    const p=covWeeks(),w=covCurrentWeek(p.weeks),m=covWeekMetrics(w),load=covWeekLoad(w);
    const assigned=w.optional?w.units:covDates(w.start,w.end).flatMap(d=>covDailyUnits(w,d));
    return '<section class="weekly-panel"><div class="weekly-header"><div><h2>'+escapeHtml(w.title)+
-     '</h2><p>3h líquidas · domingo a sexta · antecipações facultativas</p></div>'+
+     '</h2><p>Visão geral do planejamento e do progresso dos estudos</p></div>'+
      '<button type="button" class="dash-link" data-jump-view="estudos-semanal">Metas semanais</button></div>'+
      '<div class="weekly-compact">'+weeklyProgress('Estudos teóricos da semana',m.done,assigned.length)+
      weeklyProgress('Principais concluídos',p.main.filter(u=>completionOf(u)).length,p.main.length)+'</div>'+
      '<div class="weekly-meta"><span>Carga projetada: '+Math.ceil(load.projection)+' / '+load.budget+
      ' min</span><span>TEC 15–20 min; revisões primeiro</span>'+
-     '<span>31 residuais opcionais reservados para 10–16/01/2027</span></div></section>';
+     '<span>31 tópicos opcionais preservados para a etapa final</span></div></section>';
  };
  covReviewSummary=function(){
    const rev=studyData.reviews.filter(r=>!r.resetForRedo);
@@ -5566,13 +5606,11 @@ standardizeTopicNames();
       toast('Antecipe primeiro o próximo tópico da sequência e confira o saldo.');return;
    }
    const risk=covUpcomingRisk(day).filter(x=>x.over);
-   const notice=risk.length?'\nPossível sobrecarga futura em '+risk.map(x=>dateBR(x.day)).join(', ')+
-      ' caso sejam necessárias revisões após a antecipação.':'';
+   const notice=risk.length?'\nAtenção: revisões futuras poderão aumentar a carga de estudos.':'';
    if(!confirm('Antecipar '+unit.code+' — '+unit.title+' para '+dateBR(day)+
-      '?\nPrevisão: '+Math.ceil(next.cost)+' min; origem '+dateBR(next.original)+
-      '. Não será marcado como concluído.'+notice))return;
+      '?\nTempo previsto: '+Math.ceil(next.cost)+' min. O estudo continuará pendente até ser concluído.'+notice))return;
    covAdvanceMap()[id]={date:day,original:next.original,confirmedAt:todayISO()};
-   covSave();covDataUpdate();toast('Tópico remanejado; a data futura foi liberada.');
+   covSave();covDataUpdate();toast('Tópico incluído no cronograma.');
  },true);
  document.addEventListener('change',function(e){
     const id=e.target?.dataset?.covFinal;
