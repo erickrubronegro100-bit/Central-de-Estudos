@@ -14,6 +14,7 @@ Este arquivo registra as solicitações de organização e apresentação do sit
 - Painel de revisão permite selecionar a principal, uma adicional e D+30 excepcional; painel teórico permite registrar duração REAL separada de teoria, questões e correções, além de estudo parcial ou completo de residuais. O progresso parcial não conclui a unidade.
 - **Comandos atualizados:** comando geral e comandos individuais de estudo/revisão/TEC com nova carga, tempos e estratégia; mantidas seis etapas no estudo inicial e cinco na revisão com avaliação integrada; D+30 seletiva somente quando escolhida; quantidades aprovadas de questões permanecem inalteradas.
 - Testes estáticos concluídos: JavaScript sintaticamente válido, 663 entradas originais (650 ativas), 308 teóricas, 31 residuais exatos, 9+221=230, 26 comandos ativos/12 históricos, mesmas chaves de dados históricos. O número exato de pendências pessoais depende do armazenamento local do usuário; não foi forçado a 261.
+- **Capacidade semanal ampliada:** além da projeção diária, as metas agora exibem previsão TOTAL de teoria, bateria de questões, correção, revisões e TEC, disponibilidade de 540 min na semana curta e 1.080 min nas semanas completas, tempo efetivamente registrado e avisos de sobrecarga por dia/semana. Projeção agregada até a prova também aparece no planejamento.
 - **Netlify:** deploy de produção requer verificação externa após o commit; atualização no GitHub não prova por si só publicação na hospedagem.
 
 ## 17/11/2026 — Metodologia definitiva e densidades (comandos integrados)

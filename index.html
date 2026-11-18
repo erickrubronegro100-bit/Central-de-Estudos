@@ -4751,6 +4751,33 @@ standardizeTopicNames();
   return '<p class="daily-note"><strong>Conferência do histórico:</strong> o planejamento de referência prevê 261 pendências (230 principais e 31 residuais), mas este navegador apresenta uma base inicial de '+
     plan.base.referencePending+' pendências e '+plan.main.length+' unidades principais selecionadas. Nenhum estudo foi criado, descartado ou concluído artificialmente. A distribuição exibe os registros efetivamente disponíveis e precisa ser reconciliada se diferir da referência.</p>';
  }
+
+ function covWeekLoad(week){
+  const days=covDates(week.start,week.end);
+  const budget=days.length*COV_REFERENCE.daily;
+  const projections=days.map(day=>({day,projected:covForecast(covDailyUnits(week,day),day),actual:covRecorded(day)}));
+  const projection=projections.reduce((sum,x)=>sum+x.projected.total,0);
+  const measured=projections.reduce((sum,x)=>sum+x.actual.minutes,0);
+  const registered=projections.some(x=>x.actual.known||x.actual.partial);
+  const overloadedDays=projections.filter(x=>x.projected.total>COV_REFERENCE.daily).map(x=>x.day);
+  const components={
+   theory:projections.reduce((n,x)=>n+x.projected.init-11*covDailyUnits(week,x.day).length,0),
+   questions:week.optional?0:week.units.length*8,
+   corrections:week.optional?0:week.units.length*3,
+   reviews:projections.reduce((n,x)=>n+x.projected.estimatedReviews,0),
+   tec:days.length*COV_REFERENCE.tecHigh
+  };
+  return {budget,projection,measured,registered,overload:projection>budget,overloadedDays,components};
+ }
+ function covTotalRemainingCapacity(){
+  const plan=covWeeks();
+  const weeks=plan.weeks.filter(w=>!w.optional&&w.end>=todayISO());
+  const budgets=weeks.map(covWeekLoad);
+  const projected=budgets.reduce((s,w)=>s+w.projection,0);
+  const total=budgets.reduce((s,w)=>s+w.budget,0);
+  return {projected,total,difference:total-projected,overloadedWeeks:budgets.filter(w=>w.overload).length};
+ }
+
  function covWeekMetrics(w){
   const done=w.units.filter(u=>Boolean(completionOf(u))).length;
   const remaining=w.units.length-done;
@@ -4786,23 +4813,28 @@ standardizeTopicNames();
   const plan=covWeeks(),today=todayISO(),w=covCurrentWeek(plan.weeks,today);
   const days=covDates(w.start,w.end),current=days.find(d=>d>=today)||days.at(-1);
   const rows=plan.weeks.map(x=>{
-   const m=covWeekMetrics(x);
+   const m=covWeekMetrics(x),load=covWeekLoad(x);
    return '<tr><th>'+escapeHtml(x.title)+'</th><td>'+dateBR(x.start)+' a '+dateBR(x.end)+'</td>'+
     '<td>'+(x.optional?'Opcional':x.target)+'</td><td>'+x.units.length+'</td><td>'+m.done+'</td><td>'+m.remaining+'</td>'+
+    '<td>'+load.projection+' / '+load.budget+' min'+(load.overload?' · SOBRECARGA':'')+'</td>'+
+    '<td>'+(load.registered?load.measured+' min':'N/I')+'</td>'+
     '<td>'+m.initProjected+' min'+(x.optional?' (facultativos)':'')+'</td></tr>';
   }).join('');
   const currentRows=w.optional?
    '<p class="daily-note">Estudo opcional: 31 unidades residuais cadastradas, sem meta obrigatória nem atraso, com opção de registrar estudo parcial ou completo.</p>'+
    w.units.map(u=>covUnitRow(u,true)).join(''):
    w.units.map(u=>covUnitRow(u)).join('');
-  const m=covWeekMetrics(w);
+  const m=covWeekMetrics(w),wl=covWeekLoad(w),totalCapacity=covTotalRemainingCapacity();
   return covIssueText(plan)+
    '<div class="weekly-kpi">'+metricCard('Principais selecionados',plan.main.length)+
    metricCard('ResiduaIs opcionais',plan.residual.length)+metricCard('Pendentes principais',plan.main.filter(u=>!completionOf(u)).length)+
    metricCard('ResiduaIs abordados',plan.residual.filter(u=>completionOf(u)||plan.base.partial[u.id]).length)+
-   metricCard('Tempo de estudo/semana','18h')+metricCard('Revisões adicionais',covAdditionalCount()+'/10 referência')+'</div>'+
+   metricCard('Tempo de estudo/semana','18h')+metricCard('Revisões adicionais',covAdditionalCount()+'/10 referência')+
+   metricCard('Projeção até a prova',totalCapacity.projected+' / '+totalCapacity.total+' min')+
+   metricCard('Carga prevista na semana',wl.projection+' min',wl.overload?'Acima da disponibilidade':'Disponibilidade '+wl.budget+' min')+'</div>'+
    panel('Planejamento teórico · 9 + 221 + 31','Aulas em sequência pedagógica, 7 semanas principais e última semana opcional. Sábado livre. A coluna de tempo é projeção, não tempo realizado.',
-    '<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Bloco</th><th>Período</th><th>Meta</th><th>Unidades</th><th>Realizadas</th><th>Pendentes</th><th>Teoria + questões + correção</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
+    '<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Bloco</th><th>Período</th><th>Meta</th><th>Unidades</th><th>Realizadas</th><th>Pendentes</th><th>Carga prevista / disponível</th><th>Tempo real registrado</th><th>Aulas + questões + correção</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
+   (wl.overload||wl.overloadedDays.length?'<p class="daily-note"><strong>Alerta de sobrecarga:</strong> a previsão semanal é '+wl.projection+' min para '+wl.budget+' min disponíveis; dias acima de 3h: '+(wl.overloadedDays.join(', ')||'nenhum isoladamente')+'. Redistribua sem reduzir questões ou correções.</p>':'')+
    panel('Bloco em destaque — '+w.title,'Período de '+dateBR(w.start)+' a '+dateBR(w.end)+'. '+m.remaining+' unidades não concluídas.',
     '<details class="weekly-group" open><summary>'+escapeHtml(w.optional?'Última semana — tópicos residuais opcionais':'Lista completa na sequência pedagógica')+'</summary>'+currentRows+'</details>')+
    (!w.optional?covCapacityPanel(current,covDailyUnits(w,current)):'')+
@@ -4848,7 +4880,7 @@ standardizeTopicNames();
     covCapacityPanel(date,base);
  }
  function covSnapshot(){
-  const plan=covWeeks(),w=covCurrentWeek(plan.weeks),m=covWeekMetrics(w);
+  const plan=covWeeks(),w=covCurrentWeek(plan.weeks),m=covWeekMetrics(w),load=covWeekLoad(w);
   return '<section class="weekly-panel"><div class="weekly-header"><div><h2>'+
    escapeHtml(w.title)+' · '+dateBR(w.start)+' a '+dateBR(w.end)+'</h2>'+
    '<p>Metodologia adaptativa · 3h líquidas/dia · domingo a sexta, sábado livre</p></div>'+
@@ -4856,7 +4888,9 @@ standardizeTopicNames();
    '<div class="weekly-compact">'+weeklyProgress('Estudos teóricos da semana',m.done,w.units.length)+
    weeklyProgress('Abordados até agora',w.units.filter(u=>completionOf(u)||plan.base.partial[u.id]).length,w.units.length)+'</div>'+
    '<div class="weekly-meta"><span>9 esta semana · 221 nas próximas sete · 31 opcionais finais</span>'+
-   '<span>Questões TEC: 15–20 min/dia; revisões sempre antes dos estudos</span></div></section>';
+   '<span>Carga semanal projetada: '+load.projection+' / '+load.budget+' min'+(load.overload?' · Sobrecarga':'')+'</span>'+
+   '<span>Tempo semanal real informado: '+(load.registered?load.measured+' min':'N/I')+'</span>'+
+   '<span>TEC 15–20 min/dia; revisões primeiro</span></div></section>';
  }
  function covDashboard(){
   const plan=covWeeks(),w=covCurrentWeek(plan.weeks);
