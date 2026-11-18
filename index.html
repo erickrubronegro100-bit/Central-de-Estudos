@@ -2693,13 +2693,18 @@ function renderReviewGeneralPanels(){
  const reviews=studyData.reviews.filter(r=>!r.resetForRedo);
  const stages=['D+1','D+7','D+30'];
  const cards=stages.map(stage=>{
-  const rows=reviews.filter(r=>r.stage===stage),done=rows.filter(r=>r.status==='Realizada').length;
+  const rows=reviews.filter(r=>r.stage===stage&&(stage==='D+30'||r.status==='Realizada'||reviewIsRequired(r)));
+  const done=rows.filter(r=>r.status==='Realizada').length;
   const late=rows.filter(r=>statusReview(r)==='Pendentes').length;
   const future=rows.filter(r=>['Programadas','Facultativas'].includes(statusReview(r))).length;
+  if(stage==='D+30')return '<div class="review-stage"><strong>D+30</strong><small>'+done+
+   ' realizadas · '+future+' facultativas</small><small>Sem meta obrigatória de cumprimento</small></div>';
   const pct=rows.length?Math.round(100*done/rows.length):0;
-  return '<div class="review-stage"><strong>'+stage+'</strong><small>'+done+' realizadas · '+(stage==='D+30'?future+' facultativas':late+' atrasadas · '+future+' programadas')+'</small>'+
-   '<div class="review-progress-track" role="progressbar" aria-label="Revisões '+stage+' realizadas" aria-valuenow="'+done+'" aria-valuemin="0" aria-valuemax="'+rows.length+'"><i style="width:'+pct+'%"></i></div>'+
-   '<small>'+pct+'% concluído nesta etapa</small></div>';
+  return '<div class="review-stage"><strong>'+stage+'</strong><small>'+done+' realizadas · '+
+   late+' atrasadas · '+future+' programadas</small>'+
+   '<div class="review-progress-track" role="progressbar" aria-label="Revisões '+stage+
+   ' realizadas" aria-valuenow="'+done+'" aria-valuemin="0" aria-valuemax="'+rows.length+
+   '"><i style="width:'+pct+'%"></i></div><small>'+pct+'% das revisões exigidas realizado</small></div>';
  }).join('');
  const due=reviews.filter(r=>r.plannedDate===todayISO()&&['D+1','D+7'].includes(r.stage)&&!['Realizadas','Puladas','Não realizadas'].includes(statusReview(r))).length;
  const overdue=reviews.filter(r=>statusReview(r)==='Pendentes').length;
@@ -3246,25 +3251,27 @@ function pendingActivitiesPanel(backlog){
   panel('Estudos pendentes de dias anteriores',studies.length+' estudo(s) inicial(is) + '+tec.length+' complementação(ões) TEC.',
    (studyRows+tecRows)||'<div class="emptytable">Nenhum estudo anterior pendente.</div>');
 }
-function dailyFreeTimePanel(date,completed,backlog){
- const now=todayISO(),week=studyWeeks.find(w=>dateBetween(date,w.start,w.end));
- const planned=dailyStudyAssignments(date).units,todayIds=new Set(planned.map(u=>u.id));
+function estimateDayAvailability(date,completed,backlog){
+ const now=todayISO(),planned=dailyStudyAssignments(date).units;
  const pendingA=planned.filter(u=>u.flow==='A'&&!completed.has(u.id));
- const pendingReviews=studyData.reviews.filter(r=>r.status!=='Realizada'&&r.plannedDate===date&&
-  ['D+1','D+7'].includes(r.stage)&&reviewIsRequired(r));
+ const pendingReviews=studyData.reviews.filter(r=>r.status!=='Realizada'&&
+  r.plannedDate===date&&['D+1','D+7'].includes(r.stage)&&reviewIsRequired(r));
  const earlier=date===now?(backlog||{reviews:[],studies:[],tec:[]}):{reviews:[],studies:[],tec:[]};
  const earlierA=earlier.studies.filter(x=>x.unit.flow==='A').reduce((n,x)=>n+dayTheoreticalMinutes(x.unit),0);
  const earlierRevisions=earlier.reviews.length*11;
  const used=dailyRegisteredStudyMinutes(date);
  const tecLogged=studyData.attempts.filter(a=>a.date===date&&
   (a.source==='TEC'||a.platforms?.TEC)).reduce((n,a)=>n+
-   (Number.isFinite(a.durationMinutes)&&a.durationMinutes>=0?a.durationMinutes:0),0);
- // Rotina TEC é uma reserva diária única de 18 minutos (referência 15–20),
- // sem multiplicar o tempo pela quantidade de cadernos ou cobrá-lo duas vezes.
+  (Number.isFinite(a.durationMinutes)&&a.durationMinutes>=0?a.durationMinutes:0),0);
  const tecReserve=Math.max(0,18-Math.min(18,tecLogged));
  const compulsory=pendingA.reduce((n,u)=>n+dayTheoreticalMinutes(u),0)+
   pendingReviews.length*11+earlierA+earlierRevisions+tecReserve;
- const remaining=Math.max(0,180-(used.known?used.minutes:0)-compulsory);
+ return {compulsory,remaining:Math.max(0,180-(used.known?used.minutes:0)-compulsory),tecReserve,used};
+}
+function dailyFreeTimePanel(date,completed,backlog){
+ const week=studyWeeks.find(w=>dateBetween(date,w.start,w.end));
+ const planned=dailyStudyAssignments(date).units,todayIds=new Set(planned.map(u=>u.id));
+ const {remaining}=estimateDayAvailability(date,completed,backlog);
  const candidates=studyWeeks.filter(w=>!week||w.index>=week.index).flatMap(w=>{
   if(week&&w.index===week.index)return plannedStudyDates(w.start,w.end)
    .filter(day=>day>date).flatMap(day=>dailyStudyAssignments(day).units);
@@ -3307,7 +3314,9 @@ function residualComplementPanel(date,completed){
  return '<details class="history-original"><summary>Aproveitar — Complementação · '+units.length+' tópicos residuais opcionais</summary>'+
   '<p class="weekly-note">Última semana pré-prova. Esses tópicos não integram as metas obrigatórias.</p>'+
   units.map(u=>'<div class="daily-review-item"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span></div>'+
-  '<button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="Estudo inicial">Abrir bloco</button></div>').join('')+'</details>';
+  '<button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="Estudo inicial">Abrir bloco</button></div>').join('')+
+  '<p class="weekly-note">Revisão final geral seletiva, também facultativa: priorize P1/P2, erros recorrentes, acertos inseguros e conteúdos ⭐. Use as revisões já existentes, sem criar conclusão automática.</p>'+
+  '<button type="button" class="smallbtn" data-jump-view="revisoes-geral">Consultar revisões para seleção final</button></details>';
 }
 
 function renderDailyStudyWorkspace(){
@@ -3405,6 +3414,7 @@ function renderDailyStudyWorkspace(){
  };
  const blank='<div class="emptytable">Nenhuma atividade programada para a data.</div>';
  const time=dailyRegisteredStudyMinutes(date);
+ const budget=estimateDayAvailability(date,completed,backlog);
  const carryCount=backlog.count;
  const countRevsDone=revs.filter(r=>r.status==='Realizada').length;
  const countStudiesDone=entries.filter(x=>completed.has(x.unit.id)).length;
@@ -3435,7 +3445,7 @@ function renderDailyStudyWorkspace(){
  const historyPanel=originalHistorical.length?'<details class="history-original"><summary>Programação original desta data · '+originalHistorical.length+' tópico(s)</summary><div class="daily-topic-list">'+originalHistorical.map(u=>{const record=completed.get(u.id);return '<div class="daily-review-item" data-state="'+(record?'done':'pending')+'"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span><small>'+(record?'Concluído em '+dateBR(record.date):'Não concluído na programação original')+'</small></div></div>'}).join('')+'</div></details>':'';
  return weekChoices+'<div class="daily-controls"><label for="dailyDate">Data · Semana '+planWeek.number+'</label><button type="button" data-daily-step="-1">‹ Anterior</button><input type="date" id="dailyDate" min="'+availableWeeks[0].start+'" max="'+availableWeeks.at(-1).end+'" value="'+date+'"><button type="button" data-daily-step="1">Próximo ›</button><button type="button" data-daily-date="'+studyDays[0]+'">Início da semana</button></div>'+
  '<div class="daily-weekstrip">'+days+'</div><p class="daily-note">Cronograma detalhado das '+availableWeeks.length+' semanas restantes (Semanas '+availableWeeks[0].number+' a '+availableWeeks.at(-1).number+'). Na Semana '+planWeek.number+', a meta de '+weeklyGoal+' tópicos ('+planWeek.quotaA+' A + '+planWeek.quotaQ+' Q) está distribuída de domingo a sexta; total diário conferido: '+scheduledWeekCount+'. As metas futuras podem ser recalculadas após o encerramento de cada semana, preservando os registros concluídos e a sequência pedagógica. Complementações TEC seguem liberação própria. Uma revisão principal D+1 ou D+7 é programada conforme desempenho; D+30 é facultativa. Sábados livres.</p>'+
- progressHeader+progress+nextMarkup+historyPanel+pendingActivitiesPanel(backlog)+'<div class="weekly-kpi">'+metricCard('Aprofundamentos do dia',A.length)+metricCard('Tópicos de Questões do dia',Q.length)+metricCard('Complementações do dia',displayedComplements.length)+metricCard('Revisões na agenda',revs.length)+metricCard('Pendências anteriores',carryCount)+metricCard('Tempo líquido',time.known?clockMinutes(time.minutes):'N/I')+metricCard('Meta de tempo','3h00 (TEC incluso)')+metricCard('Tempo programado',clockMinutes(A.filter(x=>!completed.has(x.unit.id)).reduce((n,x)=>n+dayTheoreticalMinutes(x.unit),0)+actionableRevs.length*11+(Q.length?18:0)))+metricCard('Tempo livre estimado',clockMinutes(Math.max(0,180-(A.filter(x=>!completed.has(x.unit.id)).reduce((n,x)=>n+dayTheoreticalMinutes(x.unit),0)+actionableRevs.length*11+(Q.length?18:0)))))+'</div>'+
+ progressHeader+progress+nextMarkup+historyPanel+pendingActivitiesPanel(backlog)+'<div class="weekly-kpi">'+metricCard('Aprofundamentos do dia',A.length)+metricCard('Tópicos de Questões do dia',Q.length)+metricCard('Complementações do dia',displayedComplements.length)+metricCard('Revisões na agenda',revs.length)+metricCard('Pendências anteriores',carryCount)+metricCard('Tempo líquido',time.known?clockMinutes(time.minutes):'N/I')+metricCard('Meta de tempo','3h00 (TEC incluso)')+metricCard('Tempo programado',clockMinutes(budget.compulsory))+metricCard('Tempo livre estimado',clockMinutes(budget.remaining))+'</div>'+
 
  '<div class="section-divider"><strong>1 · Revisões — realizar primeiro</strong></div>'+
  panel('Revisões — aprofundamento',uiQuantity(revisionA.length,'revisão','revisões')+' de estudos de Aprofundamento (D+1, D+7 e D+30).',revisionA.length?groupedReviewRows(revisionA.slice().sort((a,b)=>({'D+1':0,'D+7':1,'D+30':2}[a.stage]??3)-({'D+1':0,'D+7':1,'D+30':2}[b.stage]??3))):blank)+
