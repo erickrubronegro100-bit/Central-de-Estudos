@@ -1,5 +1,16 @@
 # Registro de alterações — Central de Estudos
 
+## 18/11/2026 — Metodologia adaptativa, classificações e cronograma diário
+
+- Classificados os **308 tópicos teóricos ativos** por prioridade estratégica (P1–P4) e densidade (Curto/Médio/Denso), seguindo as tabelas consolidadas do estudante: Ciência Política 36, RICD/PL/RCCN 131, LP/LING 87 e RFIA 54. Preservados códigos, títulos, ordem, 31 residuais e todos os cadernos TEC.
+- Referências teóricas conjuntas das Etapas 1–3: **3/5/7 minutos**, exceto RFIA (**6/10/15 minutos**), conforme densidade. São referências flexíveis, sem alterações das quantidades de questões, da exigência de ineditismo ou dos critérios de correção. Inseridas notas de compatibilidade nos comandos originais, sem reconstruir suas etapas.
+- **3h líquidas por dia, de domingo a sexta**; TEC regular de 15–20 minutos dentro dessa meta; sábado sem obrigação.
+- Semana 4 encerrada operacionalmente para novos estudos, **sem dar baixa em itens não realizados**. Os tópicos A pendentes do planejamento principal são distribuídos pelas Semanas 5 a 11 (meta de referência de 230: 33/33/33/33/33/33/32, conforme histórico efetivamente disponível no navegador). Os 31 legislativos residuais ficam fora das metas obrigatórias e disponíveis em «Aproveitar — Complementação» na última semana.
+- **D+7 obrigatória**; **D+1 adaptativa** a dificuldades registradas, com opção de pular; **D+30 sempre facultativa**, agrupada por P1/P2/P3/P4, sem atraso ou pendência obrigatória. Puladas podem ser reativadas.
+- Cronograma diário preservado em sua estrutura, com **Revisões atrasadas**, **Estudos atrasados**, meta de tempo, tempo programado e folga estimada. Botão **Aproveitar tempo livre** ao final; sugestões respeitam sequência, saldos estimados e revisão D+7 futura. Abertura do bloco não registra conclusão automática. Complementação TEC continua vinculada a gatilhos.
+- Importação idempotente do relatório de **17/11/2026**: 11 revisões, 346 questões, 333 acertos e 123 minutos, com ressalva de confirmação documental da data do PL 21; registros anteriores preservados.
+- Os dados de execução permanecem armazenados no navegador (localStorage), **sem sincronização automática com ChatGPT, TEC ou outros aparelhos**. Usar exportação/importação para transportar registros; a publicação no Netlify depende do deploy da branch main.
+
 Este arquivo registra as solicitações de organização e apresentação do site. Alterações de interface não eliminam dados históricos dos estudos.
 
 ## 17/11/2026 — Reorganização LP/LING e sequência legislativa (RICD/PL/RCCN)
