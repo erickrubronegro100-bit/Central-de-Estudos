@@ -1,5 +1,18 @@
 # Registro de alterações — Central de Estudos
 
+## 17/11/2026 — Aproveitar tempo livre e D+30 opcional
+
+- Botão **Aproveitar tempo livre** no Cronograma de estudos do dia, acionado manualmente. Exibe saldo diário, estudos reais, atividades restantes, TEC, revisões obrigatórias, número de tópicos antecipáveis, D+30 elegíveis e capacidade potencial da última semana.
+- Referências: 180 minutos líquidos diários (domingo a sexta), TEC de 15–20 min, teoria pela densidade (3/5/7 min ou 6/10/15 para RFIA), questões 8 min e correção inicialmente 3 min, recalculada pela média dos tempos de correção informados. São estimativas, não limites pedagógicos.
+- Antecipações por confirmação individual: somente próximos tópicos principais, em sequência pedagógica, com transferência da data futura para a data escolhida e possibilidade de desfazer antes da conclusão. Mantêm-se IDs, cadastro, quantidade de questões, registros reais, prioridades, densidades e cálculo de revisões a partir da data efetiva da conclusão. Persistência no estado adaptativo já existente, em advances.
+- Avisos conservadores de possível sobrecarga de revisões futuras. Nenhuma atividade é executada, registrada como concluída ou acrescentada sem decisão do usuário; a capacidade de 180 minutos não é ultrapassada automaticamente.
+- D+30 restaurada exclusivamente como **D+30 disponível — opcional** quando o marco D+30 foi alcançado, ainda não houve execução e existem erros, acertos inseguros ou ⭐ documentados. Não é obrigação, não aparece como atraso e permanece elegível até ser realizada; o botão abre o material/revisão sem marcar conclusão.
+- A semana de 10–16/01/2027 exibe **Grupo A**, com os 31 tópicos residuais facultativos na ordem de ranks 101–131, e **Grupo B**, com seleção de prioridades, ⭐ e fragilidades documentadas para revisão geral seletiva. A capacidade potencial desconta TEC, revisões obrigatórias conhecidas e uma projeção conservadora de revisões D+7 dos estudos ainda alocados próximo da prova.
+- Sábado excluído dos dias obrigatórios; deslocamento de revisões já usa a função original, preservando data de referência e data ajustada. Revisões opcionais são excluídas do cálculo de atrasos e indicadores obrigatórios.
+- Validações: sintaxe de todos os scripts executáveis e parse de todos os JSONs; catálogo original de 663 unidades, documentação/comandos e históricos imutados; 31 residuais exatos (ranks 101–131); simulação de remanejamento sem duplicação e de elegibilidade/estado de D+30 opcional, com resultados aprovados.
+- Limitação de homologação: a validação sintática e as simulações são automatizadas; não foi executado teste ponta a ponta em navegador com o armazenamento local pessoal do usuário. O deploy do Netlify deve ser confirmado independentemente do commit.
+
+
 Este arquivo registra as solicitações de organização e apresentação do site. Alterações de interface não eliminam dados históricos dos estudos.
 
 ## 17/11/2026 — Estratégia de cobertura 230 + 31 e revisões adaptativas

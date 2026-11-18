@@ -2515,7 +2515,7 @@ function renderWorkspace(v){
   const stage=v.id==="revisoes-d1"?"D+1":v.id==="revisoes-d7"?"D+7":v.id==="revisoes-d30"?"D+30":null;
   const flow=v.id==="revisoes-complementacao"?"C":v.id==="revisoes-aprofundamento"?"A":null;
   const all=studyData.reviews.filter(x=>!x.resetForRedo&&(!stage||x.stage===stage)&&(!flow||reviewInitialStudyFlow(x)===flow)&&(v.id!=="revisoes-dia"||x.plannedDate===todayISO()||x.doneDate===todayISO()));
-  const reviewFilterChoices=["Programadas","Realizadas","Pendentes","Atrasadas","Não programada — decisão estratégica","Canceladas","Não realizadas"];
+  const reviewFilterChoices=["Programadas","Realizadas","Pendentes","Atrasadas","D+30 disponível — opcional","Não programada — decisão estratégica","Canceladas","Não realizadas"];
   const counts=reviewFilterChoices.map(label=>all.filter(x=>statusReview(x)===label).length);
   const choice=viewFilters[v.id]||"Programadas",shown=all.filter(x=>statusReview(x)===choice).slice().reverse();
   const groupedPanels=v.id==="revisoes-dia"?
@@ -4732,7 +4732,7 @@ standardizeTopicNames();
  function covUnitRow(u,optional=false){
   const record=completionOf(u),t=covBaseline().times[u.id]||{};
   const label=covStatus(u);
-  const guide='Densidade: '+(u.density||'N/I')+' · teoria '+covTheoryMinutes(u)+' min (referência)';
+  const guide='Prioridade: '+(u.priority||'N/I')+' · Densidade: '+(u.density||'N/I')+' · estudo inicial '+Math.ceil(covInitialCost(u))+' min (teoria '+covTheoryMinutes(u)+' + questões 8 + correção estimada)';
   return '<div class="weekly-topic '+(record?'weekly-topic-done':'')+'" data-cov-record="'+escapeHtml(u.id)+'">'+
    '<div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span>'+
    '<small>'+escapeHtml(subjectLabel(u.subject))+' · '+escapeHtml(label)+' · '+escapeHtml(guide)+'</small>'+
@@ -4984,7 +4984,7 @@ standardizeTopicNames();
   }
   const related=studyData.reviews.filter(r=>!r.resetForRedo&&covReviewMatches(study,r));
   let changed=false;
-  for(const r of related.filter(r=>r.stage==='D+30'&&r.status!=='Realizada'&&!r.adaptiveExceptional))
+  for(const r of related.filter(r=>r.stage==='D+30'&&r.status!=='Realizada'&&r.status!=='D+30 disponível — opcional'&&!r.adaptiveExceptional))
    if(covSuspend(r))changed=true;
   const active12=related.filter(r=>['D+1','D+7'].includes(r.stage)&&r.status==='Realizada');
   if(active12.length){
@@ -5150,6 +5150,435 @@ standardizeTopicNames();
   }
   covDataUpdate();
  },true);
+
+ // Extensão de cronograma facultativo; mantém as funções e os registros originais.
+ const COV_OPT='D+30 disponível — opcional';
+ const covOriginalDailyUnits=covDailyUnits;
+ const covOriginalReconcileStudy=covReconcileStudy;
+ const covOriginalReviewManager=covReviewManager;
+ let covFreeShown=false,covFreeSelectedDay='';
+ function covAdvanceMap(){
+   const base=covBaseline();
+   if(!base.advances||typeof base.advances!=='object')base.advances={};
+   return base.advances;
+ }
+ function covCorrectionReference(){
+   const v=Object.values(covBaseline().times||{}).map(t=>Number(t?.correction))
+     .filter(n=>Number.isFinite(n)&&n>=0);
+   return v.length?v.reduce((a,b)=>a+b,0)/v.length:COV_REFERENCE.correction;
+ }
+ function covInitialCost(u){return covTheoryMinutes(u)+COV_REFERENCE.question+covCorrectionReference();}
+ function covRemainingCost(u){
+   if(completionOf(u))return 0;
+   const t=covBaseline().times?.[u.id]||{};
+   return Math.max(0,covInitialCost(u)-(Number(t.theory)||0)-(Number(t.questions)||0)-(Number(t.correction)||0));
+ }
+ function covOriginDay(id){
+   for(const w of covWeeks().weeks.filter(w=>!w.optional))
+     for(const day of covDates(w.start,w.end))
+       if(covOriginalDailyUnits(w,day).some(u=>u.id===id))return day;
+   return '';
+ }
+ covDailyUnits=function(w,day){
+   if(!w||w.optional||day<w.start||day>w.end||covDateDow(day)===6)return [];
+   const changes=covAdvanceMap();
+   const orig=covOriginalDailyUnits(w,day).filter(u=>!changes[u.id]||changes[u.id].date===day);
+   const extras=Object.entries(changes).filter(([id,item])=>item?.date===day&&covBaseline().mainIds.includes(id))
+     .map(([id])=>planById.get(id)).filter(Boolean);
+   const order=new Map(covBaseline().mainIds.map((id,index)=>[id,index]));
+   return [...new Map([...orig,...extras].map(u=>[u.id,u])).values()]
+     .sort((a,b)=>(order.get(a.id)??99999)-(order.get(b.id)??99999));
+ };
+ covScheduledReviews=function(day){
+   const today=todayISO();
+   return studyData.reviews.filter(r=>!r.resetForRedo&&!r.closedNoFurtherTecReviews&&r.stage!=='D+30'&&
+     ![COV_NOT,'Realizada','Cancelada'].includes(r.status)&&r.plannedDate&&
+     (r.plannedDate===day||(day===today&&r.plannedDate<today)));
+ };
+ function covSignals(study){
+   const unit=planById.get(study.planId)||findTopicUnit(study.subject,study.topic);
+   const relevant=studyData.attempts.filter(a=>!a.resetForRedo&&
+      (a.studyId===study.id||(unit&&a.planId===unit.id)||
+       (a.subject===study.subject&&topicKey(a)===topicKey(study))));
+   const errors=relevant.reduce((n,a)=>n+(Number(a.ws)||0)+(Number(a.wu)||0)+(Number(a.wrongOther)||0),0);
+   const insecure=relevant.reduce((n,a)=>n+(Number(a.cu)||0),0);
+   const stars=[study,unit,...relevant].some(x=>x&&(x.starred===true||x.starPoints?.length>0||
+      x.starredPoints?.length>0||/⭐/.test([x.focus,x.notes,x.observations,x.title].filter(Boolean).join(' '))));
+   return {unit,errors,insecure,stars};
+ }
+ function covD30Info(study,day=todayISO()){
+   if(!study||study.status!=='Concluído'||study.resetForRedo||!study.date)return null;
+   const original=shiftReviewDate(study.date,30);
+   if(!original||original>day)return null;
+   const related=studyData.reviews.filter(r=>!r.resetForRedo&&covReviewMatches(study,r)&&r.stage==='D+30');
+   if(related.some(r=>r.status==='Realizada'))return null;
+   const evidence=covSignals(study);
+   if(!(evidence.errors||evidence.insecure||evidence.stars))return null;
+   return {study,unit:evidence.unit,original,evidence,review:related[0]||null};
+ }
+ function covD30Eligible(day=todayISO()){
+   const seen=new Set();
+   return studyData.studies.filter(s=>s.status==='Concluído'&&!s.resetForRedo)
+     .map(s=>covD30Info(s,day)).filter(x=>{
+       if(!x||!x.unit||seen.has(x.unit.id))return false;
+       seen.add(x.unit.id);return true;
+     }).sort((a,b)=>a.original.localeCompare(b.original));
+ }
+ covReconcileStudy=function(study){
+   let changed=covOriginalReconcileStudy(study);
+   if(!study||study.status!=='Concluído'||study.resetForRedo)return changed;
+   const eligible=covD30Info(study);
+   const pending=studyData.reviews.filter(r=>!r.resetForRedo&&covReviewMatches(study,r)&&
+     r.stage==='D+30'&&r.status!=='Realizada');
+   if(eligible){
+     let row=pending[0];
+     if(!row){
+       row={id:freshId(),studyId:study.id,planId:study.planId,subject:study.subject,
+         topic:study.topic,stage:'D+30',doneDate:''};
+       studyData.reviews.push(row);changed=true;
+     }
+     const fields={status:COV_OPT,optional:true,autoScheduled:false,
+       originalPlannedDate:eligible.original,
+       plannedDate:nextPermittedReviewDate(eligible.original),studyId:study.id};
+     for(const [k,v] of Object.entries(fields))if(row[k]!==v){row[k]=v;changed=true;}
+     for(const duplicate of pending.slice(1))if(duplicate.status!==COV_NOT){
+       covSuspend(duplicate);changed=true;
+     }
+   }else for(const row of pending)if(row.status!==COV_NOT){
+     covSuspend(row);changed=true;
+   }
+   return changed;
+ };
+ covStatusReview=function(r){
+   if(r.stage==='D+30'&&r.status!=='Realizada')return r.status===COV_OPT?COV_OPT:COV_NOT;
+   if(r.resetForRedo)return 'Reiniciada';
+   if(r.status===COV_NOT)return COV_NOT;
+   if(r.status==='Cancelada')return 'Canceladas';
+   if(r.closedNoFurtherTecReviews)return 'Não realizadas';
+   if(r.status==='Realizada')return 'Realizadas';
+   if(r.plannedDate&&r.plannedDate<todayISO())return 'Atrasadas';
+   return r.status==='Pendente'?'Pendentes':'Programadas';
+ };
+ function covTecRemaining(day){
+   const a=studyData.attempts.filter(x=>x.date===day&&!x.resetForRedo&&x.source==='TEC');
+   const spent=a.reduce((n,x)=>n+(Number(x.durationMinutes)||0),0);
+   const fromStudies=studyData.studies.filter(s=>s.date===day&&s.status==='Concluído'&&
+     ['Q','C'].includes(planById.get(s.planId)?.flow))
+     .reduce((n,s)=>n+(Number(s.durationMinutes)||0),0);
+   return covDateDow(day)===6?0:Math.max(0,COV_REFERENCE.tecHigh-Math.max(spent,fromStudies));
+ }
+ function covReviewCost(r){
+   const durations=studyData.reviews.filter(x=>x.stage===r.stage&&x.status==='Realizada'&&
+     Number.isFinite(x.durationMinutes)&&x.durationMinutes>0).map(x=>x.durationMinutes);
+   return durations.length?durations.reduce((a,b)=>a+b,0)/durations.length:11;
+ }
+ function covEarlierPending(day){
+   const selected=new Map();
+   for(const w of covWeeks().weeks.filter(w=>!w.optional&&w.start<day))
+    for(const date of covDates(w.start,w.end)){
+      if(date>=day)break;
+      for(const u of covDailyUnits(w,date))if(!completionOf(u))selected.set(u.id,u);
+    }
+   return [...selected.values()];
+ }
+ function covDailyCapacity(day){
+   const w=covWeeks().weeks.find(w=>!w.optional&&day>=w.start&&day<=w.end);
+   const todayUnits=w?covDailyUnits(w,day):[],backlog=covEarlierPending(day),
+     pending=[...new Map([...backlog,...todayUnits].map(u=>[u.id,u])).values()].filter(u=>!completionOf(u));
+   const used=covRecorded(day),reviews=covScheduledReviews(day),
+     studies=pending.reduce((n,u)=>n+covRemainingCost(u),0),
+     reviewMinutes=reviews.reduce((n,r)=>n+covReviewCost(r),0),
+     tec=covTecRemaining(day),limit=covDateDow(day)===6?0:COV_REFERENCE.daily;
+   const remaining=studies+reviewMinutes+tec;
+   return {day,limit,used,reviews,backlog,pending,studies,reviewMinutes,tec,remaining,
+     free:Math.max(0,limit-used.minutes-remaining),
+     excess:Math.max(0,used.minutes+remaining-limit)};
+ }
+ function covNextAdvances(day,free){
+   if(day<todayISO()||day>'2027-01-08'||covDateDow(day)===6)return [];
+   const map=covAdvanceMap(),out=[];let used=0;
+   for(const u of covWeeks().main){
+     if(completionOf(u)||map[u.id])continue;
+     const original=covOriginDay(u.id);
+     if(!original||original<=day)continue;
+     const cost=covInitialCost(u);
+     if(used+cost>free+0.001)break;
+     out.push({unit:u,original,cost});used+=cost;
+   }
+   return out;
+ }
+ function covUpcomingRisk(day){
+   const days=[1,7].map(n=>nextPermittedReviewDate(shiftReviewDate(day,n)))
+     .filter((d,i,a)=>d&&d<'2027-01-17'&&a.indexOf(d)===i);
+   return days.map(d=>{
+     const b=covDailyCapacity(d);
+     return {day:d,over:b.used.minutes+b.remaining+11>COV_REFERENCE.daily};
+   });
+ }
+ function covLastWeekCapacity(){
+   const plan=covWeeks(),last=plan.weeks.at(-1),days=covDates(last.start,last.end);
+   const tec=days.length*COV_REFERENCE.tecHigh;
+   const confirmed=days.reduce((n,d)=>n+covScheduledReviews(d).reduce((s,r)=>s+covReviewCost(r),0),0);
+   const maybe=new Set();
+   for(const w of plan.weeks.filter(w=>!w.optional))
+    for(const d of covDates(w.start,w.end)){
+      const future=nextPermittedReviewDate(shiftReviewDate(d,7));
+      if(!days.includes(future))continue;
+      for(const u of covDailyUnits(w,d))if(!completionOf(u))maybe.add(u.id);
+    }
+   const provisional=maybe.size*11;
+   return {total:days.length*COV_REFERENCE.daily,tec,confirmed,provisional,
+     free:Math.max(0,days.length*COV_REFERENCE.daily-tec-confirmed-provisional),
+     pending:plan.main.filter(u=>!completionOf(u)).length};
+ }
+ covForecast=function(units,day){
+   const init=units.filter(u=>!completionOf(u)).reduce((n,u)=>n+covRemainingCost(u),0),
+     rev=covScheduledReviews(day),estimatedReviews=rev.reduce((n,r)=>n+covReviewCost(r),0),
+     tec=covTecRemaining(day);
+   return {init,reviews:rev.length,estimatedReviews,tec,total:init+estimatedReviews+tec};
+ };
+ covCapacityPanel=function(day,units){
+   const b=covDailyCapacity(day),last=covLastWeekCapacity();
+   return '<div class="weekly-kpi">'+
+     metricCard('Tempo diário disponível',b.limit+' min','Domingo a sexta')+
+     metricCard('Tempo efetivamente estudado',b.used.known||b.used.partial?b.used.minutes+' min':'N/I',
+       b.used.unknown?'Algumas durações não informadas':'Duração real registrada')+
+     metricCard('Atividades restantes',Math.ceil(b.remaining)+' min','Inclui revisões, teoria, questões, correção e TEC')+
+     metricCard('Tempo livre estimado',Math.floor(b.free)+' min',b.excess?'Sobrecarga '+Math.ceil(b.excess)+' min':'Saldo facultativo')+
+     metricCard('Tópicos antecipáveis',covNextAdvances(day,b.free).length,'Sem alterar a sequência')+
+     metricCard('Revisões obrigatórias',b.reviews.length,Math.ceil(b.reviewMinutes)+' min estimados')+
+     metricCard('D+30 opcionais elegíveis',covD30Eligible(day).length,'Sem prazo de cobrança')+
+     metricCard('Capacidade na última semana',Math.floor(last.free)+' min','Projeção sujeita a revisões')+
+     '</div>'+
+     (b.excess?'<p class="daily-note"><strong>Aviso de sobrecarga:</strong> '+Math.ceil(b.excess)+' min acima da média de 180 min. Nenhuma atividade será incluída automaticamente.</p>':'')+
+     '<p class="daily-note">Correção estimada: '+covCorrectionReference().toFixed(1).replace('.',',')+
+       ' min por estudo (média real, quando registrada; referência provisória de 3 min). Os tempos não limitam a aprendizagem.</p>';
+ };
+ covWeekMetrics=function(w){
+   const assigned=w.optional?w.units:covDates(w.start,w.end).flatMap(day=>covDailyUnits(w,day)),
+     pending=assigned.filter(u=>!completionOf(u));
+   return {done:assigned.length-pending.length,remaining:pending.length,
+     theory:pending.reduce((n,u)=>n+covTheoryMinutes(u),0),
+     initProjected:pending.reduce((n,u)=>n+covRemainingCost(u),0)};
+ };
+ covWeekLoad=function(w){
+   const days=covDates(w.start,w.end),budget=days.length*COV_REFERENCE.daily;
+   const entries=days.map(day=>({day,forecast:covForecast(w.optional?[]:covDailyUnits(w,day),day),
+     actual:covRecorded(day)}));
+   const projection=entries.reduce((n,x)=>n+x.forecast.total+x.actual.minutes,0);
+   const measured=entries.reduce((n,x)=>n+x.actual.minutes,0);
+   const components={theory:entries.reduce((n,x)=>n+x.forecast.init,0),
+     questions:0,corrections:0,
+     reviews:entries.reduce((n,x)=>n+x.forecast.estimatedReviews,0),
+     tec:entries.reduce((n,x)=>n+x.forecast.tec,0)};
+   const overloadedDays=entries.filter(x=>x.forecast.total+x.actual.minutes>COV_REFERENCE.daily).map(x=>x.day);
+   return {budget,projection,measured,components,
+     registered:entries.some(x=>x.actual.known||x.actual.partial),
+     overloadedDays,overload:projection>budget};
+ };
+ function covOptionalEntry(info){
+   const u=info.unit;
+   return '<div class="weekly-topic"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+
+     '</span><small>'+COV_OPT+' · marco '+dateBR(info.original)+' · erros '+info.evidence.errors+
+     ' · acertos inseguros '+info.evidence.insecure+(info.evidence.stars?' · ⭐':'')+'</small></div>'+
+     '<button class="smallbtn" type="button" data-cov-opt-open="'+escapeHtml(u.id)+'">Realizar D+30 opcional</button></div>';
+ }
+ function covSuggestions(day){
+   const b=covDailyCapacity(day),advance=covNextAdvances(day,b.free),optional=covD30Eligible(day);
+   return '<section class="weekly-panel"><div class="weekly-header"><div><h2>Aproveitamento facultativo</h2>'+
+     '<p>Saldo estimado: '+Math.floor(b.free)+' min; nenhuma tarefa é adicionada automaticamente.</p></div></div>'+
+     panel('4. Antecipação teórica',advance.length+' tópico(s) futuros cabem no saldo previsto.',
+       advance.length?advance.map(x=>{
+         const u=x.unit,risk=covUpcomingRisk(day).filter(r=>r.over);
+         return '<div class="weekly-topic"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+
+           '</span><small>Prioridade '+escapeHtml(u.priority||'N/I')+' · '+escapeHtml(u.density||'N/I')+
+           ' · '+Math.ceil(x.cost)+' min estimados (teoria '+covTheoryMinutes(u)+' + questões 8 + correção '+
+           covCorrectionReference().toFixed(1).replace('.',',')+') · origem '+dateBR(x.original)+
+           (risk.length?' · Possível sobrecarga de revisões: '+risk.map(r=>dateBR(r.day)).join(', '):'')+
+           '</small></div><button class="smallbtn" type="button" data-cov-advance="'+escapeHtml(u.id)+
+           '" data-cov-target="'+day+'">Antecipar este tópico</button></div>';
+       }).join(''):'<p class="daily-note">Sem antecipação possível dentro do tempo livre ou da sequência disponível.</p>')+
+     panel('5. Revisões D+30 facultativas',optional.length+' disponível(is), sem atraso se não realizadas.',
+       optional.length&&b.free>=11?optional.map(covOptionalEntry).join(''):
+        '<p class="daily-note">'+(optional.length?'Há D+30 elegíveis, mas não há 11 minutos de margem estimada.':'Nenhuma D+30 elegível encontrada.')+'</p>')+
+     '<p class="daily-note">Você pode encerrar o dia com tempo livre. D+30 não realizada não vira pendência.</p></section>';
+ }
+ function covFinalChoices(){
+   const b=covBaseline();
+   if(!Array.isArray(b.finalChoices))b.finalChoices=[];
+   return b.finalChoices;
+ }
+ function covLastWeekPanel(){
+   const plan=covWeeks(),selected=new Set(covFinalChoices()),last=covLastWeekCapacity();
+   const candidates=plan.main.filter(u=>completionOf(u)).map(u=>{
+      const ev=covSignals(completionOf(u)),priority=/^(P1|P2|Alta)$/i.test(String(u.priority||''));
+      return {u,ev,weight:ev.errors*3+ev.insecure*2+(ev.stars?4:0)+(priority?1:0)};
+    }).filter(x=>x.weight>0||selected.has(x.u.id))
+    .sort((a,b)=>b.weight-a.weight||a.u.order-b.u.order);
+   const checks=candidates.map(x=>'<label class="weekly-topic"><input type="checkbox" data-cov-final="'+
+       escapeHtml(x.u.id)+'" '+(selected.has(x.u.id)?'checked':'')+'><span><strong>'+escapeHtml(x.u.code)+
+       '</strong> · '+escapeHtml(x.u.title)+'<small> Prioridade '+escapeHtml(x.u.priority||'N/I')+
+       ' · erros '+x.ev.errors+' · acertos inseguros '+x.ev.insecure+(x.ev.stars?' · ⭐':'')+
+       '</small></span></label>').join('');
+   return '<p class="daily-note">10 a 16/01/2027 · semana pré-prova facultativa. Sábado permanece livre.</p>'+
+     '<div class="weekly-kpi">'+metricCard('Residuais opcionais',31)+
+     metricCard('Capacidade estimada da semana',Math.floor(last.free)+' min','TEC e revisões projetadas descontados')+
+     metricCard('Principais pendentes',last.pending,'Risco de ocupação da semana final')+
+     metricCard('Seleções para revisão geral',selected.size,'Sem execução automática')+'</div>'+
+     panel('Grupo A — Tópicos residuais opcionais','31 unidades, ordem pedagógica original; estudo parcial ou completo.',
+       plan.residual.map(u=>covUnitRow(u,true)).join(''))+
+     panel('Grupo B — Revisão geral final seletiva','Marque prioridades, ⭐, erros e dificuldades. Use questões inéditas e correção direcionada, sem bateria integral automática.',
+       checks||'<p class="daily-note">Nenhum ponto prioritário ou frágil identificável nos registros disponíveis.</p>')+
+     '<p class="daily-note">A capacidade é potencial: novas revisões e estudos principais remanescentes podem reduzi-la.</p>';
+ }
+ covDailyView=function(){
+   const p=covWeeks(),today=todayISO(),w=covCurrentWeek(p.weeks,today);
+   if(w.optional)return covLastWeekPanel();
+   const days=covDates(w.start,w.end),date=covDaySelection&&days.includes(covDaySelection)?
+      covDaySelection:(days.find(d=>d>=today)||days.at(-1));
+   if(!date)return '<p class="daily-note">Sábado livre de tarefas obrigatórias.</p>';
+   if(covFreeSelectedDay!==date){covFreeShown=false;covFreeSelectedDay=date;}
+   const units=covDailyUnits(w,date),backlog=covEarlierPending(date),revs=covScheduledReviews(date);
+   const tec=planUnits.filter(u=>u.flow==='C').filter(u=>{
+      const gate=complementGate(u);
+      return gate?.ready&&(gate.scheduled===date||completionOf(u)?.date===date);
+   });
+   const tabs=days.map(d=>'<button type="button" data-cov-day="'+d+'" aria-pressed="'+(d===date)+'">'+
+      ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][covDateDow(d)]+' · '+dateBR(d)+
+      '<small>'+covDailyUnits(w,d).length+' tópico(s)</small></button>').join('');
+   const moved=units.filter(u=>Boolean(covAdvanceMap()[u.id]));
+   return covIssueText(p)+'<div class="daily-days">'+tabs+'</div>'+
+     '<div class="weekly-kpi">'+metricCard('Estudos previstos',units.length)+
+     metricCard('Estudos concluídos',units.filter(u=>completionOf(u)).length)+
+     metricCard('Revisões obrigatórias',revs.length)+
+     metricCard('Pendências anteriores',backlog.length)+'</div>'+
+     panel('1. Revisões obrigatórias',revs.length+' revisão(ões) programada(s) ou atrasada(s).',
+       revs.length?revs.map(covReviewLine).join(''):'<p class="daily-note">Nenhuma revisão obrigatória para a data.</p>')+
+     panel('2. Estudos iniciais — '+dateBR(date),'Inclui somente os remanejamentos confirmados.',
+       units.length?units.map(u=>covUnitRow(u)).join(''):'<p class="daily-note">Nenhuma unidade prevista.</p>')+
+     (moved.length?'<details class="weekly-group"><summary>Antecipações confirmadas · '+moved.length+'</summary>'+
+       moved.map(u=>'<div class="weekly-topic"><div><strong>'+escapeHtml(u.code)+
+          '</strong><span>Origem '+dateBR(covAdvanceMap()[u.id].original)+' · destino '+dateBR(date)+'</span></div>'+
+          (completionOf(u)?'<small>Já concluído</small>':
+          '<button class="smallbtn" type="button" data-cov-undo="'+escapeHtml(u.id)+'">Desfazer antecipação</button>')+
+         '</div>').join('')+'</details>':'')+
+     (backlog.length?'<details class="weekly-group"><summary>Pendências anteriores · '+backlog.length+'</summary>'+
+       backlog.map(u=>covUnitRow(u)).join('')+'</details>':'')+
+     panel('3. TEC — 15 a 20 minutos','Reserva já incluída no cálculo; filtros e cadernos originais preservados.',
+       tec.length?tec.map(u=>'<div class="weekly-topic"><div><strong>'+escapeHtml(u.code)+
+         '</strong><span>'+escapeHtml(u.title)+'</span></div><button class="smallbtn" data-open-topic="'+
+         escapeHtml(u.id)+'">Abrir TEC</button></div>').join(''):
+        '<p class="daily-note">Reservar 15–20 min para filtros, sem caderno específico nesta data.</p>')+
+     covCapacityPanel(date,units)+
+     '<div class="weekly-actions"><button type="button" class="primary" data-cov-free="1">'+
+        (covFreeShown?'Ocultar sugestões':'Aproveitar tempo livre')+'</button></div>'+
+     (covFreeShown?covSuggestions(date):'')+
+     '<p class="daily-note">É permitido encerrar o estudo do dia mesmo com tempo livre.</p>';
+ };
+ covWeeklyView=function(){
+   const p=covWeeks(),today=todayISO(),w=covCurrentWeek(p.weeks,today),last=covLastWeekCapacity();
+   const rows=p.weeks.map(x=>{
+      const assigned=x.optional?x.units:covDates(x.start,x.end).flatMap(d=>covDailyUnits(x,d));
+      const done=assigned.filter(u=>completionOf(u)).length,load=covWeekLoad(x);
+      return '<tr><th>'+escapeHtml(x.title)+'</th><td>'+dateBR(x.start)+' a '+dateBR(x.end)+
+        '</td><td>'+assigned.length+'</td><td>'+done+'</td><td>'+assigned.length-done+
+        '</td><td>'+Math.ceil(load.projection)+' / '+load.budget+' min'+
+        (load.overload?' · SOBRECARGA':'')+'</td></tr>';
+   }).join('');
+   const here=w.optional?w.units:covDates(w.start,w.end).flatMap(d=>covDailyUnits(w,d));
+   return covIssueText(p)+'<div class="weekly-kpi">'+metricCard('Principais selecionados',p.main.length)+
+      metricCard('Principais concluídos',p.main.filter(u=>completionOf(u)).length)+
+      metricCard('Residuais opcionais',p.residual.length)+
+      metricCard('Capacidade final projetada',Math.floor(last.free)+' min')+'</div>'+
+      panel('Distribuição semanal atualizada','Um tópico antecipado deixa sua data futura original, sem duplicar registros.',
+        '<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Bloco</th><th>Período</th><th>Unidades</th><th>Concluídas</th><th>Pendentes</th><th>Projeção/capacidade</th></tr></thead><tbody>'+
+        rows+'</tbody></table></div>')+
+      (w.optional?covLastWeekPanel():panel('Bloco em destaque — '+w.title,
+         'Tópicos na sequência efetivamente atribuída a esta semana.',
+         here.map(u=>covUnitRow(u)).join(''))+
+       covCapacityPanel(covDates(w.start,w.end).find(d=>d>=today)||w.end,[])+
+       '<details class="weekly-group"><summary>Prévia dos 31 residuais opcionais</summary>'+
+       p.residual.map(u=>covUnitRow(u,true)).join('')+'</details>');
+ };
+ covSnapshot=function(){
+   const p=covWeeks(),w=covCurrentWeek(p.weeks),m=covWeekMetrics(w),load=covWeekLoad(w);
+   const assigned=w.optional?w.units:covDates(w.start,w.end).flatMap(d=>covDailyUnits(w,d));
+   return '<section class="weekly-panel"><div class="weekly-header"><div><h2>'+escapeHtml(w.title)+
+     '</h2><p>3h líquidas · domingo a sexta · antecipações facultativas</p></div>'+
+     '<button type="button" class="dash-link" data-jump-view="estudos-semanal">Metas semanais</button></div>'+
+     '<div class="weekly-compact">'+weeklyProgress('Estudos teóricos da semana',m.done,assigned.length)+
+     weeklyProgress('Principais concluídos',p.main.filter(u=>completionOf(u)).length,p.main.length)+'</div>'+
+     '<div class="weekly-meta"><span>Carga projetada: '+Math.ceil(load.projection)+' / '+load.budget+
+     ' min</span><span>TEC 15–20 min; revisões primeiro</span>'+
+     '<span>31 residuais opcionais reservados para 10–16/01/2027</span></div></section>';
+ };
+ covReviewSummary=function(){
+   const rev=studyData.reviews.filter(r=>!r.resetForRedo);
+   return '<div class="weekly-kpi">'+metricCard('Programadas',
+      rev.filter(r=>covStatusReview(r)==='Programadas').length)+
+     metricCard('Concluídas',rev.filter(r=>r.status==='Realizada').length)+
+     metricCard('Atrasadas',rev.filter(r=>covStatusReview(r)==='Atrasadas').length)+
+     metricCard(COV_OPT,covD30Eligible().length,'Fora do cálculo obrigatório')+'</div>';
+ };
+ covReviewManager=function(){
+   const original=covOriginalReviewManager()
+     .replace(/<label>Justificativa D\+30 excepcional[\s\S]*?<\/label>/g,'')
+     .replace(/<button type="button" class="smallbtn" data-cov-d30="[^"]*">[^<]*<\/button>/g,'')
+     .replace(/D\+30 excepcional/g,'D+30 opcional');
+   const optional=covD30Eligible();
+   return original+panel(COV_OPT,'Somente após o marco de 30 dias e com fragilidade ou ⭐ documentado.',
+      optional.length?optional.map(covOptionalEntry).join(''):
+       '<p class="daily-note">Nenhuma revisão opcional elegível nesta data.</p>');
+ };
+ document.addEventListener('click',function(e){
+   const btn=e.target.closest('[data-cov-free],[data-cov-advance],[data-cov-undo],[data-cov-opt-open]');
+   if(!btn)return;
+   e.preventDefault();e.stopPropagation();
+   if(btn.dataset.covFree){
+      covFreeShown=!covFreeShown;
+      if(activeView==='estudos-cronograma-dia')renderWorkspace(workspaceById[activeView]);
+      return;
+   }
+   const id=btn.dataset.covAdvance||btn.dataset.covUndo||btn.dataset.covOptOpen,
+      unit=planById.get(id);
+   if(!unit)return;
+   if(btn.dataset.covOptOpen){
+      if(!covD30Eligible().some(x=>x.unit.id===id)){
+         toast('D+30 não elegível neste momento.');return;
+      }
+      openTopicBlock(id,'D+30');return;
+   }
+   if(btn.dataset.covUndo){
+      if(completionOf(unit)){toast('O estudo concluído mantém sua data real.');return;}
+      delete covAdvanceMap()[id];covSave();covDataUpdate();
+      toast('Antecipação desfeita; data original restaurada.');return;
+   }
+   const day=btn.dataset.covTarget;
+   if(!day||day<todayISO()||day>'2027-01-08'||covDateDow(day)===6||
+      unit.legislativePhase==='Residual'||!covWeeks().main.some(u=>u.id===id)){
+      toast('Antecipação indisponível para a data ou tópico.');return;
+   }
+   const b=covDailyCapacity(day),next=covNextAdvances(day,b.free)[0];
+   if(!next||next.unit.id!==id){
+      toast('Antecipe primeiro o próximo tópico da sequência e confira o saldo.');return;
+   }
+   const risk=covUpcomingRisk(day).filter(x=>x.over);
+   const notice=risk.length?'\nPossível sobrecarga futura em '+risk.map(x=>dateBR(x.day)).join(', ')+
+      ' caso sejam necessárias revisões após a antecipação.':'';
+   if(!confirm('Antecipar '+unit.code+' — '+unit.title+' para '+dateBR(day)+
+      '?\nPrevisão: '+Math.ceil(next.cost)+' min; origem '+dateBR(next.original)+
+      '. Não será marcado como concluído.'+notice))return;
+   covAdvanceMap()[id]={date:day,original:next.original,confirmedAt:todayISO()};
+   covSave();covDataUpdate();toast('Tópico remanejado; a data futura foi liberada.');
+ },true);
+ document.addEventListener('change',function(e){
+    const id=e.target?.dataset?.covFinal;
+    if(!id||!planById.has(id))return;
+    const selection=new Set(covFinalChoices());
+    if(e.target.checked)selection.add(id);else selection.delete(id);
+    covBaseline().finalChoices=[...selection];covSave();covDataUpdate();
+ },true);
+
  // Substituir apenas os pontos de apresentação e programação universal,
  // preservando cadastro, registros históricos, filtros TEC e relatórios originais.
  ensureScheduledReviews=covEnsureScheduled;
