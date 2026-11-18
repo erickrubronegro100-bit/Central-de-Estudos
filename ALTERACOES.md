@@ -2,6 +2,20 @@
 
 Este arquivo registra as solicitações de organização e apresentação do site. Alterações de interface não eliminam dados históricos dos estudos.
 
+## 17/11/2026 — Estratégia de cobertura 230 + 31 e revisões adaptativas
+
+- Aplicada a metodologia final enviada em 17/11/2026, com **3h líquidas/dia de domingo a sexta, sábado livre, meta de 18h/semana, TEC 15–20 min/dia dentro das 3h**. Os tempos de questões (8 min) e correção (3 min) são hipóteses de projeção, não tempos reais nem limites.
+- **Novo plano teórico:** 9 unidades para 18–20/11/2026; 221 distribuídas nas semanas de 22/11/2026 a 08/01/2027 (metas **32,32,32,32,31,31,31**); **31 unidades legislativas residuais opcionais** reservadas para 10–16/01/2027, todas identificadas pelo rank 101–131 da sequência integrada RICD/PL/RCCN.
+- O plano é calculado **somente com as unidades teóricas pendentes do histórico do navegador** e congela a seleção inicial em chave própria `central-estudos-cobertura-adaptativa-20261118-v1` para evitar que uma conclusão remova a unidade da semana. A referência nominal é 261 pendências (230 obrigatórias + 31 opcionais); se a base real do navegador diferir, mostra-se aviso explícito, sem criar/excluir estudos ou mudar conclusões.
+- Preservada a ordem pedagógica dos tópicos, seus identificadores, densidade e prioridades. A rotina antiga de metas A/Q históricas foi mantida como fonte de histórico, mas os novos painéis de **visão geral, cronograma diário e metas semanais** passam a utilizar o plano teórico adaptativo. Filtros e cadernos TEC continuam com cadastro independente.
+- **Novos tempos de teoria conjunta Etapas 1–3:** 3/5/7 minutos (curto/médio/denso) para RICD, RCCN, PL, LP/LING e CP; **6/10/15 minutos** para RFIA. Flexíveis, sem alteração de questões.
+- **Revisões adaptativas:** primeira revisão D+1 ou D+7 conforme desempenho documentado e prioridade disponível; escolha manual editável; segunda revisão possível com limite de 10 como referência, sem bloqueio automático; D+30 somente excepcional com justificativa. A rotina original de criação universal D+1/D+7/D+30 foi desligada desde a inicialização. Revisões realizadas permanecem realizadas.
+- **Status separado “Não programada — decisão estratégica”** para revisões descartadas pelo novo plano; sem contabilização como atraso/conclusão. Datas originalmente previstas são preservadas em campos históricos. Sábados sem obrigação; datas de revisão que incidirem em sábado são transferidas para domingo, conservando a referência original.
+- Painel de revisão permite selecionar a principal, uma adicional e D+30 excepcional; painel teórico permite registrar duração REAL separada de teoria, questões e correções, além de estudo parcial ou completo de residuais. O progresso parcial não conclui a unidade.
+- **Comandos atualizados:** comando geral e comandos individuais de estudo/revisão/TEC com nova carga, tempos e estratégia; mantidas seis etapas no estudo inicial e cinco na revisão com avaliação integrada; D+30 seletiva somente quando escolhida; quantidades aprovadas de questões permanecem inalteradas.
+- Testes estáticos concluídos: JavaScript sintaticamente válido, 663 entradas originais (650 ativas), 308 teóricas, 31 residuais exatos, 9+221=230, 26 comandos ativos/12 históricos, mesmas chaves de dados históricos. O número exato de pendências pessoais depende do armazenamento local do usuário; não foi forçado a 261.
+- **Netlify:** deploy de produção requer verificação externa após o commit; atualização no GitHub não prova por si só publicação na hospedagem.
+
 ## 17/11/2026 — Metodologia definitiva e densidades (comandos integrados)
 
 - Aplicada a metodologia definitiva CEBRASPE a todas as modalidades, com o novo comando geral **GERAL-01** e atualização dos **6 comandos teóricos de estudo inicial**, **14 comandos de revisão**, comandos de estudos exclusivos TEC, Complementação TEC e relatório diário.
