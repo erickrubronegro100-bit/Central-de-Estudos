@@ -4776,13 +4776,13 @@ function importNov17RecordsOnce(){
  ["PL 19","D+1",14,38,2,1,2,"Seguro","Pontual","Erros Q19/Q30/Q31; inseguranças Q11/Q28"],
  ["LP/LING 15","D+1",11,25,1,2,0,"Seguro","Pontual","Erros Q11/Q13; insegurança Q26"],
  ["PL 20","D+1",10,25,1,1,1,"Seguro","Pontual","Erros Q03/Q20; insegurança Q10"],
- ["PL 21","D+1",18,36,6,1,2,"Seguro, com ressalvas","Pontual","Data informada 17/11, sem confirmação expressa; erros Q07/Q24/Q31; seis acertos inseguros"],
+ ["PL 21","D+1",18,36,6,1,2,"Seguro","Pontual","Data informada 17/11, sem confirmação expressa; erros Q07/Q24/Q31; seis acertos inseguros"],
  ["LP/LING 16","D+1",13,26,0,0,0,"Seguro","Dispensável","Sem erros ou inseguranças"],
  ["RFIA 4","D+7",12,22,3,1,0,"Parcial","Pontual","Erro Q16; inseguranças Q02/Q15/Q19"],
  ["CP 3","D+7",11,37,3,0,0,"Parcial","Pontual","Inseguranças Q07/Q10/Q27; compreensão posterior parcial Q07/Q10"],
  ["RICD 11","D+7",7,24,1,1,0,"Seguro","Pontual","Erro Q21; insegurança Q17"],
  ["LP/LING 9","D+7",8,30,0,0,0,"Seguro","Dispensável","Sem erros ou inseguranças"],
- ["RICD 12","D+7",7,18,3,1,0,"Seguro, com ressalvas","Pontual","Erro Q18; inseguranças Q10/Q11/Q19"],
+ ["RICD 12","D+7",7,18,3,1,0,"Seguro","Pontual","Erro Q18; inseguranças Q10/Q11/Q19"],
  ["LP/LING 10","D+7",12,29,3,0,0,"Seguro","Pontual","Inseguranças Q01/Q22/Q27"]
  ];
  let changes=false;
@@ -4801,7 +4801,7 @@ function importNov17RecordsOnce(){
   }else if(review.status!=="Realizada"&&(!review.doneDate||review.doneDate===date)){
     review.status="Realizada";review.doneDate=date;review.durationMinutes=minutes;changes=true;
   }
-  const matching=studyData.attempts.find(a=>!a.resetForRedo&&a.date===date&&a.subject===unit.subject&&
+  const matching=studyData.attempts.find(a=>!a.resetForRedo&&a.date===date&&a.subject===unit.subject&&a.source==="ChatGPT"&&
     (a.planId===unit.id||topicKey(a)===topicKey({subject:unit.subject,topic}))&&
     (a.stage===stage||stageForContact(a.contact)===stage));
   if(!matching){
