@@ -1690,11 +1690,9 @@ let replanInMemory=null;
 function lastClosedStudyWeekIndex(weeks=studyWeeks){
  const today=todayISO();
  let index=weeks.reduce((n,w)=>w.end<today?Math.max(n,w.index):n,-1);
- // O fechamento definitivo de 13/11 já encerra a Semana 3, mesmo antes da meia-noite.
  if(studyData.attempts.some(a=>a.reportId==='relatorio-diario-20261113-definitivo'))
   index=Math.max(index,2);
- // Semana 4 encerrada para novas atividades por decisão expressa, sem simular conclusões.
- if(today>='2026-11-18')index=Math.max(index,3);
+ // A Semana 4 permanece aberta até 22/11; nove aprofundamentos ficam em 18–20/11.
  return index;
 }
 function detailedStudyWeekIndex(weeks=studyWeeks){
@@ -1911,23 +1909,83 @@ function distributeWeek4PendingThroughFriday(weeks){
 
 let studyWeeks=[];
 let weeklyUnitIndex=new Map();
+// Metas A/Q: nove aprofundamentos em 18–20/11 e saldo nas sete semanas seguintes.
+// Os 31 residuais permanecem cadastrados e exclusivamente facultativos.
 function rebuildWeeklyPlan(){
- studyWeeks=distributeWeek4PendingThroughFriday(distributeNov16Aprofundamentos(rebalanceAfterClosedStudyWeek(redistributeWeek3Aprofundamento(buildWeeklyPlan()))));
- // Planejamento principal: 230 tópicos A pendentes, sem as 31 unidades legislativas residuais.
- // Semana 4 encerrada operacionalmente; distribuir o saldo sem duplicar nem alterar estudos concluídos.
- if(todayISO()>='2026-11-18'){
-  const future=studyWeeks.filter(w=>w.index>=4), done=new Set(planUnits.filter(u=>u.flow==='A'&&completionOf(u)).map(u=>u.id));
-  const mainA=planUnits.filter(u=>u.flow==='A'&&u.legislativePhase!=='Residual'&&!done.has(u.id))
-   .sort((a,b)=>a.order-b.order);
-  const quotas=evenQuotas(mainA.length,future.length);
-  let cursor=0;
-  for(let i=0;i<future.length;i++){
-   const w=future[i],q=w.units.filter(u=>u.flow==='Q');
-   const a=mainA.slice(cursor,cursor+quotas[i]);cursor+=a.length;
-   w.units=[...a,...q];w.quotaA=a.length;w.quotaQ=q.length;
+ const base=redistributeWeek3Aprofundamento(buildWeeklyPlan());
+ const last=lastClosedStudyWeekIndex(base);
+ studyWeeks=rebalanceAfterClosedStudyWeek(base);
+ if(todayISO()>='2026-11-18'&&last>=2&&last<studyWeeks.length-1){
+  const done=new Map(planUnits.filter(u=>u.flow==='A'&&completionOf(u)).map(u=>[u.id,completionOf(u)]));
+  const main=planUnits.filter(u=>u.flow==='A'&&u.legislativePhase!=='Residual').sort((a,b)=>a.order-b.order);
+  const remaining=main.filter(u=>!done.has(u.id));
+  const doneInWeek=w=>main.filter(u=>{const d=done.get(u.id)?.date;return d&&dateBetween(d,w.start,w.end)});
+  let active=studyWeeks.slice(last+1),futurePool=remaining;
+  if(last===2){
+   const w=studyWeeks[3],dates=['2026-11-18','2026-11-19','2026-11-20'];
+   const already=doneInWeek(w),recent=already.filter(u=>done.get(u.id).date>='2026-11-18').length;
+   const chosen=remaining.slice(0,Math.max(0,9-recent));
+   futurePool=remaining.slice(chosen.length);
+   const q=w.units.filter(u=>u.flow==='Q');
+   w.units=[...already,...chosen,...q];w.quotaA=already.length+chosen.length;w.quotaQ=q.length;
+   const byDate={};
+   for(const u of [...already,...q].filter(u=>completionOf(u))){
+    const day=completionOf(u).date;
+    if(dateBetween(day,w.start,w.end))(byDate[day]||(byDate[day]=[])).push(u);
+   }
+   let cursor=0;
+   for(const date of dates){
+    const finished=(byDate[date]||[]).filter(u=>u.flow==='A'&&done.has(u.id)).length;
+    const take=Math.max(0,3-finished);
+    (byDate[date]||(byDate[date]=[])).push(...chosen.slice(cursor,cursor+take));
+    cursor+=take;
+   }
+   if(cursor<chosen.length)byDate['2026-11-20'].push(...chosen.slice(cursor));
+   const pendingQ=q.filter(u=>!completionOf(u)),qGoals=evenQuotas(pendingQ.length,dates.length);
+   let iq=0;
+   for(let i=0;i<dates.length;i++){
+    (byDate[dates[i]]||(byDate[dates[i]]=[])).push(...pendingQ.slice(iq,iq+qGoals[i]));iq+=qGoals[i];
+   }
+   w.nov17To20ByDate=byDate;
+   w.nov17To20Quotas={dates,A:dates.map(d=>(byDate[d]||[]).filter(u=>u.flow==='A').length),
+    Q:dates.map(d=>(byDate[d]||[]).filter(u=>u.flow==='Q').length),
+    remainingA:chosen.length,completedFrom18:recent,remainingQ:pendingQ.length};
+   active=studyWeeks.slice(4);
   }
-  if(mainA.length!==230||cursor!==mainA.length)
-   console.warn('Meta de 230 tópicos: conferir registros locais; saldo atual',mainA.length);
+  const pairs={'A-184':'A-CP-NEW-020','A-273':'A-CP-NEW-030','A-302':'A-CP-NEW-034','A-312':'A-CP-NEW-036'};
+  const byId=new Map(futurePool.map(u=>[u.id,u])),used=new Set(),groups=[];
+  for(const u of futurePool){
+   if(used.has(u.id))continue;
+   const partner=byId.get(pairs[u.id]),group=partner&&!used.has(partner.id)?[u,partner]:[u];
+   for(const x of group)used.add(x.id);groups.push(group);
+  }
+  const targets=evenQuotas(futurePool.length,active.length);
+  let ig=0,allocated=0;
+  for(let i=0;i<active.length;i++){
+   const w=active[i],selected=[],target=targets.slice(0,i+1).reduce((n,x)=>n+x,0);
+   if(i===active.length-1)while(ig<groups.length)selected.push(...groups[ig++]);
+   else{
+    while(ig<groups.length&&allocated+selected.length+groups[ig].length<=target)
+     selected.push(...groups[ig++]);
+    if(ig<groups.length&&groups[ig].length===2){
+     const deficit=target-(allocated+selected.length),excess=allocated+selected.length+2-target;
+     if(deficit>excess)selected.push(...groups[ig++]);
+    }
+   }
+   const finished=doneInWeek(w),q=w.units.filter(u=>u.flow==='Q');
+   w.units=[...finished,...selected,...q];
+   w.quotaA=finished.length+selected.length;w.quotaQ=q.length;
+   allocated+=selected.length;
+  }
+  if(allocated!==futurePool.length)throw Error('Metas principais: tópicos omitidos.');
+  const allMain=studyWeeks.flatMap(w=>w.units.filter(u=>u.flow==='A'&&u.legislativePhase!=='Residual').map(u=>u.id));
+  const unique=new Set(allMain);
+  if(allMain.length!==unique.size||main.some(u=>!unique.has(u.id)))throw Error('Metas principais: tópicos duplicados ou ausentes.');
+  if(last===2){
+   const w=studyWeeks[3],days=['2026-11-18','2026-11-19','2026-11-20'];
+   if(days.flatMap(d=>w.nov17To20ByDate[d]||[]).filter(u=>u.flow==='A'&&!done.has(u.id)).length!==
+    w.nov17To20Quotas.remainingA)throw Error('Semana 4: nove tópicos não distribuídos.');
+  }
  }
  weeklyUnitIndex=new Map(studyWeeks.flatMap(w=>w.units.map(u=>[u.id,w.index])));
 }
@@ -2489,7 +2547,7 @@ function nextValidStudyDate(day){
  for(let i=0;i<8;i++){
   t=shiftAgendaDate(t,1);
   const dow=new Date(t+"T12:00:00Z").getUTCDay();
-  if((dow!==5&&dow!==6||t==='2026-11-20')&&!dateBetween(t,"2026-11-23","2026-11-28"))return t; // Exceção em 20/11: sexta também recebe estudos iniciais da Semana 4.
+  if(dow!==6&&!dateBetween(t,"2026-11-23","2026-11-28"))return t; // Domingo a sexta; sábado livre.
  }
  return null;
 }
