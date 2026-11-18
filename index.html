@@ -5211,7 +5211,7 @@ standardizeTopicNames();
    const original=shiftReviewDate(study.date,30);
    if(!original||original>day)return null;
    const related=studyData.reviews.filter(r=>!r.resetForRedo&&covReviewMatches(study,r)&&r.stage==='D+30');
-   if(related.some(r=>r.status==='Realizada'))return null;
+   if(related.some(r=>r.status==='Realizada'||r.status==='Cancelada'||r.closedNoFurtherTecReviews))return null;
    const evidence=covSignals(study);
    if(!(evidence.errors||evidence.insecure||evidence.stars))return null;
    return {study,unit:evidence.unit,original,evidence,review:related[0]||null};
@@ -5229,7 +5229,7 @@ standardizeTopicNames();
    if(!study||study.status!=='Concluído'||study.resetForRedo)return changed;
    const eligible=covD30Info(study);
    const pending=studyData.reviews.filter(r=>!r.resetForRedo&&covReviewMatches(study,r)&&
-     r.stage==='D+30'&&r.status!=='Realizada');
+     r.stage==='D+30'&&r.status!=='Realizada'&&r.status!=='Cancelada'&&!r.closedNoFurtherTecReviews);
    if(eligible){
      let row=pending[0];
      if(!row){
@@ -5250,8 +5250,10 @@ standardizeTopicNames();
    return changed;
  };
  covStatusReview=function(r){
-   if(r.stage==='D+30'&&r.status!=='Realizada')return r.status===COV_OPT?COV_OPT:COV_NOT;
    if(r.resetForRedo)return 'Reiniciada';
+   if(r.status==='Cancelada')return 'Canceladas';
+   if(r.closedNoFurtherTecReviews)return 'Não realizadas';
+   if(r.stage==='D+30'&&r.status!=='Realizada')return r.status===COV_OPT?COV_OPT:COV_NOT;
    if(r.status===COV_NOT)return COV_NOT;
    if(r.status==='Cancelada')return 'Canceladas';
    if(r.closedNoFurtherTecReviews)return 'Não realizadas';
@@ -5277,6 +5279,7 @@ standardizeTopicNames();
    for(const w of covWeeks().weeks.filter(w=>!w.optional&&w.start<day))
     for(const date of covDates(w.start,w.end)){
       if(date>=day)break;
+      if(date>=todayISO())continue; // datas futuras ainda não são atrasos
       for(const u of covDailyUnits(w,date))if(!completionOf(u))selected.set(u.id,u);
     }
    return [...selected.values()];
