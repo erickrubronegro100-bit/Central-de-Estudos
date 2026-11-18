@@ -1,5 +1,13 @@
 # Registro de alterações — Central de Estudos
 
+## 18/11/2026 — Separação de pendências anteriores e agenda do dia
+
+- O botão **Atividades pendentes (estudos e revisões)** agora mostra apenas tarefas vencidas em dias anteriores à data corrente, sem incluir atividades programadas para hoje ou para datas futuras.
+- Inclui estudos A/Q não concluídos em dias anteriores, revisões D+1/D+7 obrigatórias ainda não realizadas e complementações TEC liberadas/agendadas em datas anteriores ainda não concluídas.
+- Estudos, revisões e TEC atrasados deixam de ser inseridos automaticamente nos painéis da agenda do dia, evitando duplicidades; as tarefas da data continuam em seus painéis normais.
+- Os indicadores passam a distinguir **Pendentes do dia** de **Pendências anteriores**. D+30 facultativas e D+1 adaptativas não exigidas continuam fora das pendências obrigatórias.
+- Metas futuras já redistribuídas para novas datas não são tratadas como atrasadas antes da nova data prevista. Nenhum registro de execução foi excluído.
+
 ## 18/11/2026 — Cronograma das sete semanas restantes e botão de pendências
 
 - **Cronograma diário das Semanas 5–11 (29/11/2026 a 15/01/2027):** calendário detalhado disponível para todas as semanas restantes, com seletor direto por semana e navegação entre dias e semanas.
