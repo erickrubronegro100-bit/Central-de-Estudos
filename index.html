@@ -2282,6 +2282,10 @@ g('workspacePage').addEventListener('click',e=>{
   renderWorkspace(workspaceById[activeView]);return
  }
  if(btn.dataset.filter){viewFilters[activeView]=btn.dataset.filter;planPages[activeView]=0;renderWorkspace(workspaceById[activeView]);return}
+ if(btn.dataset.advanceTopic){
+  const u=planById.get(btn.dataset.advanceTopic);
+  if(!u||!confirm('Antecipar '+u.code+' — '+u.title+'? A abertura não registra conclusão; somente sua confirmação após realizar o estudo atualizará o cronograma.'))return;
+ }
  if(btn.dataset.openTopic){openTopicBlock(btn.dataset.openTopic,btn.dataset.openStage||'Estudo inicial');return}
  if(btn.dataset.planId){setPlanDone(btn.dataset.planId,btn.dataset.planDone==='1');return}
  if(btn.dataset.toggleStudy){const item=studyData.studies.find(x=>x.id===btn.dataset.toggleStudy&&!x.planId);if(item){item.status=item.status==='Concluído'?'Planejado':'Concluído';writeData();renderWorkspace(workspaceById[activeView]);refreshOverview()}return}
@@ -2660,7 +2664,9 @@ function setPlanDone(id,done){
  }else if(u.subject==="CP"&&(u.code==="CP 1"||u.code==="CP 2")){
   if(current){current.status="Planejado";current.previousStudyDate=current.date;current.date="";current.resetForRedo=true;}
  }else studyData.studies=studyData.studies.filter(x=>x.planId!==id);
- writeData();renderWorkspace(workspaceById[activeView]);refreshOverview();toast(done?"Estudo concluído.":"Estudo reaberto.");
+ writeData();
+ try{rebuildWeeklyPlan()}catch(e){console.error('Falha ao recalcular cronograma após conclusão:',e);toast('Replanejamento não concluído; o registro foi preservado.');}
+ renderWorkspace(workspaceById[activeView]);refreshOverview();toast(done?"Estudo concluído.":"Estudo reaberto.");
 }
 
 function renderReviewGeneralPanels(){
@@ -3220,45 +3226,58 @@ function pendingActivitiesPanel(backlog){
   panel('Estudos pendentes de dias anteriores',studies.length+' estudo(s) inicial(is) + '+tec.length+' complementação(ões) TEC.',
    (studyRows+tecRows)||'<div class="emptytable">Nenhum estudo anterior pendente.</div>');
 }
-function dailyFreeTimePanel(date,completed){
- const week=studyWeeks.find(w=>dateBetween(date,w.start,w.end));
- const assignedToday=dailyStudyAssignments(date).units;
- const todayIds=new Set(assignedToday.map(u=>u.id));
- const mandatoryA=assignedToday.filter(u=>u.flow==='A'&&!completed.has(u.id));
- const scheduledReviews=studyData.reviews.filter(r=>r.status!=='Realizada'&&
-   r.plannedDate===date&&['D+1','D+7'].includes(r.stage)&&reviewIsRequired(r));
- const regularTec=assignedToday.some(u=>u.flow==='Q')?18:0;
- const compulsoryEstimate=mandatoryA.reduce((n,u)=>n+dayTheoreticalMinutes(u),0)+
-   regularTec+scheduledReviews.length*11;
- const used=dailyRegisteredStudyMinutes(date),remaining=Math.max(0,180-(used.known?used.minutes:0)-compulsoryEstimate);
+function dailyFreeTimePanel(date,completed,backlog){
+ const now=todayISO(),week=studyWeeks.find(w=>dateBetween(date,w.start,w.end));
+ const planned=dailyStudyAssignments(date).units,todayIds=new Set(planned.map(u=>u.id));
+ const pendingA=planned.filter(u=>u.flow==='A'&&!completed.has(u.id));
+ const pendingReviews=studyData.reviews.filter(r=>r.status!=='Realizada'&&r.plannedDate===date&&
+  ['D+1','D+7'].includes(r.stage)&&reviewIsRequired(r));
+ const earlier=date===now?(backlog||{reviews:[],studies:[],tec:[]}):{reviews:[],studies:[],tec:[]};
+ const earlierA=earlier.studies.filter(x=>x.unit.flow==='A').reduce((n,x)=>n+dayTheoreticalMinutes(x.unit),0);
+ const earlierRevisions=earlier.reviews.length*11;
+ const used=dailyRegisteredStudyMinutes(date);
+ const tecLogged=studyData.attempts.filter(a=>a.date===date&&
+  (a.source==='TEC'||a.platforms?.TEC)).reduce((n,a)=>n+
+   (Number.isFinite(a.durationMinutes)&&a.durationMinutes>=0?a.durationMinutes:0),0);
+ // Rotina TEC é uma reserva diária única de 18 minutos (referência 15–20),
+ // sem multiplicar o tempo pela quantidade de cadernos ou cobrá-lo duas vezes.
+ const tecReserve=Math.max(0,18-Math.min(18,tecLogged));
+ const compulsory=pendingA.reduce((n,u)=>n+dayTheoreticalMinutes(u),0)+
+  pendingReviews.length*11+earlierA+earlierRevisions+tecReserve;
+ const remaining=Math.max(0,180-(used.known?used.minutes:0)-compulsory);
  const candidates=studyWeeks.filter(w=>!week||w.index>=week.index).flatMap(w=>{
-  if(week&&w.index===week.index){
-   return plannedStudyDates(w.start,w.end).filter(day=>day>date).flatMap(day=>dailyStudyAssignments(day).units);
-  }
+  if(week&&w.index===week.index)return plannedStudyDates(w.start,w.end)
+   .filter(day=>day>date).flatMap(day=>dailyStudyAssignments(day).units);
   return w.units;
- }).filter(u=>u.flow==='A'&&u.legislativePhase!=='Residual'&&!completed.has(u.id)&&!todayIds.has(u.id))
+ }).filter(u=>u.flow==='A'&&u.legislativePhase!=='Residual'&&
+  !completed.has(u.id)&&!todayIds.has(u.id))
  .sort((a,b)=>a.order-b.order);
  const unique=[...new Map(candidates.map(u=>[u.id,u])).values()];
- const optional=optionalD30For(date).sort((a,b)=>Number(reviewPriorityCode(a).slice(1))-Number(reviewPriorityCode(b).slice(1))||a.plannedDate.localeCompare(b.plannedDate));
+ const optional=optionalD30For(date).sort((a,b)=>
+  Number(reviewPriorityCode(a).slice(1))-Number(reviewPriorityCode(b).slice(1))||
+  a.plannedDate.localeCompare(b.plannedDate));
  const items=[];let room=remaining;
  for(const u of unique){
   const estimate=dayTheoreticalMinutes(u);
   if(estimate>room)break;
-  items.push({text:'Antecipar · '+u.code+' — '+u.title,id:u.id,stage:'Estudo inicial',estimate,after:'Gerará D+7 obrigatória futura'});
+  items.push({text:'Antecipar · '+u.code+' — '+u.title,id:u.id,stage:'Estudo inicial',
+   estimate,after:'Pode gerar revisão principal adaptativa futura',advance:true});
   room-=estimate;if(items.length>=6)break;
  }
  if(items.length<6)for(const r of optional){
   const estimate=11;if(room<estimate)break;
   const id=planById.get(r.planId)?.id||findTopicUnit(r.subject,r.topic)?.id;
   if(!id)continue;
-  items.push({text:'D+30 '+reviewPriorityCode(r)+' · '+visibleTopicTitle(r.topic),id,stage:'D+30',estimate,after:'Facultativa'});
+  items.push({text:'D+30 '+reviewPriorityCode(r)+' · '+visibleTopicTitle(r.topic),
+   id,stage:'D+30',estimate,after:'Facultativa',advance:false});
   room-=estimate;if(items.length>=6)break;
  }
  return '<div class="daily-free-cta"><button type="button" class="smallbtn" data-use-free="1" aria-expanded="'+freeTimeSuggestionsOpen+'">▶ Aproveitar tempo livre</button></div>'+
  (freeTimeSuggestionsOpen?panel('Sugestões para aproveitar o tempo disponível',
- 'Saldo estimado: '+clockMinutes(remaining)+' após as atividades programadas. Antecipações dependem da confirmação de execução; futuras revisões D+7 são consideradas.',
- items.length?items.map(x=>'<div class="daily-review-item"><div><span>'+escapeHtml(x.text)+'</span><small>Estimativa '+x.estimate+' min · '+escapeHtml(x.after)+' · abrir não marca conclusão</small></div>'+
- '<button type="button" class="smallbtn" data-open-topic="'+escapeHtml(x.id)+'" data-open-stage="'+escapeHtml(x.stage)+'">Abrir</button></div>').join(''):
+ 'Saldo estimado: '+clockMinutes(remaining)+' (180 min diários, TEC 15–20 min incluído). Considera o tempo já registrado, atividades do dia ainda não realizadas e pendências anteriores. O tempo real e as revisões futuras podem alterar o saldo. Antecipações exigem confirmação; abrir não marca conclusão.',
+ items.length?items.map(x=>'<div class="daily-review-item"><div><span>'+escapeHtml(x.text)+'</span><small>Estimativa '+x.estimate+' min · '+escapeHtml(x.after)+'</small></div>'+
+ '<button type="button" class="smallbtn" '+(x.advance?'data-advance-topic="'+escapeHtml(x.id)+'" ':'')+
+ 'data-open-topic="'+escapeHtml(x.id)+'" data-open-stage="'+escapeHtml(x.stage)+'">Abrir</button></div>').join(''):
  '<div class="emptytable">Sem folga estimada para antecipar atividades. Conclua as programadas e atualize os tempos efetivos.</div>'):'');
 }
 function residualComplementPanel(date,completed){
@@ -3285,7 +3304,10 @@ function renderDailyStudyWorkspace(){
   '<small>'+weekRange(w)+'</small><small>Meta: '+w.quotaA+' A + '+w.quotaQ+' Q ('+(w.quotaA+w.quotaQ)+')</small></button>').join('')+'</div>';
  const scheduledWeekCount=studyDays.reduce((sum,d)=>sum+dailyStudyAssignments(d).units.length,0);
  const weeklyGoal=planWeek.quotaA+planWeek.quotaQ;
- if(scheduledWeekCount!==weeklyGoal)throw Error('Cronograma diário da Semana '+planWeek.number+' diverge da meta semanal: '+scheduledWeekCount+'/'+weeklyGoal);
+ const recordedSaturday=planWeek.units.filter(u=>completionOf(u)?.date&&
+  new Date(completionOf(u).date+'T12:00:00Z').getUTCDay()===6).length;
+ if(scheduledWeekCount+recordedSaturday!==weeklyGoal)
+  console.warn('Conferir distribuição semanal (inclusive conclusões de sábado):',planWeek.number,scheduledWeekCount,weeklyGoal,recordedSaturday);
  const info=dailyStudyAssignments(date);
  const completed=weeklyStudyState().completed;
  // Pendências de A/Q retornam à agenda corrente sem mudança nas datas de origem.
@@ -3393,7 +3415,7 @@ function renderDailyStudyWorkspace(){
  const historyPanel=originalHistorical.length?'<details class="history-original"><summary>Programação original desta data · '+originalHistorical.length+' tópico(s)</summary><div class="daily-topic-list">'+originalHistorical.map(u=>{const record=completed.get(u.id);return '<div class="daily-review-item" data-state="'+(record?'done':'pending')+'"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span><small>'+(record?'Concluído em '+dateBR(record.date):'Não concluído na programação original')+'</small></div></div>'}).join('')+'</div></details>':'';
  return weekChoices+'<div class="daily-controls"><label for="dailyDate">Data · Semana '+planWeek.number+'</label><button type="button" data-daily-step="-1">‹ Anterior</button><input type="date" id="dailyDate" min="'+availableWeeks[0].start+'" max="'+availableWeeks.at(-1).end+'" value="'+date+'"><button type="button" data-daily-step="1">Próximo ›</button><button type="button" data-daily-date="'+studyDays[0]+'">Início da semana</button></div>'+
  '<div class="daily-weekstrip">'+days+'</div><p class="daily-note">Cronograma detalhado das '+availableWeeks.length+' semanas restantes (Semanas '+availableWeeks[0].number+' a '+availableWeeks.at(-1).number+'). Na Semana '+planWeek.number+', a meta de '+weeklyGoal+' tópicos ('+planWeek.quotaA+' A + '+planWeek.quotaQ+' Q) está distribuída de domingo a sexta; total diário conferido: '+scheduledWeekCount+'. As metas futuras podem ser recalculadas após o encerramento de cada semana, preservando os registros concluídos e a sequência pedagógica. Complementações TEC seguem liberação própria. Uma revisão principal D+1 ou D+7 é programada conforme desempenho; D+30 é facultativa. Sábados livres.</p>'+
- progressHeader+progress+nextMarkup+historyPanel+pendingActivitiesPanel(backlog)+'<div class="weekly-kpi">'+metricCard('Aprofundamentos do dia',A.length)+metricCard('Tópicos de Questões do dia',Q.length)+metricCard('Complementações do dia',displayedComplements.length)+metricCard('Revisões na agenda',revs.length)+metricCard('Pendências anteriores',carryCount)+metricCard('Tempo líquido',time.known?clockMinutes(time.minutes):'N/I')+metricCard('Meta de tempo','3h00')+metricCard('Tempo programado',clockMinutes(A.filter(x=>!completed.has(x.unit.id)).reduce((n,x)=>n+dayTheoreticalMinutes(x.unit),0)+actionableRevs.length*11+(Q.length?18:0)))+metricCard('Tempo livre estimado',clockMinutes(Math.max(0,180-(A.filter(x=>!completed.has(x.unit.id)).reduce((n,x)=>n+dayTheoreticalMinutes(x.unit),0)+actionableRevs.length*11+(Q.length?18:0)))))+'</div>'+
+ progressHeader+progress+nextMarkup+historyPanel+pendingActivitiesPanel(backlog)+'<div class="weekly-kpi">'+metricCard('Aprofundamentos do dia',A.length)+metricCard('Tópicos de Questões do dia',Q.length)+metricCard('Complementações do dia',displayedComplements.length)+metricCard('Revisões na agenda',revs.length)+metricCard('Pendências anteriores',carryCount)+metricCard('Tempo líquido',time.known?clockMinutes(time.minutes):'N/I')+metricCard('Meta de tempo','3h00 (TEC incluso)')+metricCard('Tempo programado',clockMinutes(A.filter(x=>!completed.has(x.unit.id)).reduce((n,x)=>n+dayTheoreticalMinutes(x.unit),0)+actionableRevs.length*11+(Q.length?18:0)))+metricCard('Tempo livre estimado',clockMinutes(Math.max(0,180-(A.filter(x=>!completed.has(x.unit.id)).reduce((n,x)=>n+dayTheoreticalMinutes(x.unit),0)+actionableRevs.length*11+(Q.length?18:0)))))+'</div>'+
 
  '<div class="section-divider"><strong>1 · Revisões — realizar primeiro</strong></div>'+
  panel('Revisões — aprofundamento',uiQuantity(revisionA.length,'revisão','revisões')+' de estudos de Aprofundamento (D+1, D+7 e D+30).',revisionA.length?groupedReviewRows(revisionA.slice().sort((a,b)=>({'D+1':0,'D+7':1,'D+30':2}[a.stage]??3)-({'D+1':0,'D+7':1,'D+30':2}[b.stage]??3))):blank)+
@@ -3403,7 +3425,7 @@ function renderDailyStudyWorkspace(){
  '<div class="section-divider"><strong>2 · Estudos iniciais — após as revisões</strong></div>'+
  panel('Estudos iniciais — aprofundamento',A.length+' nesta data.',A.length?groupedInitialRows(A):blank)+
  panel('Estudos iniciais — questões',Q.length+' nesta data.',Q.length?groupedInitialRows(Q):blank)+
- panel('Complementação (TEC) — concluídas e programadas',completedComplements.length+' concluída(s) · '+scheduled.length+' pendente(s) para esta data.',displayedComplements.length?displayedComplements.map(cRow).join(''):blank)+optionalD30Panel(date)+residualComplementPanel(date,completed)+dailyFreeTimePanel(date,completed);
+ panel('Complementação (TEC) — concluídas e programadas',completedComplements.length+' concluída(s) · '+scheduled.length+' pendente(s) para esta data.',displayedComplements.length?displayedComplements.map(cRow).join(''):blank)+optionalD30Panel(date)+residualComplementPanel(date,completed)+dailyFreeTimePanel(date,completed,backlog);
 }
 
 // MIGRAÇÃO ADITIVA E IDPOTENTE DE CP 32 → 36, preservando histórico e IDs dos tópicos já existentes.
