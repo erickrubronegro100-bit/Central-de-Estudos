@@ -1592,8 +1592,9 @@ function renderEntry(x,kind){
   const relatedUnit=kind==='review'?findTopicUnit(x.subject,x.topic):null;
  const openMaterials=relatedUnit?`<button class="block-access" type="button" data-open-topic="${escapeHtml(relatedUnit.id)}" data-open-stage="${escapeHtml(x.stage||'Estudo inicial')}">◫ Materiais e comandos</button>`:'';
 const skipAction=kind==='review'&&['D+1','D+30'].includes(x.stage)&&x.status!=='Realizada'&&!reviewIsSkipped(x)?`<button class="smallbtn" type="button" data-skip-review="${escapeHtml(x.id)}">Pular revisão</button>`:'';
+const unskipAction=kind==='review'&&reviewIsSkipped(x)?`<button class="smallbtn" type="button" data-unskip-review="${escapeHtml(x.id)}">Reativar revisão</button>`:'';
 const action=kind==='study'?`<button class="smallbtn" type="button" data-toggle-study="${escapeHtml(x.id)}">${x.status==='Concluído'?'↶ Voltar a planejado':'✓ Concluir'}</button>`:`<button class="smallbtn" type="button" data-remove="${kind==='attempt'?'attempt-topic':escapeHtml(kind)}" data-recordid="${escapeHtml(x.id)}" aria-label="Excluir registro">Excluir</button>`;
- return `<div class="log-entry"><div><h3>${escapeHtml(headline)}</h3><p><span class="logbadge">${escapeHtml(subjectLabel(x.subject))}</span>${status?`<span class="logbadge">${escapeHtml(status)}</span>`:''}${domain}</p><p>${escapeHtml(meta)}</p>${quantitative}${pedagogy}${reviewExtra}</div><div class="plan-unit-actions">${openMaterials}${skipAction}${action}</div></div>`;
+ return `<div class="log-entry"><div><h3>${escapeHtml(headline)}</h3><p><span class="logbadge">${escapeHtml(subjectLabel(x.subject))}</span>${status?`<span class="logbadge">${escapeHtml(status)}</span>`:''}${domain}</p><p>${escapeHtml(meta)}</p>${quantitative}${pedagogy}${reviewExtra}</div><div class="plan-unit-actions">${openMaterials}${skipAction}${unskipAction}${action}</div></div>`;
 }
 function listFor(items,kind){return items.length?`<div class="log-list">${items.map(x=>renderEntry(x,kind)).join('')}</div>`:'<div class="emptytable">Nenhum registro nesta seleção.</div>'}
 function choiceBar(view,choices){const active=viewFilters[view]||choices[0];return `<div class="statusbar" aria-label="Filtrar por situação">${choices.map(s=>`<button class="statusbutton" type="button" data-filter="${escapeHtml(s)}" aria-pressed="${active===s}">${escapeHtml(s)}</button>`).join('')}</div>`}
@@ -2159,6 +2160,13 @@ g('workspacePage').addEventListener('click',e=>{
  if(btn.hasAttribute('data-week-select')){selectedStudyWeek=Number(btn.dataset.weekSelect);renderWorkspace(workspaceById[activeView]);return}
  if(btn.dataset.dailyDate){dailySelectedDate=btn.dataset.dailyDate;renderWorkspace(workspaceById[activeView]);return}
  if(btn.dataset.useFree){freeTimeSuggestionsOpen=!freeTimeSuggestionsOpen;renderWorkspace(workspaceById[activeView]);return}
+ if(btn.dataset.unskipReview){
+  const r=studyData.reviews.find(x=>x.id===btn.dataset.unskipReview);
+  if(!r||!reviewIsSkipped(r))return;
+  if(!confirm('Reativar esta revisão sem marcá-la como realizada?'))return;
+  r.status='Programada';delete r.skipped;delete r.skippedAt;
+  writeData();renderWorkspace(workspaceById[activeView]);refreshOverview();return;
+ }
  if(btn.dataset.skipReview){
   const review=studyData.reviews.find(r=>r.id===btn.dataset.skipReview);
   if(!review||!['D+1','D+30'].includes(review.stage)||review.status==='Realizada')return;
@@ -3086,14 +3094,46 @@ function overdueDailyPanels(date,completed,existing){
  panel('Estudos atrasados',overdueStudies.length+' estudo(s) em atraso.',studyRows||'<div class="emptytable">Nenhum estudo inicial atrasado.</div>');
 }
 function dailyFreeTimePanel(date,completed){
- const future=planUnits.filter(u=>u.flow==='A'&&u.legislativePhase!=='Residual'&&!completed.has(u.id)).sort((a,b)=>a.order-b.order).slice(0,6);
- const optional=optionalD30For(date).sort((a,b)=>Number(reviewPriorityCode(a).slice(1))-Number(reviewPriorityCode(b).slice(1))).slice(0,6);
- const items=future.map(u=>({text:'Antecipar · '+u.code+' — '+u.title,id:u.id,stage:'Estudo inicial',estimate:dayTheoreticalMinutes(u)}))
-  .concat(optional.map(r=>({text:'D+30 '+reviewPriorityCode(r)+' · '+visibleTopicTitle(r.topic),id:planById.get(r.planId)?.id||findTopicUnit(r.subject,r.topic)?.id,stage:'D+30',estimate:11})));
+ const week=studyWeeks.find(w=>dateBetween(date,w.start,w.end));
+ const assignedToday=dailyStudyAssignments(date).units;
+ const todayIds=new Set(assignedToday.map(u=>u.id));
+ const mandatoryA=assignedToday.filter(u=>u.flow==='A'&&!completed.has(u.id));
+ const scheduledReviews=studyData.reviews.filter(r=>r.status!=='Realizada'&&!reviewIsSkipped(r)&&
+   r.plannedDate===date&&['D+1','D+7'].includes(r.stage)&&
+   (r.stage==='D+7'||requiresAdaptiveD1(r)));
+ const regularTec=assignedToday.some(u=>u.flow==='Q')?18:0;
+ const compulsoryEstimate=mandatoryA.reduce((n,u)=>n+dayTheoreticalMinutes(u),0)+
+   regularTec+scheduledReviews.length*11;
+ const used=dailyRegisteredStudyMinutes(date),remaining=Math.max(0,180-(used.known?used.minutes:0)-compulsoryEstimate);
+ const candidates=studyWeeks.filter(w=>!week||w.index>=week.index).flatMap(w=>{
+  if(week&&w.index===week.index){
+   return plannedStudyDates(w.start,w.end).filter(day=>day>date).flatMap(day=>dailyStudyAssignments(day).units);
+  }
+  return w.units;
+ }).filter(u=>u.flow==='A'&&u.legislativePhase!=='Residual'&&!completed.has(u.id)&&!todayIds.has(u.id))
+ .sort((a,b)=>a.order-b.order);
+ const unique=[...new Map(candidates.map(u=>[u.id,u])).values()];
+ const optional=optionalD30For(date).sort((a,b)=>Number(reviewPriorityCode(a).slice(1))-Number(reviewPriorityCode(b).slice(1))||a.plannedDate.localeCompare(b.plannedDate));
+ const items=[];let room=remaining;
+ for(const u of unique){
+  const estimate=dayTheoreticalMinutes(u);
+  if(estimate>room)break;
+  items.push({text:'Antecipar · '+u.code+' — '+u.title,id:u.id,stage:'Estudo inicial',estimate,after:'Gerará D+7 obrigatória futura'});
+  room-=estimate;if(items.length>=6)break;
+ }
+ if(items.length<6)for(const r of optional){
+  const estimate=11;if(room<estimate)break;
+  const id=planById.get(r.planId)?.id||findTopicUnit(r.subject,r.topic)?.id;
+  if(!id)continue;
+  items.push({text:'D+30 '+reviewPriorityCode(r)+' · '+visibleTopicTitle(r.topic),id,stage:'D+30',estimate,after:'Facultativa'});
+  room-=estimate;if(items.length>=6)break;
+ }
  return '<div class="daily-free-cta"><button type="button" class="smallbtn" data-use-free="1" aria-expanded="'+freeTimeSuggestionsOpen+'">▶ Aproveitar tempo livre</button></div>'+
- (freeTimeSuggestionsOpen?panel('Sugestões para aproveitar o tempo disponível','Sugestões sem conclusão automática. Abrir não marca atividade como realizada.',
- items.length?items.map(x=>'<div class="daily-review-item"><div><span>'+escapeHtml(x.text)+'</span><small>Estimativa: '+x.estimate+' min · confirmação de conclusão separada</small></div>'+
- (x.id?'<button type="button" class="smallbtn" data-open-topic="'+escapeHtml(x.id)+'" data-open-stage="'+escapeHtml(x.stage)+'">Abrir</button>':'')+'</div>').join(''):'<div class="emptytable">Nenhuma sugestão disponível.</div>'):'');
+ (freeTimeSuggestionsOpen?panel('Sugestões para aproveitar o tempo disponível',
+ 'Saldo estimado: '+clockMinutes(remaining)+' após as atividades programadas. Antecipações dependem da confirmação de execução; futuras revisões D+7 são consideradas.',
+ items.length?items.map(x=>'<div class="daily-review-item"><div><span>'+escapeHtml(x.text)+'</span><small>Estimativa '+x.estimate+' min · '+escapeHtml(x.after)+' · abrir não marca conclusão</small></div>'+
+ '<button type="button" class="smallbtn" data-open-topic="'+escapeHtml(x.id)+'" data-open-stage="'+escapeHtml(x.stage)+'">Abrir</button></div>').join(''):
+ '<div class="emptytable">Sem folga estimada para antecipar atividades. Conclua as programadas e atualize os tempos efetivos.</div>'):'');
 }
 function residualComplementPanel(date,completed){
  if(!dateBetween(date,'2027-01-10','2027-01-15'))return '';
