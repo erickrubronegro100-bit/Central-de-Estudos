@@ -2160,6 +2160,7 @@ g('workspacePage').addEventListener('click',e=>{
  if(btn.hasAttribute('data-week-select')){selectedStudyWeek=Number(btn.dataset.weekSelect);renderWorkspace(workspaceById[activeView]);return}
  if(btn.dataset.dailyDate){dailySelectedDate=btn.dataset.dailyDate;renderWorkspace(workspaceById[activeView]);return}
  if(btn.dataset.useFree){freeTimeSuggestionsOpen=!freeTimeSuggestionsOpen;renderWorkspace(workspaceById[activeView]);return}
+ if(btn.hasAttribute('data-optional-d30')){optionalD30Open=!optionalD30Open;renderWorkspace(workspaceById[activeView]);return}
  if(btn.dataset.unskipReview){
   const r=studyData.reviews.find(x=>x.id===btn.dataset.unskipReview);
   if(!r||!reviewIsSkipped(r))return;
@@ -3049,6 +3050,7 @@ function renderContinuousWorkspace(){
 
 /* Componentes aditivos do cronograma — mantém os painéis e os comandos existentes. */
 let freeTimeSuggestionsOpen=false;
+let optionalD30Open=false;
 function dayTheoreticalMinutes(unit){
  const d=unit?.density||'Médio',table=unit?.subject==='RFIA'?{Curto:6,'Médio':10,Denso:15}:{Curto:3,'Médio':5,Denso:7};
  return (table[d]||5)+8+3; // Etapas 1–3 + bateria + correção hipotética.
@@ -3064,7 +3066,9 @@ function optionalD30For(date){
 }
 function optionalD30Panel(date){
  const rows=optionalD30For(date);
- return panel('D+30 facultativas — P1 a P4','Sempre disponíveis quando elegíveis; não geram atraso ou descumprimento.',
+ const toggle='<div class="daily-free-cta"><button type="button" class="smallbtn" data-optional-d30="1" aria-expanded="'+optionalD30Open+'">'+(optionalD30Open?'▼':'▶')+' D+30 facultativas — P1 a P4 ('+rows.length+')</button></div>';
+ if(!optionalD30Open)return toggle;
+ return toggle+panel('D+30 facultativas — P1 a P4','Sempre disponíveis quando elegíveis; não geram atraso ou descumprimento.',
   '<div class="weekly-kpi">'+['P1','P2','P3','P4'].map(priority=>{
     const list=rows.filter(r=>reviewPriorityCode(r)===priority).sort((a,b)=>a.plannedDate.localeCompare(b.plannedDate));
     return '<div class="workspace-panel" style="padding:12px"><strong>'+priority+' · '+list.length+' disponível(is)</strong>'+
