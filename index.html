@@ -871,29 +871,71 @@ function reviewMatchesStudy(r,study){
  if(r.studyId===study.id||study.planId&&r.studyId===study.planId)return true;
  return topicKey(r)===topicKey(study);
 }
+function studyReviewDecision(study){
+ const unit=planById.get(study?.planId)||findTopicUnit(study?.subject,study?.topic);
+ const same=a=>!a.resetForRedo&&((unit&&a.planId===unit.id)||
+  (study?.id&&a.studyId===study.id)||(study?.subject===a.subject&&topicKey(a)===topicKey(study)));
+ const sessions=studyData.attempts.filter(same);
+ const initial=sessions.filter(a=>a.stage==='Estudo inicial'||(!a.stage&&!stageForContact(a.contact)));
+ const errors=initial.reduce((n,a)=>n+safeNum(a.ws)+safeNum(a.wu)+safeNum(a.wrongOther),0);
+ const insecurity=initial.reduce((n,a)=>n+safeNum(a.cu)+safeNum(a.wu),0);
+ const weak=[study,...initial].some(x=>['Fraco','Parcial'].includes(x?.domain)||x?.hasDifficulties===true);
+ const priority=unit?.priority||'P4',important=/^P[12]$/.test(priority);
+ const relevant=weak||errors>=2||insecurity>=2;
+ const difficulty=weak||errors>0||insecurity>0;
+ const primary=difficulty&&(!important||relevant)?'D+1':'D+7';
+ const d1=sessions.filter(a=>a.stage==='D+1'||stageForContact(a.contact)==='D+1');
+ const persistent=d1.some(a=>safeNum(a.ws)+safeNum(a.wu)+safeNum(a.wrongOther)+safeNum(a.cu)>0||
+  ['Fraco','Parcial'].includes(a.domain));
+ const stars=[study,...sessions].some(x=>x?.starred===true||x?.importantStar===true||
+  ['starTopics','starPoints','stars','importantTopics'].some(k=>Array.isArray(x?.[k])&&x[k].length>0));
+ const additionalD7=primary==='D+1'&&(persistent||(important&&relevant&&errors>0));
+ const eligibleD30=errors>0||insecurity>0||stars||sessions.some(a=>
+  safeNum(a.ws)+safeNum(a.wu)+safeNum(a.wrongOther)+safeNum(a.cu)>0);
+ return {primary,additionalD7,eligibleD30,priority,errors,insecurity,stars};
+}
+function studyForReview(r){
+ return studyData.studies.find(s=>!s.resetForRedo&&s.status==='Concluído'&&
+  (r.studyId===s.id||(r.planId&&r.planId===s.planId)||reviewMatchesStudy(r,s)))||null;
+}
+function reviewIsRequired(r){
+ if(!r||r.resetForRedo||r.closedNoFurtherTecReviews||reviewIsSkipped(r))return false;
+ if(r.status==='Realizada')return true;
+ if(r.stage==='D+30')return false;
+ const study=studyForReview(r);
+ if(!study)return !r.adaptiveOptional;
+ const choice=studyReviewDecision(study);
+ return r.stage===choice.primary||(r.stage==='D+7'&&choice.additionalD7);
+}
+function eligibleOptionalD30(r){
+ if(!r||r.stage!=='D+30')return false;
+ const study=studyForReview(r);
+ return Boolean(study&&studyReviewDecision(study).eligibleD30);
+}
 function ensureScheduledReviews(study){
- if(!study||study.status!=='Concluído'||['Q-038','C-RCCN-001','Q-040','Q-060'].includes(study.planId)||/^(?:DA\s*0*23|RCCN\/TEC\s*0*1)\b/i.test(String(study.topic||'')))return false;
+ if(!study||study.status!=='Concluído'||['Q-038','C-RCCN-001','Q-040','Q-060'].includes(study.planId)||
+  /^(?:DA\s*0*23|RCCN\/TEC\s*0*1)\b/i.test(String(study.topic||'')))return false;
+ const decision=studyReviewDecision(study);
+ const stages=[decision.primary,...(decision.additionalD7?['D+7']:[]),...(decision.eligibleD30?['D+30']:[])];
  let modified=false;
- for(const [stage,offset] of [['D+1',1],['D+7',7],['D+30',30]]){
-  if(study.planId==='Q-038'&&(stage==='D+7'||stage==='D+30'))continue;
+ for(const stage of new Set(stages)){
+  const offset={'D+1':1,'D+7':7,'D+30':30}[stage];
   const originalReviewDate=shiftReviewDate(study.date,offset);
   const plannedDate=nextPermittedReviewDate(originalReviewDate);
   if(!plannedDate)continue;
   const matches=studyData.reviews.filter(r=>!r.resetForRedo&&r.stage===stage&&reviewMatchesStudy(r,study));
   if(matches.length){
-   // Reagendamento ou revisão já realizada prevalece sobre automação; não duplicar.
-   for(const old of matches){
-    if(old.proposed===true&&old.plannedDate===plannedDate&&old.status!=='Realizada'){
-     delete old.proposed;modified=true;
-    }
+   for(const old of matches)if(old.proposed===true&&old.plannedDate===plannedDate&&old.status!=='Realizada'){
+    delete old.proposed;modified=true;
    }
    continue;
   }
   studyData.reviews.push({
-   id:freshId(),studyId:study.id,subject:study.subject,topic:study.topic,
+   id:freshId(),studyId:study.id,planId:study.planId,subject:study.subject,topic:study.topic,
    stage,status:'Programada',plannedDate,doneDate:'',autoScheduled:true,
-   ...(stage==='D+1'&&study.date>='2026-11-18'?{adaptiveOptional:true}:{}),
-   ...(originalReviewDate!==plannedDate?{originalPlannedDate:originalReviewDate,rescheduledReason:'Sábado sem estudos: revisão transferida para domingo.'}:{})
+   ...(stage==='D+30'?{adaptiveOptional:true}:{}),
+   ...(originalReviewDate!==plannedDate?{originalPlannedDate:originalReviewDate,
+    rescheduledReason:'Sábado sem estudos: revisão transferida para domingo.'}:{})
   });
   modified=true;
  }
@@ -1298,24 +1340,14 @@ applyNov03Records();
 
 function freshId(){return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8)}
 function reviewIsSkipped(r){return r.status==='Pulada'||r.skipped===true}
-function requiresAdaptiveD1(r){
- if(r.adaptiveRequired||!r.adaptiveOptional)return true;
- const u=planById.get(r.planId)||findTopicUnit(r.subject,r.topic);
- const study=studyData.studies.find(x=>!x.resetForRedo&&x.status==='Concluído'&&
-   ((u&&x.planId===u.id)||(r.studyId&&x.id===r.studyId)));
- if(!study)return false;
- const attempts=studyData.attempts.filter(a=>!a.resetForRedo&&a.date===study.date&&
-   ((u&&a.planId===u.id)||(a.subject===study.subject&&topicKey(a)===topicKey(study)))&&
-   (a.stage==='Estudo inicial'||!a.stage&&!stageForContact(a.contact)));
- return attempts.some(a=>safeNum(a.cu)+safeNum(a.ws)+safeNum(a.wu)>0);
-}
+function requiresAdaptiveD1(r){return reviewIsRequired(r);}
 function statusReview(r){
  if(r.resetForRedo)return 'Reiniciada';
  if(r.status==='Realizada')return 'Realizadas';
  if(r.closedNoFurtherTecReviews)return 'Não realizadas';
  if(reviewIsSkipped(r))return 'Puladas';
  if(r.stage==='D+30')return 'Facultativas';
- if(r.stage==='D+1'&&r.adaptiveOptional&&!requiresAdaptiveD1(r))return 'Programadas';
+ if(['D+1','D+7'].includes(r.stage)&&!reviewIsRequired(r))return 'Facultativas';
  if(r.proposed)return 'Programadas';
  return r.status==='Pendente'||(r.plannedDate&&r.plannedDate<todayISO())?'Pendentes':'Programadas';
 }
@@ -2601,8 +2633,8 @@ function renderWorkspace(v){
   const stage=v.id==="revisoes-d1"?"D+1":v.id==="revisoes-d7"?"D+7":v.id==="revisoes-d30"?"D+30":null;
   const flow=v.id==="revisoes-complementacao"?"C":v.id==="revisoes-aprofundamento"?"A":null;
   const all=studyData.reviews.filter(x=>!x.resetForRedo&&(!stage||x.stage===stage)&&(!flow||reviewInitialStudyFlow(x)===flow)&&(v.id!=="revisoes-dia"||x.plannedDate===todayISO()||x.doneDate===todayISO()));
-  const tabs=stage==='D+1'?['Programadas','Realizadas','Pendentes','Puladas']:
-   stage==='D+7'?['Programadas','Realizadas','Pendentes','Não realizadas']:
+  const tabs=stage==='D+1'?['Programadas','Realizadas','Pendentes','Facultativas','Puladas']:
+   stage==='D+7'?['Programadas','Realizadas','Pendentes','Facultativas','Não realizadas']:
    stage==='D+30'?['Facultativas','Realizadas','Puladas']:
    ['Programadas','Realizadas','Pendentes','Facultativas','Puladas','Não realizadas'];
   const choice=tabs.includes(viewFilters[v.id])?viewFilters[v.id]:tabs[0];
@@ -2627,8 +2659,8 @@ function renderWorkspace(v){
     metricCard("Complementação (TEC)",all.filter(r=>reviewInitialStudyFlow(r)==="C").length)+
    '</div>':"";
   const urgent=all.filter(r=>statusReview(r)==='Pendentes'&&r.plannedDate&&r.plannedDate<todayISO()).length;
-  const todayDue=all.filter(r=>['D+1','D+7'].includes(r.stage)&&r.status!=='Realizada'&&!reviewIsSkipped(r)&&!r.closedNoFurtherTecReviews&&r.plannedDate===todayISO()).length;
-  const reviewNotice='<div class="review-deadlines" role="status"><div><strong>'+(urgent===0?'Nenhuma revisão atrasada':uiQuantity(urgent,'revisão atrasada','revisões atrasadas'))+'</strong><small>Prazos anteriores à data atual, ainda sem conclusão</small></div><div><strong>'+(todayDue===0?'Nenhuma revisão prevista para hoje':uiQuantity(todayDue,'revisão prevista para hoje','revisões previstas para hoje'))+'</strong><small>D+7 obrigatória; D+1 adaptativa; D+30 facultativa</small></div></div>';
+  const todayDue=all.filter(r=>['D+1','D+7'].includes(r.stage)&&r.status!=='Realizada'&&reviewIsRequired(r)&&r.plannedDate===todayISO()).length;
+  const reviewNotice='<div class="review-deadlines" role="status"><div><strong>'+(urgent===0?'Nenhuma revisão atrasada':uiQuantity(urgent,'revisão atrasada','revisões atrasadas'))+'</strong><small>Prazos anteriores à data atual, ainda sem conclusão</small></div><div><strong>'+(todayDue===0?'Nenhuma revisão prevista para hoje':uiQuantity(todayDue,'revisão prevista para hoje','revisões previstas para hoje'))+'</strong><small>Revisão principal D+1 ou D+7 adaptativa; D+30 facultativa</small></div></div>';
   const reviewSummary=reviewNotice+(v.id==="revisoes-geral"?renderReviewGeneralPanels():"")+
    '<div class="workspace-metrics">'+
     (stage==='D+30'?metricCard('Disponíveis',all.filter(r=>statusReview(r)==='Facultativas'&&r.plannedDate<=todayISO()).length)+metricCard('Agendadas',all.filter(r=>statusReview(r)==='Facultativas'&&r.plannedDate>todayISO()).length)+metricCard('Realizadas',all.filter(r=>statusReview(r)==='Realizadas').length)+metricCard('Puladas',all.filter(r=>statusReview(r)==='Puladas').length):
@@ -3073,7 +3105,7 @@ function reviewPriorityCode(r){
 function optionalD30For(date){
  return studyData.reviews.filter(r=>!r.resetForRedo&&r.stage==='D+30'&&
   !r.closedNoFurtherTecReviews&&r.status!=='Realizada'&&!reviewIsSkipped(r)&&
-  Boolean(r.plannedDate&&r.plannedDate<=date));
+  eligibleOptionalD30(r)&&Boolean(r.plannedDate&&r.plannedDate<=date));
 }
 function optionalD30Panel(date){
  const rows=optionalD30For(date);
@@ -3095,8 +3127,7 @@ function optionalD30Panel(date){
 function pastDueActivities(now,completed,pendingPrevious){
  const reviews=studyData.reviews.filter(r=>!r.resetForRedo&&r.plannedDate&&r.plannedDate<now&&
   ['D+1','D+7'].includes(r.stage)&&r.status!=='Realizada'&&
-  !reviewIsSkipped(r)&&!r.closedNoFurtherTecReviews&&
-  !(r.stage==='D+1'&&r.adaptiveOptional&&!requiresAdaptiveD1(r))&&statusReview(r)==='Pendentes')
+  reviewIsRequired(r)&&statusReview(r)==='Pendentes')
   .sort((a,b)=>a.plannedDate.localeCompare(b.plannedDate));
  const studies=[...pendingPrevious.values()].filter(x=>x.origin<now&&!completed.has(x.unit.id))
   .sort((a,b)=>a.origin.localeCompare(b.origin));
@@ -3136,9 +3167,8 @@ function dailyFreeTimePanel(date,completed){
  const assignedToday=dailyStudyAssignments(date).units;
  const todayIds=new Set(assignedToday.map(u=>u.id));
  const mandatoryA=assignedToday.filter(u=>u.flow==='A'&&!completed.has(u.id));
- const scheduledReviews=studyData.reviews.filter(r=>r.status!=='Realizada'&&!reviewIsSkipped(r)&&
-   r.plannedDate===date&&['D+1','D+7'].includes(r.stage)&&
-   (r.stage==='D+7'||requiresAdaptiveD1(r)));
+ const scheduledReviews=studyData.reviews.filter(r=>r.status!=='Realizada'&&
+   r.plannedDate===date&&['D+1','D+7'].includes(r.stage)&&reviewIsRequired(r));
  const regularTec=assignedToday.some(u=>u.flow==='Q')?18:0;
  const compulsoryEstimate=mandatoryA.reduce((n,u)=>n+dayTheoreticalMinutes(u),0)+
    regularTec+scheduledReviews.length*11;
@@ -3250,7 +3280,8 @@ function renderDailyStudyWorkspace(){
    escapeHtml(u.id)+'" data-open-stage="Estudo inicial">'+(done?'Ver registro':'Abrir TEC')+'</button></div>';
  };
  const revs=studyData.reviews.filter(r=>{
-  if(r.resetForRedo||!['D+1','D+7'].includes(r.stage)||reviewIsSkipped(r)||r.stage==='D+1'&&r.adaptiveOptional&&!requiresAdaptiveD1(r))return false;
+  if(r.resetForRedo||!['D+1','D+7'].includes(r.stage)||reviewIsSkipped(r)||
+   (r.status!=='Realizada'&&!reviewIsRequired(r)))return false;
   if(r.closedNoFurtherTecReviews)return r.plannedDate===date;
   if(r.status==='Realizada')return r.plannedDate===date||r.doneDate===date;
   return date>=today&&r.plannedDate===date;
@@ -3303,7 +3334,7 @@ function renderDailyStudyWorkspace(){
  const originalHistorical=date<today?dailyStudyAssignments(date).units:[];
  const historyPanel=originalHistorical.length?'<details class="history-original"><summary>Programação original desta data · '+originalHistorical.length+' tópico(s)</summary><div class="daily-topic-list">'+originalHistorical.map(u=>{const record=completed.get(u.id);return '<div class="daily-review-item" data-state="'+(record?'done':'pending')+'"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span><small>'+(record?'Concluído em '+dateBR(record.date):'Não concluído na programação original')+'</small></div></div>'}).join('')+'</div></details>':'';
  return weekChoices+'<div class="daily-controls"><label for="dailyDate">Data · Semana '+planWeek.number+'</label><button type="button" data-daily-step="-1">‹ Anterior</button><input type="date" id="dailyDate" min="'+availableWeeks[0].start+'" max="'+availableWeeks.at(-1).end+'" value="'+date+'"><button type="button" data-daily-step="1">Próximo ›</button><button type="button" data-daily-date="'+studyDays[0]+'">Início da semana</button></div>'+
- '<div class="daily-weekstrip">'+days+'</div><p class="daily-note">Cronograma detalhado das '+availableWeeks.length+' semanas restantes (Semanas '+availableWeeks[0].number+' a '+availableWeeks.at(-1).number+'). Na Semana '+planWeek.number+', a meta de '+weeklyGoal+' tópicos ('+planWeek.quotaA+' A + '+planWeek.quotaQ+' Q) está distribuída de domingo a sexta; total diário conferido: '+scheduledWeekCount+'. As metas futuras podem ser recalculadas após o encerramento de cada semana, preservando os registros concluídos e a sequência pedagógica. Complementações TEC seguem liberação própria. D+7 é obrigatória; D+1 é adaptativa; D+30 é facultativa. Sábados livres.</p>'+
+ '<div class="daily-weekstrip">'+days+'</div><p class="daily-note">Cronograma detalhado das '+availableWeeks.length+' semanas restantes (Semanas '+availableWeeks[0].number+' a '+availableWeeks.at(-1).number+'). Na Semana '+planWeek.number+', a meta de '+weeklyGoal+' tópicos ('+planWeek.quotaA+' A + '+planWeek.quotaQ+' Q) está distribuída de domingo a sexta; total diário conferido: '+scheduledWeekCount+'. As metas futuras podem ser recalculadas após o encerramento de cada semana, preservando os registros concluídos e a sequência pedagógica. Complementações TEC seguem liberação própria. Uma revisão principal D+1 ou D+7 é programada conforme desempenho; D+30 é facultativa. Sábados livres.</p>'+
  progressHeader+progress+nextMarkup+historyPanel+pendingActivitiesPanel(backlog)+'<div class="weekly-kpi">'+metricCard('Aprofundamentos do dia',A.length)+metricCard('Tópicos de Questões do dia',Q.length)+metricCard('Complementações do dia',displayedComplements.length)+metricCard('Revisões na agenda',revs.length)+metricCard('Pendências anteriores',carryCount)+metricCard('Tempo líquido',time.known?clockMinutes(time.minutes):'N/I')+metricCard('Meta de tempo','3h00')+metricCard('Tempo programado',clockMinutes(A.filter(x=>!completed.has(x.unit.id)).reduce((n,x)=>n+dayTheoreticalMinutes(x.unit),0)+actionableRevs.length*11+(Q.length?18:0)))+metricCard('Tempo livre estimado',clockMinutes(Math.max(0,180-(A.filter(x=>!completed.has(x.unit.id)).reduce((n,x)=>n+dayTheoreticalMinutes(x.unit),0)+actionableRevs.length*11+(Q.length?18:0)))))+'</div>'+
 
  '<div class="section-divider"><strong>1 · Revisões — realizar primeiro</strong></div>'+
