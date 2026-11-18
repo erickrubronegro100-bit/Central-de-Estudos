@@ -892,6 +892,7 @@ function ensureScheduledReviews(study){
   studyData.reviews.push({
    id:freshId(),studyId:study.id,subject:study.subject,topic:study.topic,
    stage,status:'Programada',plannedDate,doneDate:'',autoScheduled:true,
+   ...(stage==='D+1'&&study.date>='2026-11-18'?{adaptiveOptional:true}:{}),
    ...(originalReviewDate!==plannedDate?{originalPlannedDate:originalReviewDate,rescheduledReason:'Sábado sem estudos: revisão transferida para domingo.'}:{})
   });
   modified=true;
@@ -1303,6 +1304,7 @@ function statusReview(r){
  if(r.closedNoFurtherTecReviews)return 'Não realizadas';
  if(reviewIsSkipped(r))return 'Puladas';
  if(r.stage==='D+30')return 'Facultativas';
+ if(r.stage==='D+1'&&r.adaptiveOptional&&!r.adaptiveRequired)return 'Programadas';
  if(r.proposed)return 'Programadas';
  return r.status==='Pendente'||(r.plannedDate&&r.plannedDate<todayISO())?'Pendentes':'Programadas';
 }
@@ -2543,18 +2545,6 @@ function setPlanDone(id,done){
  writeData();renderWorkspace(workspaceById[activeView]);refreshOverview();toast(done?"Estudo concluído.":"Estudo reaberto.");
 }
 
-function statusReview(r){
- if(r.resetForRedo)return "Reiniciada";
- if(r.closedNoFurtherTecReviews)return "Não realizadas";
- if(r.status==="Realizada")return "Realizadas";
- if(r.status==="Pendente"||(r.plannedDate&&r.plannedDate<todayISO()))return "Pendentes";
- return "Programadas";
-}
-
-
-
-
-
 function renderReviewGeneralPanels(){
  const reviews=studyData.reviews.filter(r=>!r.resetForRedo);
  const stages=['D+1','D+7','D+30'];
@@ -3069,7 +3059,7 @@ function optionalD30Panel(date){
 }
 function overdueDailyPanels(date,completed,existing){
  const overdueReviews=studyData.reviews.filter(r=>!r.resetForRedo&&r.plannedDate&&r.plannedDate<date&&
-   r.status!=='Realizada'&&!reviewIsSkipped(r)&&!r.closedNoFurtherTecReviews&&r.stage!=='D+30');
+   r.status!=='Realizada'&&!reviewIsSkipped(r)&&!r.closedNoFurtherTecReviews&&r.stage!=='D+30'&&statusReview(r)==='Pendentes');
  const reviewRows=overdueReviews.sort((a,b)=>a.plannedDate.localeCompare(b.plannedDate)).map(r=>{
   const u=planById.get(r.planId)||findTopicUnit(r.subject,r.topic);
   return '<div class="daily-review-item" data-state="late"><div><strong>'+escapeHtml(r.stage)+'</strong><span>'+escapeHtml(visibleTopicTitle(r.topic))+
@@ -3186,7 +3176,7 @@ function renderDailyStudyWorkspace(){
  const rRow=r=>{
   const u=findTopicUnit(r.subject,r.topic);
   const detail=r.closedNoFurtherTecReviews?'Não realizada: esgotamento das questões TEC; ciclo encerrado':r.status==='Realizada'?'Realizada'+(r.doneDate?' em '+dateBR(r.doneDate):''):
-   'Pendente'+(r.plannedDate<date?' · Adiada desde '+dateBR(r.plannedDate):'');
+   (r.stage==='D+1'&&r.adaptiveOptional&&!r.adaptiveRequired?'Adaptativa (não obrigatória)':'Pendente')+(r.plannedDate<date?' · Adiada desde '+dateBR(r.plannedDate):'');
   return '<div class="daily-review-item" data-state="'+(r.status==='Realizada'?'done':r.closedNoFurtherTecReviews?'done':r.plannedDate<date?'late':'pending')+'"><div><strong>'+escapeHtml(r.stage)+'</strong><span>'+escapeHtml(visibleTopicTitle(r.topic))+'</span><small>'+escapeHtml(detail)+' · Prevista originalmente: '+dateBR(r.originalPlannedDate||r.plannedDate)+'</small></div>'+(u?'<button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="'+escapeHtml(r.stage)+'">Abrir</button>':'')+(r.stage==='D+1'&&r.status!=='Realizada'?'<button type="button" class="smallbtn" data-skip-review="'+escapeHtml(r.id)+'">Pular</button>':'')+'</div>';
  };
  const blank='<div class="emptytable">Nenhuma atividade programada para a data.</div>';
