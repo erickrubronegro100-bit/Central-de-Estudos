@@ -4861,6 +4861,20 @@ function importNov17RecordsOnce(){
  try{localStorage.setItem(key,'1')}catch(e){}
 }
 importNov17RecordsOnce();
+/* Adaptação não destrutiva das D+1 ainda não realizadas: datas e decisões históricas intactas. */
+function adaptPendingD1Once(){
+ const key='central-estudos-d1-adaptativas-20261118-v1';
+ try{if(localStorage.getItem(key)==='1')return;}catch(e){}
+ let changed=false;
+ for(const r of studyData.reviews){
+  if(r.stage==='D+1'&&r.status!=='Realizada'&&!r.closedNoFurtherTecReviews&&!reviewIsSkipped(r)&&!r.resetForRedo&&!r.adaptiveOptional){
+    r.adaptiveOptional=true;changed=true;
+  }
+ }
+ if(changed)writeData();
+ try{localStorage.setItem(key,'1')}catch(e){}
+}
+adaptPendingD1Once();
 
 rebuildWeeklyPlan();
 installComplementationEvents();
