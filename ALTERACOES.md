@@ -1,5 +1,14 @@
 # Registro de alterações — Central de Estudos
 
+## 18/11/2026 — Cronograma das sete semanas restantes e botão de pendências
+
+- **Cronograma diário das Semanas 5–11 (29/11/2026 a 15/01/2027):** calendário detalhado disponível para todas as semanas restantes, com seletor direto por semana e navegação entre dias e semanas.
+- **Distribuição de domingo a sexta:** removida a condição que excluía as sextas-feiras, garantindo que as atividades de Aprofundamento (A) e Questões (Q) de cada semana sejam integralmente distribuídas pelos seis dias. Incluída validação da soma diária contra a meta A+Q; sábado permanece livre.
+- **Metas semanais:** seleção das Semanas 5–11 também na visão de metas, com acesso às listas de tópicos. A distribuição futura permanece recalculável após encerramentos, sem alterar registros já concluídos, prioridades ou a sequência pedagógica.
+- **Atividades pendentes (estudos e revisões):** novo botão expansível, inicialmente recolhido, que reúne estudos A/Q, complementações TEC e revisões obrigatórias D+1/D+7 não concluídas, incluindo atrasadas. As D+30 facultativas permanecem separadas do controle de pendências.
+- **Navegação:** setas e campo de data passam a percorrer todas as semanas restantes; o total de cada semana é exibido no seletor.
+- **Validação:** sintaxe dos scripts principais conferida; sete semanas simuladas com metas A/Q distribuídas em seis dias e sexta-feira não vazia. O resultado efetivo depende dos registros salvos no navegador.
+
 ## 18/11/2026 — Metodologia adaptativa, classificações e cronograma diário
 
 - Classificados os **308 tópicos teóricos ativos** por prioridade estratégica (P1–P4) e densidade (Curto/Médio/Denso), seguindo as tabelas consolidadas do estudante: Ciência Política 36, RICD/PL/RCCN 131, LP/LING 87 e RFIA 54. Preservados códigos, títulos, ordem, 31 residuais e todos os cadernos TEC.
