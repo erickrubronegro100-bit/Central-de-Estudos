@@ -1295,7 +1295,16 @@ function applyNov03Records(){
 applyNov03Records();
 
 function freshId(){return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8)}
-function statusReview(x){if(x.status==='Realizada')return 'Realizadas';if(x.proposed)return 'Programadas';if(x.status==='Pendente'||(x.plannedDate&&x.plannedDate<todayISO()))return 'Pendentes';return 'Programadas'}
+function reviewIsSkipped(r){return r.status==='Pulada'||r.skipped===true}
+function statusReview(r){
+ if(r.resetForRedo)return 'Reiniciada';
+ if(r.status==='Realizada')return 'Realizadas';
+ if(r.closedNoFurtherTecReviews)return 'Não realizadas';
+ if(reviewIsSkipped(r))return 'Puladas';
+ if(r.stage==='D+30')return 'Facultativas';
+ if(r.proposed)return 'Programadas';
+ return r.status==='Pendente'||(r.plannedDate&&r.plannedDate<todayISO())?'Pendentes':'Programadas';
+}
 function statusStudy(x){return x.status==='Concluído'?'Concluídos':'Planejados'}
 const RESULT_KEYS=['cs','cu','ws','wu','correctOther','wrongOther'];
 const PLATFORM_NAMES=['ChatGPT','TEC','Não informada'];
@@ -1636,6 +1645,8 @@ function lastClosedStudyWeekIndex(weeks=studyWeeks){
  // O fechamento definitivo de 13/11 já encerra a Semana 3, mesmo antes da meia-noite.
  if(studyData.attempts.some(a=>a.reportId==='relatorio-diario-20261113-definitivo'))
   index=Math.max(index,2);
+ // Semana 4 encerrada para novas atividades por decisão expressa, sem simular conclusões.
+ if(today>='2026-11-18')index=Math.max(index,3);
  return index;
 }
 function detailedStudyWeekIndex(weeks=studyWeeks){
@@ -1854,13 +1865,29 @@ let studyWeeks=[];
 let weeklyUnitIndex=new Map();
 function rebuildWeeklyPlan(){
  studyWeeks=distributeWeek4PendingThroughFriday(distributeNov16Aprofundamentos(rebalanceAfterClosedStudyWeek(redistributeWeek3Aprofundamento(buildWeeklyPlan()))));
+ // Planejamento principal: 230 tópicos A pendentes, sem as 31 unidades legislativas residuais.
+ // Semana 4 encerrada operacionalmente; distribuir o saldo sem duplicar nem alterar estudos concluídos.
+ if(todayISO()>='2026-11-18'){
+  const future=studyWeeks.filter(w=>w.index>=4), done=new Set(planUnits.filter(u=>u.flow==='A'&&completionOf(u)).map(u=>u.id));
+  const mainA=planUnits.filter(u=>u.flow==='A'&&u.legislativePhase!=='Residual'&&!done.has(u.id))
+   .sort((a,b)=>a.order-b.order);
+  const quotas=evenQuotas(mainA.length,future.length);
+  let cursor=0;
+  for(let i=0;i<future.length;i++){
+   const w=future[i],q=w.units.filter(u=>u.flow==='Q');
+   const a=mainA.slice(cursor,cursor+quotas[i]);cursor+=a.length;
+   w.units=[...a,...q];w.quotaA=a.length;w.quotaQ=q.length;
+  }
+  if(mainA.length!==230||cursor!==mainA.length)
+   console.warn('Meta de 230 tópicos: conferir registros locais; saldo atual',mainA.length);
+ }
  weeklyUnitIndex=new Map(studyWeeks.flatMap(w=>w.units.map(u=>[u.id,w.index])));
 }
 function plannedStudyDates(start,end){
  const days=[];
  for(let d=start;d<=end;d=shiftAgendaDate(d,1)){
   const dow=new Date(d+'T12:00:00Z').getUTCDay();
-  if((dow!==5&&dow!==6||d==='2026-11-20')&&!dateBetween(d,'2026-11-23','2026-11-28'))days.push(d);
+  if(dow!==6&&!dateBetween(d,'2026-11-23','2026-11-28'))days.push(d);
  }
  return days;
 }
@@ -2517,13 +2544,13 @@ function renderReviewGeneralPanels(){
  const cards=stages.map(stage=>{
   const rows=reviews.filter(r=>r.stage===stage),done=rows.filter(r=>r.status==='Realizada').length;
   const late=rows.filter(r=>statusReview(r)==='Pendentes').length;
-  const future=rows.filter(r=>statusReview(r)==='Programadas').length;
+  const future=rows.filter(r=>['Programadas','Facultativas'].includes(statusReview(r))).length;
   const pct=rows.length?Math.round(100*done/rows.length):0;
-  return '<div class="review-stage"><strong>'+stage+'</strong><small>'+done+' realizadas · '+late+' atrasadas · '+future+' programadas</small>'+
+  return '<div class="review-stage"><strong>'+stage+'</strong><small>'+done+' realizadas · '+(stage==='D+30'?future+' facultativas':late+' atrasadas · '+future+' programadas')+'</small>'+
    '<div class="review-progress-track" role="progressbar" aria-label="Revisões '+stage+' realizadas" aria-valuenow="'+done+'" aria-valuemin="0" aria-valuemax="'+rows.length+'"><i style="width:'+pct+'%"></i></div>'+
    '<small>'+pct+'% concluído nesta etapa</small></div>';
  }).join('');
- const due=reviews.filter(r=>r.plannedDate===todayISO()&&r.status!=='Realizada'&&!r.closedNoFurtherTecReviews).length;
+ const due=reviews.filter(r=>r.plannedDate===todayISO()&&['D+1','D+7'].includes(r.stage)&&!['Realizadas','Puladas','Não realizadas'].includes(statusReview(r))).length;
  const overdue=reviews.filter(r=>statusReview(r)==='Pendentes').length;
  const summary='<div class="review-stage-summary">'+cards+'</div>';
  return summary+'<div class="weekly-kpi">'+metricCard('Vencendo hoje',due)+metricCard('Atrasadas',overdue)+
