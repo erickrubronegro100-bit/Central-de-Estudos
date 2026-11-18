@@ -1,5 +1,19 @@
 # Registro de alterações — Central de Estudos
 
+## 18/11/2026 — Metodologia definitiva: revisões adaptativas, Semana 4, tempo e comandos
+
+> Esta entrada substitui as regras operacionais incompatíveis das entradas anteriores; os registros antigos permanecem como histórico de evolução, não como instruções vigentes.
+
+- **Revisão principal:** D+1 ou D+7 definida por prioridade P1–P4 e desempenho registrado. P1/P2 com domínio satisfatório tendem a D+7; dificuldades relevantes podem indicar D+1 e D+7 adicional justificada. P3/P4 com dificuldades tendem a D+1; com bom domínio, D+7. Persistência de erros/insegurança pode justificar segunda revisão. Revisões já realizadas preservadas; revisões previamente programadas que não são mais exigidas ficam facultativas, sem atraso.
+- **D+30:** sempre facultativa, sem impacto no cumprimento. Painel de sugestões filtra pontos elegíveis a partir de erros, inseguranças ou ⭐ efetivamente registrados, sem presumir destaques não estruturados. Mantidas baterias inéditas e correções dos erros e acertos inseguros.
+- **Semana 4 (18–20/11):** não encerrar antecipadamente; manter nove aprofundamentos distribuídos em três dias, reconhecendo os que forem concluídos. O saldo principal segue para as sete semanas 5–11. No cenário de 230 aprofundamentos ainda pendentes em 18/11, são 9 nesta semana e 221 nas sete seguintes. **Os totais efetivos dependem dos históricos locais** e serão ajustados sem marcar conclusões.
+- **Questões TEC:** rotina de referência 15–20 min por dia incluída nas três horas, com reserva de 18 min na estimativa e distribuição das unidades Q para evitar concentração na Semana 4. Sem alterar questões, filtros ou dados TEC.
+- **Tempo disponível:** mesmo cálculo para os cartões do cronograma e para «Aproveitar tempo livre». Considera tempo líquido registrado, estudos e revisões obrigatórios ainda não realizados, pendências anteriores e reserva diária única para TEC; não multiplica a reserva por caderno. É estimativa sujeita ao tempo real.
+- **Antecipações:** exigem confirmação antes de abrir o estudo; abrir não conclui. Ao registrar a conclusão, as metas semanais são recalculadas e o tópico deixa de integrar as pendências futuras.
+- **Última semana (10–15/01):** 31 tópicos residuais legislativos mantidos como opcionais, fora das quotas obrigatórias; o próprio painel possibilita acessar as revisões existentes para seleção final P1/P2, erros, inseguranças e ⭐.
+- **Comandos:** somente 40 ocorrências da frase introdutória sobre a obrigatoriedade da D+7 foram harmonizadas, nos textos e na apresentação dos 37 documentos. Corpo pedagógico, quantidade de questões, etapas, identificadores e regras de correção integralmente preservados; contexto de abertura do comando atualizado.
+- **Verificações:** scripts principais com sintaxe válida; simulações isoladas da alocação testaram 9+221, 3 estudos concluídos no dia 18/11 e redistribuição pós-semana 4, com totais A/Q diários iguais às metas semanais. Os dados locais reais do navegador e o deploy Netlify não foram testados nesta auditoria.
+
 ## 18/11/2026 — Separação de pendências anteriores e agenda do dia
 
 - O botão **Atividades pendentes (estudos e revisões)** agora mostra apenas tarefas vencidas em dias anteriores à data corrente, sem incluir atividades programadas para hoje ou para datas futuras.
