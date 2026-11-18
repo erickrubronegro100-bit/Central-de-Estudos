@@ -1578,8 +1578,9 @@ function renderEntry(x,kind){
  const pedagogy=kind==='attempt'?[x.originalDomain&&x.originalDomain!==x.domain?'Classificação original: '+x.originalDomain:null,x.reinforcement?'Reforço: '+x.reinforcement:null,x.nextTecIntensity?'Próximo TEC: intensidade '+x.nextTecIntensity.toLocaleLowerCase('pt-BR'):null,x.correctedErrors?'Erros corrigidos: '+x.correctedErrors:null,x.errorNote?'Observações pedagógicas: '+x.errorNote:null,x.pedagogicalNotes||null,x.completionConfirmed===false?'Conclusão formal não informada':null,x.reviewConfirmed===false&&!stageForContact(x.contact)?'Contato TEC sem etapa de revisão identificada':null,x.insecureCorrectUnstudied?'Acertos inseguros ainda não estudados: '+x.insecureCorrectUnstudied:null,x.domainCorrection||null].filter(Boolean).map(t=>`<p class="study-pedagogical">${escapeHtml(t)}</p>`).join(''):'';
   const relatedUnit=kind==='review'?findTopicUnit(x.subject,x.topic):null;
  const openMaterials=relatedUnit?`<button class="block-access" type="button" data-open-topic="${escapeHtml(relatedUnit.id)}" data-open-stage="${escapeHtml(x.stage||'Estudo inicial')}">◫ Materiais e comandos</button>`:'';
+const skipAction=kind==='review'&&['D+1','D+30'].includes(x.stage)&&x.status!=='Realizada'&&!reviewIsSkipped(x)?`<button class="smallbtn" type="button" data-skip-review="${escapeHtml(x.id)}">Pular revisão</button>`:'';
 const action=kind==='study'?`<button class="smallbtn" type="button" data-toggle-study="${escapeHtml(x.id)}">${x.status==='Concluído'?'↶ Voltar a planejado':'✓ Concluir'}</button>`:`<button class="smallbtn" type="button" data-remove="${kind==='attempt'?'attempt-topic':escapeHtml(kind)}" data-recordid="${escapeHtml(x.id)}" aria-label="Excluir registro">Excluir</button>`;
- return `<div class="log-entry"><div><h3>${escapeHtml(headline)}</h3><p><span class="logbadge">${escapeHtml(subjectLabel(x.subject))}</span>${status?`<span class="logbadge">${escapeHtml(status)}</span>`:''}${domain}</p><p>${escapeHtml(meta)}</p>${quantitative}${pedagogy}${reviewExtra}</div><div class="plan-unit-actions">${openMaterials}${action}</div></div>`;
+ return `<div class="log-entry"><div><h3>${escapeHtml(headline)}</h3><p><span class="logbadge">${escapeHtml(subjectLabel(x.subject))}</span>${status?`<span class="logbadge">${escapeHtml(status)}</span>`:''}${domain}</p><p>${escapeHtml(meta)}</p>${quantitative}${pedagogy}${reviewExtra}</div><div class="plan-unit-actions">${openMaterials}${skipAction}${action}</div></div>`;
 }
 function listFor(items,kind){return items.length?`<div class="log-list">${items.map(x=>renderEntry(x,kind)).join('')}</div>`:'<div class="emptytable">Nenhum registro nesta seleção.</div>'}
 function choiceBar(view,choices){const active=viewFilters[view]||choices[0];return `<div class="statusbar" aria-label="Filtrar por situação">${choices.map(s=>`<button class="statusbutton" type="button" data-filter="${escapeHtml(s)}" aria-pressed="${active===s}">${escapeHtml(s)}</button>`).join('')}</div>`}
@@ -2045,7 +2046,7 @@ function renderStudyWorkspace(v){
  const unique=[...new Set(rows.map(x=>x.subject))];const opts=['Todos',...unique].map(key=>`<option value="${escapeHtml(key)}" ${key===(planSubjects[v.id]||'Todos')?'selected':''}>${key==='Todos'?'Todas as matérias':escapeHtml(subjectLabel(key))}</option>`).join('');
  const counter=rows.length?`${rows.filter(x=>x.status==='Concluído').length} de ${rows.length} concluídas`:'Sem unidades cadastradas';
  const note=v.id==='estudos-questoes'||v.id==='estudos-geral'?'<p class="plan-note"><strong>Organização dos tópicos:</strong> as unidades seguem a sequência pedagógica cadastrada, com identificação padronizada das disciplinas.</p>':'';
- return `${v.id==='estudos-geral'?'':`<div class="workspace-metrics">${metricCard('Planejados',formatNum(p))}${metricCard('Concluídos',formatNum(c))}${metricCard('Total cadastrado',formatNum(rows.length+extras.length))}</div>`}<div class="plan-legend">${escapeHtml(type)} · ${counter} · as unidades seguem a sequência pedagógica cadastrada.</div><div class="plan-progress" aria-label="Progresso dos estudos"><div class="plan-progress-fill" style="width:${rows.length?(100*rows.filter(x=>x.status==='Concluído').length/rows.length).toFixed(2):0}%"></div></div>${choiceBar(v.id,['Planejados','Concluídos'])}${note}<div class="plan-controls"><input id="planSearch" type="search" placeholder="Buscar código, matéria ou nome do tópico…" aria-label="Buscar nas unidades de estudo" value="${escapeHtml(planQueries[v.id]||'')}"><select id="planSubjectFilter" aria-label="Filtrar matérias">${opts}</select></div>${panel('Sequência integrada · '+filt,'Selecione um item para registrar sua conclusão. Ao concluir o estudo inicial, as revisões D+1, D+7 e D+30 são programadas automaticamente a partir da data do estudo.','<div id="planList"></div><div class="plan-pager" id="planPagination"></div>')}${extras.length?`<div style="margin-top:19px">${panel('Registros avulsos · '+filt,'Registros cadastrados manualmente antes ou depois da importação do planejamento.',listFor(relevant,'study'))}</div>`:''}<p class="statusnote">Aprofundamento e Questões: conclua apenas atividades efetivamente realizadas. Complementação (TEC): abra a unidade, registre a sessão e finalize a etapa para atualizar a conclusão e agendar revisões.</p>`;
+ return `${v.id==='estudos-geral'?'':`<div class="workspace-metrics">${metricCard('Planejados',formatNum(p))}${metricCard('Concluídos',formatNum(c))}${metricCard('Total cadastrado',formatNum(rows.length+extras.length))}</div>`}<div class="plan-legend">${escapeHtml(type)} · ${counter} · as unidades seguem a sequência pedagógica cadastrada.</div><div class="plan-progress" aria-label="Progresso dos estudos"><div class="plan-progress-fill" style="width:${rows.length?(100*rows.filter(x=>x.status==='Concluído').length/rows.length).toFixed(2):0}%"></div></div>${choiceBar(v.id,['Planejados','Concluídos'])}${note}<div class="plan-controls"><input id="planSearch" type="search" placeholder="Buscar código, matéria ou nome do tópico…" aria-label="Buscar nas unidades de estudo" value="${escapeHtml(planQueries[v.id]||'')}"><select id="planSubjectFilter" aria-label="Filtrar matérias">${opts}</select></div>${panel('Sequência integrada · '+filt,'Selecione um item para registrar sua conclusão. Ao concluir o estudo inicial: D+7 obrigatória; D+1 adaptativa (pode ser pulada); D+30 facultativa, sem gerar atraso.','<div id="planList"></div><div class="plan-pager" id="planPagination"></div>')}${extras.length?`<div style="margin-top:19px">${panel('Registros avulsos · '+filt,'Registros cadastrados manualmente antes ou depois da importação do planejamento.',listFor(relevant,'study'))}</div>`:''}<p class="statusnote">Aprofundamento e Questões: conclua apenas atividades efetivamente realizadas. Complementação (TEC): abra a unidade, registre a sessão e finalize a etapa para atualizar a conclusão e agendar revisões.</p>`;
 }
 
 
@@ -2575,8 +2576,12 @@ function renderWorkspace(v){
   const stage=v.id==="revisoes-d1"?"D+1":v.id==="revisoes-d7"?"D+7":v.id==="revisoes-d30"?"D+30":null;
   const flow=v.id==="revisoes-complementacao"?"C":v.id==="revisoes-aprofundamento"?"A":null;
   const all=studyData.reviews.filter(x=>!x.resetForRedo&&(!stage||x.stage===stage)&&(!flow||reviewInitialStudyFlow(x)===flow)&&(v.id!=="revisoes-dia"||x.plannedDate===todayISO()||x.doneDate===todayISO()));
-  const counts=["Programadas","Realizadas","Pendentes","Não realizadas"].map(label=>all.filter(x=>statusReview(x)===label).length);
-  const choice=viewFilters[v.id]||"Programadas",shown=all.filter(x=>statusReview(x)===choice).slice().reverse();
+  const tabs=stage==='D+1'?['Programadas','Realizadas','Pendentes','Puladas']:
+   stage==='D+7'?['Programadas','Realizadas','Pendentes','Não realizadas']:
+   stage==='D+30'?['Facultativas','Realizadas','Puladas']:
+   ['Programadas','Realizadas','Pendentes','Facultativas','Puladas','Não realizadas'];
+  const choice=tabs.includes(viewFilters[v.id])?viewFilters[v.id]:tabs[0];
+  const shown=all.filter(x=>statusReview(x)===choice).slice().reverse();
   const groupedPanels=v.id==="revisoes-dia"?
    [["A","Revisões — aprofundamento"],["Q","Revisões — questões"],["C","Revisões — complementação (TEC)"]].map(([modality,title])=>{
     const items=shown.filter(r=>reviewInitialStudyFlow(r)===modality);
@@ -2585,6 +2590,10 @@ function renderWorkspace(v){
    (shown.some(r=>!["A","Q","C"].includes(reviewInitialStudyFlow(r)))?
     panel("Revisões — Sem modalidade identificada","Revisões cujo estudo inicial não pôde ser classificado.",
       listFor(shown.filter(r=>!["A","Q","C"].includes(reviewInitialStudyFlow(r))),"review")):""):
+   stage==='D+30'?['P1','P2','P3','P4'].map(p=>{
+      const items=shown.filter(r=>reviewPriorityCode(r)===p);
+      return panel('D+30 · '+p+' · '+choice,items.length+' revisão(ões) nesta prioridade; todas facultativas.',listFor(items,'review'));
+    }).join(''):
    panel((stage||v.title)+" · "+choice,"Revisões separadas por modalidade, em dias corridos.",listFor(shown,"review"));
   const modalitySummary=v.id==="revisoes-dia"?
    '<div class="workspace-metrics">'+
@@ -2592,13 +2601,15 @@ function renderWorkspace(v){
     metricCard("Questões",all.filter(r=>reviewInitialStudyFlow(r)==="Q").length)+
     metricCard("Complementação (TEC)",all.filter(r=>reviewInitialStudyFlow(r)==="C").length)+
    '</div>':"";
-  const urgent=all.filter(r=>r.status!=='Realizada'&&r.plannedDate&&r.plannedDate<todayISO()&&!r.closedNoFurtherTecReviews).length;
-  const todayDue=all.filter(r=>r.status!=='Realizada'&&!r.closedNoFurtherTecReviews&&r.plannedDate===todayISO()).length;
-  const reviewNotice='<div class="review-deadlines" role="status"><div><strong>'+(urgent===0?'Nenhuma revisão atrasada':uiQuantity(urgent,'revisão atrasada','revisões atrasadas'))+'</strong><small>Prazos anteriores à data atual, ainda sem conclusão</small></div><div><strong>'+(todayDue===0?'Nenhuma revisão prevista para hoje':uiQuantity(todayDue,'revisão prevista para hoje','revisões previstas para hoje'))+'</strong><small>D+1, D+7 e D+30 · datas originais preservadas</small></div></div>';
+  const urgent=all.filter(r=>statusReview(r)==='Pendentes'&&r.plannedDate&&r.plannedDate<todayISO()).length;
+  const todayDue=all.filter(r=>['D+1','D+7'].includes(r.stage)&&r.status!=='Realizada'&&!reviewIsSkipped(r)&&!r.closedNoFurtherTecReviews&&r.plannedDate===todayISO()).length;
+  const reviewNotice='<div class="review-deadlines" role="status"><div><strong>'+(urgent===0?'Nenhuma revisão atrasada':uiQuantity(urgent,'revisão atrasada','revisões atrasadas'))+'</strong><small>Prazos anteriores à data atual, ainda sem conclusão</small></div><div><strong>'+(todayDue===0?'Nenhuma revisão prevista para hoje':uiQuantity(todayDue,'revisão prevista para hoje','revisões previstas para hoje'))+'</strong><small>D+7 obrigatória; D+1 adaptativa; D+30 facultativa</small></div></div>';
   const reviewSummary=reviewNotice+(v.id==="revisoes-geral"?renderReviewGeneralPanels():"")+
-   '<div class="workspace-metrics">'+metricCard("Programadas",counts[0])+metricCard("Realizadas",counts[1])+metricCard("Pendentes",counts[2])+metricCard("Não realizadas",counts[3])+'</div>';
+   '<div class="workspace-metrics">'+
+    (stage==='D+30'?metricCard('Disponíveis',all.filter(r=>statusReview(r)==='Facultativas'&&r.plannedDate<=todayISO()).length)+metricCard('Agendadas',all.filter(r=>statusReview(r)==='Facultativas'&&r.plannedDate>todayISO()).length)+metricCard('Realizadas',all.filter(r=>statusReview(r)==='Realizadas').length)+metricCard('Puladas',all.filter(r=>statusReview(r)==='Puladas').length):
+    tabs.slice(0,4).map(label=>metricCard(label,all.filter(r=>statusReview(r)===label).length)).join(''))+'</div>';
   body=v.id==="revisoes-geral"?reviewSummary:
-   reviewSummary+modalitySummary+choiceBar(v.id,["Programadas","Realizadas","Pendentes","Não realizadas"])+actionsHtml("review")+entryForm("review",v)+groupedPanels;
+   reviewSummary+modalitySummary+choiceBar(v.id,tabs)+actionsHtml("review")+entryForm("review",v)+groupedPanels;
  }else{
   const rawAttempts=subsetByView(v,studyData.attempts).filter(x=>!x.resetForRedo);
   const allAttempts=topicResults(rawAttempts),m=metricsAttempt(rawAttempts),has=m.all>0;
