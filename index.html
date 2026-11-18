@@ -1692,7 +1692,9 @@ function lastClosedStudyWeekIndex(weeks=studyWeeks){
  let index=weeks.reduce((n,w)=>w.end<today?Math.max(n,w.index):n,-1);
  if(studyData.attempts.some(a=>a.reportId==='relatorio-diario-20261113-definitivo'))
   index=Math.max(index,2);
- // A Semana 4 permanece aberta até 22/11; nove aprofundamentos ficam em 18–20/11.
+ // Decisão de 18/11: encerrar operacionalmente a Semana 4, sem dar baixa fictícia.
+ // Os estudos A/Q ainda não concluídos passam às Semanas 5–11 após a pausa de 23–28/11.
+ if(today>='2026-11-18')index=Math.max(index,3);
  return index;
 }
 function detailedStudyWeekIndex(weeks=studyWeeks){
@@ -3254,19 +3256,34 @@ function pendingActivitiesPanel(backlog){
 function estimateDayAvailability(date,completed,backlog){
  const now=todayISO(),planned=dailyStudyAssignments(date).units;
  const pendingA=planned.filter(u=>u.flow==='A'&&!completed.has(u.id));
+ const pendingQ=planned.filter(u=>u.flow==='Q'&&!completed.has(u.id));
  const pendingReviews=studyData.reviews.filter(r=>r.status!=='Realizada'&&
   r.plannedDate===date&&['D+1','D+7'].includes(r.stage)&&reviewIsRequired(r));
+ const pendingC=planUnits.filter(u=>u.flow==='C'&&!completed.has(u.id)).filter(u=>{
+  const gate=complementGate(u);
+  return gate&&['Liberado','Em andamento'].includes(gate.status)&&gate.scheduled===date;
+ });
  const earlier=date===now?(backlog||{reviews:[],studies:[],tec:[]}):{reviews:[],studies:[],tec:[]};
- const earlierA=earlier.studies.filter(x=>x.unit.flow==='A').reduce((n,x)=>n+dayTheoreticalMinutes(x.unit),0);
- const earlierRevisions=earlier.reviews.length*11;
+ const earlierA=earlier.studies.filter(x=>x.unit.flow==='A');
+ const earlierQ=earlier.studies.filter(x=>x.unit.flow==='Q');
  const used=dailyRegisteredStudyMinutes(date);
  const tecLogged=studyData.attempts.filter(a=>a.date===date&&
   (a.source==='TEC'||a.platforms?.TEC)).reduce((n,a)=>n+
   (Number.isFinite(a.durationMinutes)&&a.durationMinutes>=0?a.durationMinutes:0),0);
+ // Questões (Q) e complementações (C) compartilham a reserva diária TEC
+ // de 15–20 minutos, estimada em 18; não cobrar 18 minutos por caderno.
  const tecReserve=Math.max(0,18-Math.min(18,tecLogged));
- const compulsory=pendingA.reduce((n,u)=>n+dayTheoreticalMinutes(u),0)+
-  pendingReviews.length*11+earlierA+earlierRevisions+tecReserve;
- return {compulsory,remaining:Math.max(0,180-(used.known?used.minutes:0)-compulsory),tecReserve,used};
+ const earlierTec=earlierQ.length+(earlier.tec||[]).length;
+ // Sessão extra de referência para pendências TEC anteriores; não conta cada
+ // caderno como 18 minutos e não modifica os filtros ou resultados do TEC.
+ const overdueTecReserve=earlierTec?18:0;
+ const planA=pendingA.reduce((n,u)=>n+dayTheoreticalMinutes(u),0);
+ const previousA=earlierA.reduce((n,x)=>n+dayTheoreticalMinutes(x.unit),0);
+ const reviewMinutes=(pendingReviews.length+(earlier.reviews||[]).length)*11;
+ const compulsory=planA+previousA+reviewMinutes+tecReserve+overdueTecReserve;
+ const remaining=Math.max(0,180-(used.known?used.minutes:0)-compulsory);
+ return {compulsory,remaining,tecReserve,used,overdueTecReserve,tecScheduled:pendingQ.length+pendingC.length,
+  planA,previousA,reviewMinutes,overdueTEC:earlierTec};
 }
 function dailyFreeTimePanel(date,completed,backlog){
  const week=studyWeeks.find(w=>dateBetween(date,w.start,w.end));
@@ -3284,11 +3301,21 @@ function dailyFreeTimePanel(date,completed,backlog){
   Number(reviewPriorityCode(a).slice(1))-Number(reviewPriorityCode(b).slice(1))||
   a.plannedDate.localeCompare(b.plannedDate));
  const items=[];let room=remaining;
+ // Simulação conservadora de UMA revisão principal futura (D+1 OU D+7).
+ // Reservar ambos os cenários, sem cadastrar nenhuma revisão fictícia.
+ const reviewForecast=new Map();
  for(const u of unique){
   const estimate=dayTheoreticalMinutes(u);
   if(estimate>room)break;
+  const futureOptions=[1,7].map(offset=>
+   nextPermittedReviewDate(shiftReviewDate(date,offset)))
+   .filter(d=>d&&d<='2027-01-15');
+  const feasible=futureOptions.every(d=>
+   estimateDayAvailability(d,completed,null).remaining-(reviewForecast.get(d)||0)>=11);
+  if(!feasible)break; // Não ultrapassar a carga futura nem violar a sequência.
   items.push({text:'Antecipar · '+u.code+' — '+u.title,id:u.id,stage:'Estudo inicial',
    estimate,after:'Pode gerar revisão principal adaptativa futura',advance:true});
+  for(const d of futureOptions)reviewForecast.set(d,(reviewForecast.get(d)||0)+11);
   room-=estimate;if(items.length>=6)break;
  }
  if(items.length<6)for(const r of optional){
