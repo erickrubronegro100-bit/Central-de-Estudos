@@ -1648,7 +1648,8 @@ function entryForm(type,v){
  const helper=type==='attempt'?'<p class="help">Cada lançamento representa uma sessão independente, inclusive quando há outras sessões do mesmo tópico e dia. Corrija registros excluindo apenas a sessão incorreta, sem relançar resultados já existentes. Acertos inseguros pontuam integralmente.</p>':type==='review'?'<p class="help">Revisões não realizadas com data programada anterior à data atual aparecem automaticamente como pendentes. Marque “Realizada” apenas depois da execução efetiva.</p>':'';
  return `<form class="regform" id="regform" data-formtype="${type}"><h2>${type==='study'?'Registrar estudo inicial':type==='review'?'Registrar revisão':type==='attempt'?'Resultado consolidado do tópico':'Classificar conteúdo'}</h2><div class="formgrid">${fields}</div>${helper}<div class="formfooter"><button type="button" class="smallbtn" data-action="cancel-form">Cancelar</button><button type="submit" class="primary">Salvar registro</button></div></form>`;
 }
-function actionsHtml(type,second=false){return `<div class="panel-actions"><button type="button" class="primary" data-action="toggle-form" data-formtype="${type}">${type==='study'?'+ Registrar estudo':type==='review'?'+ Registrar revisão':type==='attempt'?'+ Registrar resultado do tópico':'+ Classificar ponto'}</button>${!second?`<button type="button" class="smallbtn" data-action="export-data">Exportar dados (.json)</button><button type="button" class="smallbtn" data-action="import-data">Importar dados (.json)</button><input id="importDataFile" hidden type="file" accept="application/json,.json">`:''}</div>`}
+function hasPreImportRecovery(){try{return Boolean(localStorage.getItem('central-estudos-recuperacao-preimportacao-v1'))}catch(e){return false}}
+function actionsHtml(type,second=false){return `<div class="panel-actions"><button type="button" class="primary" data-action="toggle-form" data-formtype="${type}">${type==='study'?'+ Registrar estudo':type==='review'?'+ Registrar revisão':type==='attempt'?'+ Registrar resultado do tópico':'+ Classificar ponto'}</button>${!second?`<button type="button" class="smallbtn" data-action="export-data">Exportar dados (.json)</button><button type="button" class="smallbtn" data-action="import-data">Importar dados (.json)</button>${hasPreImportRecovery()?`<button type="button" class="smallbtn" data-action="restore-preimport">Restaurar pré-importação</button>`:""}<input id="importDataFile" hidden type="file" accept="application/json,.json">`:''}</div>`}
 function getStudies(v){return v.id==='estudos-aprofundamento'?studyData.studies.filter(x=>x.activity==='Aprofundamento'):v.id==='estudos-questoes'?studyData.studies.filter(x=>x.activity==='Questões'):studyData.studies}
 const planQueries={},planSubjects={},planPages={};
 let weeklySubjectFilter='Todos';
@@ -2336,6 +2337,28 @@ async function importData(file){
   refreshOverview();toast('Dados importados. Recuperação anterior preservada.');
  }catch(e){if(previous){studyData=previous;writeData()}toast('Importação não concluída: '+(e?.message||'erro desconhecido'))}
 }
+function restorePreImportData(){
+ try{
+  const raw=localStorage.getItem('central-estudos-recuperacao-preimportacao-v1');
+  if(!raw){toast('Ainda não existe ponto de recuperação local.');return}
+  const backup=JSON.parse(raw);
+  const keys=['studies','reviews','attempts','classifications','pendencies','simulations','writings'];
+  if(!backup||!['studies','reviews','attempts','classifications'].every(k=>Array.isArray(backup[k]))||
+   keys.some(k=>backup[k]!==undefined&&!Array.isArray(backup[k])))
+   throw Error('Ponto de recuperação inválido');
+  if(!window.confirm('Restaurar os registros anteriores à última importação? Os registros atuais serão substituídos. Exporte uma cópia dos atuais antes, se desejar.'))return;
+  const previous=studyData;
+  studyData=Object.fromEntries(keys.map(k=>[k,Array.isArray(backup[k])?backup[k]:[]]));
+  if(!writeData()){studyData=previous;writeData();throw Error('Armazenamento indisponível')}
+  linkDc01ToQuestionPlan();
+  for(const study of studyData.studies)ensureScheduledReviews(study);
+  reconcileContactsAsReviews();
+  if(!writeData()){studyData=previous;writeData();throw Error('Falha na restauração')}
+  if(workspaceById[activeView])renderWorkspace(workspaceById[activeView]);
+  refreshOverview();toast('Registros anteriores à importação restaurados.');
+ }catch(e){toast('Restauração não concluída: '+(e?.message||'erro desconhecido'))}
+}
+
 // Navegação e backup da Visão geral (os indicadores são derivados dos registros locais).
 g('dashboardRoot').addEventListener('click',e=>{
  const btn=e.target.closest('button');if(!btn)return;
@@ -2404,6 +2427,7 @@ g('workspacePage').addEventListener('click',e=>{
  if(btn.dataset.action==='cancel-form'){showEntryForm='';renderWorkspace(workspaceById[activeView]);return}
  if(btn.dataset.action==='export-data'){exportData();return}
  if(btn.dataset.action==='import-data'){g('importDataFile')?.click();return}
+ if(btn.dataset.action==='restore-preimport'){restorePreImportData();return}
 });
 g('workspacePage').addEventListener('input',e=>{if(e.target.id==='planSearch'){planQueries[activeView]=e.target.value;planPages[activeView]=0;refreshPlanList(workspaceById[activeView])}});
 g('workspacePage').addEventListener('submit',e=>{if(e.target.id==='regform'){e.preventDefault();formSubmit(e.target);return}if(e.target.dataset.examKind){e.preventDefault();submitExamPractice(e.target)}});
