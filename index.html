@@ -2126,6 +2126,78 @@ function performanceCharts(attempts){
   '<div class="chart-panel"><h3>Comparativo por disciplina</h3><p>Até oito disciplinas, ordenadas pelo volume de questões</p>'+chart2+'</div></section>';
 }
 
+
+function renderExamPracticePanel(){
+ const sims=studyData.simulations||[],essays=studyData.writings||[];
+ const simRows=sims.slice().reverse().map(x=>
+  '<tr><th>'+dateBR(x.date)+'</th><td>'+escapeHtml(x.label)+'</td><td>'+escapeHtml(x.source)+'</td>'+
+  '<td>'+x.correct+'/'+x.wrong+'/'+x.blank+'</td><td>'+formatNum(x.correct-x.wrong)+'</td><td>'+
+  (x.durationMinutes===null?'N/I':clockMinutes(x.durationMinutes))+'</td><td><button type="button" class="smallbtn" data-exam-delete="simulations" data-exam-id="'+escapeHtml(x.id)+'">Excluir</button></td></tr>').join('');
+ const essayRows=essays.slice().reverse().map(x=>
+  '<tr><th>'+dateBR(x.date)+'</th><td>'+escapeHtml(x.kind)+'</td><td>'+escapeHtml(x.theme)+'</td>'+
+  '<td>'+(x.score===null?'Não avaliada':x.score+(x.maxScore===null?'':'/'+x.maxScore))+'</td><td>'+
+  (x.durationMinutes===null?'N/I':clockMinutes(x.durationMinutes))+'</td><td><button type="button" class="smallbtn" data-exam-delete="writings" data-exam-id="'+escapeHtml(x.id)+'">Excluir</button></td></tr>').join('');
+ const simForm='<details class="history-original"><summary>+ Registrar simulado realizado</summary>'+
+  '<form class="regform" data-exam-kind="simulations"><div class="formgrid">'+
+  '<label>Data<input type="date" name="date" required value="'+todayISO()+'"></label>'+
+  '<label>Nome<input name="label" maxlength="150" placeholder="Simulado 01" required></label>'+
+  '<label>Origem<select name="source"><option>Prova anterior CEBRASPE</option><option>TEC</option><option>ChatGPT</option><option>Outra</option></select></label>'+
+  '<label>Acertos<input type="number" name="correct" min="0" value="0" required></label>'+
+  '<label>Erros<input type="number" name="wrong" min="0" value="0" required></label>'+
+  '<label>Em branco<input type="number" name="blank" min="0" value="0" required></label>'+
+  '<label>Tempo em minutos<input type="number" name="durationMinutes" min="0" placeholder="Opcional"></label>'+
+  '<label class="wide">Observações<input name="notes" maxlength="400"></label></div>'+
+  '<div class="formfooter"><button class="primary" type="submit">Salvar simulado</button></div></form></details>';
+ const essayForm='<details class="history-original"><summary>+ Registrar treino discursivo realizado</summary>'+
+  '<form class="regform" data-exam-kind="writings"><div class="formgrid">'+
+  '<label>Data<input type="date" name="date" required value="'+todayISO()+'"></label>'+
+  '<label>Modalidade<select name="kind"><option>Peça técnica</option><option>Questão discursiva</option><option>Redação</option></select></label>'+
+  '<label class="wide">Tema<input name="theme" maxlength="180" required></label>'+
+  '<label>Nota obtida<input type="number" name="score" min="0" step="0.01" placeholder="Opcional"></label>'+
+  '<label>Nota máxima<input type="number" name="maxScore" min="0.01" step="0.01" placeholder="Opcional"></label>'+
+  '<label>Tempo em minutos<input type="number" name="durationMinutes" min="0" placeholder="Opcional"></label>'+
+  '<label class="wide">Observações<input name="notes" maxlength="400"></label></div>'+
+  '<div class="formfooter"><button class="primary" type="submit">Salvar treino</button></div></form></details>';
+ const simTable='<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Data</th><th>Simulado</th><th>Origem</th><th>A/E/B</th><th>Saldo</th><th>Tempo</th><th>Ação</th></tr></thead><tbody>'+
+  (simRows||'<tr><td colspan="7">Nenhum simulado registrado.</td></tr>')+'</tbody></table></div>';
+ const essayTable='<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Data</th><th>Tipo</th><th>Tema</th><th>Nota</th><th>Tempo</th><th>Ação</th></tr></thead><tbody>'+
+  (essayRows||'<tr><td colspan="6">Nenhuma discursiva registrada.</td></tr>')+'</tbody></table></div>';
+ return panel('Simulados — desempenho em prova',
+  'Registre exclusivamente simulados efetivamente realizados, separados das questões por tópico.',
+  '<div class="weekly-kpi">'+metricCard('Simulados',sims.length)+
+  metricCard('Itens',formatNum(sims.reduce((n,x)=>n+x.correct+x.wrong+x.blank,0)))+
+  metricCard('Saldo C−E',formatNum(sims.reduce((n,x)=>n+x.correct-x.wrong,0)))+'</div>'+
+  '<p class="weekly-note">Saldo ilustrativo C−E = acertos − erros, com brancos = 0. Não substitui a pontuação oficial prevista no edital.</p>'+
+  simForm+simTable)+
+  panel('Discursivas e peças técnicas','Treinos concluídos, sem notas ou realizações presumidas.',
+   '<div class="weekly-kpi">'+metricCard('Treinos',essays.length)+metricCard('Com nota informada',essays.filter(x=>x.score!==null).length)+'</div>'+
+   essayForm+essayTable);
+}
+function submitExamPractice(form){
+ const type=form.dataset.examKind;if(!['simulations','writings'].includes(type))return;
+ const fd=new FormData(form),v=k=>String(fd.get(k)||'').trim(),date=v('date');
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){toast('Informe data válida.');return}
+ const num=k=>v(k)===''?null:Number(v(k)),durationMinutes=num('durationMinutes');
+ if(durationMinutes!==null&&(!Number.isSafeInteger(durationMinutes)||durationMinutes<0)){toast('Tempo inválido.');return}
+ let record={id:freshId(),date,durationMinutes,notes:v('notes')};
+ if(type==='simulations'){
+  const correct=Number(v('correct')),wrong=Number(v('wrong')),blank=Number(v('blank'));
+  if([correct,wrong,blank].some(n=>!Number.isSafeInteger(n)||n<0)||correct+wrong+blank===0||!v('label')){
+   toast('Informe identificação e itens válidos.');return;
+  }
+  record={...record,label:v('label'),source:v('source'),correct,wrong,blank};
+ }else{
+  const score=num('score'),maxScore=num('maxScore');
+  if(!v('theme')||(score!==null&&(!Number.isFinite(score)||score<0))||
+   (maxScore!==null&&(!Number.isFinite(maxScore)||maxScore<=0))||
+   (score!==null&&maxScore!==null&&score>maxScore)){toast('Confira tema e nota.');return}
+  record={...record,kind:v('kind'),theme:v('theme'),score,maxScore};
+ }
+ studyData[type].push(record);
+ if(!writeData()){studyData[type].pop();return}
+ renderWorkspace(workspaceById[activeView]);refreshOverview();toast('Registro salvo.');
+}
+
 function renderPerformanceGeneralPanels(){
  const validAttempts=studyData.attempts.filter(a=>!a.resetForRedo);
  const bySubject=[...new Set(validAttempts.map(x=>canonicalSubject(x.subject)))].map(code=>{
@@ -2140,7 +2212,7 @@ function renderPerformanceGeneralPanels(){
  const nov15Status=nov15Official.length?'<p class="weekly-note"><strong>15/11/2026 — fechamento oficial:</strong> '+nov15Official.length+' atividades, 240 questões e 81 minutos líquidos totais confirmados (1h21min); os 67 minutos informados nos três complementos não são adicionais. A D+7 de RICD 10 foi concluída em 15/11/2026, com data efetiva confirmada e cronograma atualizado; não houve novo lançamento. '+nov15Supplement.length+' estudos iniciais confirmados separadamente (CP 5, LP/LING 14 e RFIA 5) permanecem complementares, sem alterar o subtotal original.</p>':'';
  // Detalhamento individual de RICD 10 preservado no registro da tentativa;
  // o painel complementar não integra mais o Quadro geral de Desempenho.
- return nov15Status+performanceCharts(validAttempts)+confidenceChart(validAttempts)+
+ return nov15Status+performanceCharts(validAttempts)+confidenceChart(validAttempts)+renderExamPracticePanel()+
  '<div class="weekly-kpi">'+metricCard('Questões acumuladas',formatNum(totals.all))+metricCard('Acertos totais',formatNum(totals.correct))+metricCard('Erros totais',formatNum(totals.all-totals.correct))+metricCard('Aproveitamento',formatPercent(totals.overall))+metricCard('Insegurança declarada',formatPercent(insecurity))+metricCard('Tópicos avaliados',formatNum(topicResults(validAttempts).length))+'</div>'+
  panel('Resultados por disciplina','Total de questões e segurança a partir de sessões distintas, sem duplicação.','<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Disciplina</th><th>Tópicos</th><th>Questões</th><th>Acertos</th><th>Erros</th><th>Aproveitamento</th><th>Insegurança</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
  '<p class="weekly-note">Aproveitamento bruto = (acertos seguros + inseguros + acertos sem classificação) ÷ questões válidas. Insegurança = (AI + EI) ÷ questões. Estes indicadores não são pontuação líquida CEBRASPE.</p>';
@@ -2319,6 +2391,13 @@ g('workspacePage').addEventListener('click',e=>{
  if(btn.dataset.planId){setPlanDone(btn.dataset.planId,btn.dataset.planDone==='1');return}
  if(btn.dataset.toggleStudy){const item=studyData.studies.find(x=>x.id===btn.dataset.toggleStudy&&!x.planId);if(item){item.status=item.status==='Concluído'?'Planejado':'Concluído';writeData();renderWorkspace(workspaceById[activeView]);refreshOverview()}return}
  if(btn.hasAttribute('data-plan-page')){planPages[activeView]=Number(btn.dataset.planPage)||0;refreshPlanList(workspaceById[activeView]);return}
+ if(btn.dataset.examDelete){
+  const key=btn.dataset.examDelete,id=btn.dataset.examId;
+  if(!['simulations','writings'].includes(key)||!id)return;
+  if(!window.confirm('Excluir apenas este registro de '+(key==='simulations'?'simulado':'discursiva')+'?'))return;
+  studyData[key]=studyData[key].filter(x=>x.id!==id);
+  writeData();renderWorkspace(workspaceById[activeView]);refreshOverview();return;
+ }
  if(btn.dataset.remove){deleteRecord(btn.dataset.remove,btn.dataset.recordid);return}
  if(btn.dataset.action==='toggle-form'){showEntryForm=showEntryForm===btn.dataset.formtype?'':btn.dataset.formtype;renderWorkspace(workspaceById[activeView]);return}
  if(btn.dataset.action==='cancel-form'){showEntryForm='';renderWorkspace(workspaceById[activeView]);return}
@@ -2326,7 +2405,7 @@ g('workspacePage').addEventListener('click',e=>{
  if(btn.dataset.action==='import-data'){g('importDataFile')?.click();return}
 });
 g('workspacePage').addEventListener('input',e=>{if(e.target.id==='planSearch'){planQueries[activeView]=e.target.value;planPages[activeView]=0;refreshPlanList(workspaceById[activeView])}});
-g('workspacePage').addEventListener('submit',e=>{if(e.target.id==='regform'){e.preventDefault();formSubmit(e.target)}});
+g('workspacePage').addEventListener('submit',e=>{if(e.target.id==='regform'){e.preventDefault();formSubmit(e.target);return}if(e.target.dataset.examKind){e.preventDefault();submitExamPractice(e.target)}});
 g('workspacePage').addEventListener('change',e=>{
  if(e.target.name==='studyId'&&e.target.value){
    const linked=studyData.studies.find(x=>!x.planId&&x.id===e.target.value);
