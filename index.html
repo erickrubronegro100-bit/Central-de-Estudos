@@ -2458,7 +2458,53 @@ function buildLibraryUI(){
 function filtered(){return docs.filter(d=>(group==='Todos'||d.materia===group)&&(kind==='Todos'||(kind==='Questionário'?d.categoria.startsWith('Questionário'):d.categoria===kind))&&(!query||[d.titulo,d.categoria,d.materia,subjectLabel(d.materia),d.codigo,d.conteudo,String(d.numero)].some(t=>t.toLocaleLowerCase('pt-BR').includes(query))));}
 function draw(){const show=filtered(), target=g('tables');target.innerHTML='';for(let [id,full,description] of subjects){const sel=show.filter(d=>d.materia===id);if((group!=='Todos'&&group!==id)||!sel.length)continue;const section=document.createElement('section');section.className='section';section.id='subject-'+id;section.innerHTML=`<div class="secrow"><h2 class="sectitle"><span class="secnum">BLOCO ${subjects.findIndex(v=>v[0]===id)+1}</span>${escapeHtml(full)} <span style="font-size:12px;color:var(--muted);font-weight:500">${escapeHtml(description)}</span></h2><span class="countlabel">${sel.length} de ${docs.filter(d=>d.materia===id).length}</span></div><div class="tablebox"><table class="library"><thead><tr><th style="width:105px">Código</th><th>Comando</th><th>Modalidade</th><th style="width:98px">Ação</th></tr></thead><tbody>${sel.map(d=>`<tr data-id="${d.id}" tabindex="0" role="button" aria-label="Abrir ${escapeHtml(d.codigo)}: ${escapeHtml(d.titulo)}"><td><span class="idpill">${escapeHtml(d.codigo)}</span></td><td><div class="itemtitle">${escapeHtml(d.titulo)}</div><div class="itemdesc">${d.categoria.startsWith('Questionário')?'Avaliação e registro para o Planejamento Geral':d.categoria==='Relatório'?'Consolidação quantitativa diária':'Aula, fixação e recuperação ativa'} · ${d.palavras.toLocaleString('pt-BR')} palavras</div></td><td><span class="typebadge">${escapeHtml(label(d.categoria))}</span></td><td><button class="openbtn" data-open="${d.id}">Abrir ↗</button></td></tr>`).join('')}</tbody></table></div>`;target.appendChild(section)}if(!target.children.length)target.innerHTML='<div class="noresults">Nenhum comando encontrado com os filtros atuais. Experimente outra busca.</div>';target.querySelectorAll('tr[data-id]').forEach(tr=>{tr.addEventListener('click',()=>openDoc(Number(tr.dataset.id)));tr.addEventListener('keydown',(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openDoc(Number(tr.dataset.id))}})});}
 function toast(msg){clearTimeout(toastTimer);g('toast').textContent=msg;g('toast').classList.add('visible');toastTimer=setTimeout(()=>g('toast').classList.remove('visible'),2200)}
-function openDoc(id,updateHash=true){const pos=docs.findIndex(x=>x.id===id);if(pos===-1)return;if(activeView!=='comandos')showPage('comandos',false);const d=docs[pos];current=id;setActiveNav(id);g('viewlabel').textContent=`${d.codigo} · Comando ${String(d.numero).padStart(2,'0')}`;g('viewtitle').textContent=d.titulo;g('viewmeta').textContent=`${subjectLabel(d.materia)} · ${label(d.categoria)} · ${d.palavras.toLocaleString('pt-BR')} palavras · pronto para copiar`;g('promptbody').innerHTML=d.html;g('copyFallback').hidden=true;g('manualCopyText').value='';g('viewbody').scrollTop=0;g('promptbody').scrollTop=0;g('pagination').textContent=`${String(pos+1).padStart(2,'0')} / ${String(docs.length).padStart(2,'0')}`;g('prev').disabled=pos===0;g('next').disabled=pos===docs.length-1;if(!g('viewer').open)g('viewer').showModal();if(updateHash)try{history.replaceState(null,'','#comando-'+id)}catch(e){}}
+
+function renderMarkdownFromSource(source){
+ // O conteúdo textual é a fonte única para visualização, cópia e exportação.
+ const inline=raw=>{
+  let t=escapeHtml(raw);
+  t=t.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,(_,label,url)=>
+   '<a href="'+url+'" target="_blank" rel="noopener noreferrer">'+label+'</a>');
+  return t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+   .replace(/__([^_]+)__/g,'<strong>$1</strong>')
+   .replace(/\u0060([^\u0060]+)\u0060/g,'<code>$1</code>')
+   .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g,'<em>$1</em>');
+ };
+ const cells=line=>line.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(x=>x.trim());
+ const isDivider=line=>/^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
+ const lines=String(source||'').split(/\r?\n/),parts=[];let list=null,code=false,codeLines=[];
+ const close=()=>{if(list){parts.push('</'+list+'>');list=null}};
+ for(let i=0;i<lines.length;i++){
+  const line=lines[i],trim=line.trim();
+  if(/^\u0060{3}/.test(trim)){
+   close();if(code){parts.push('<pre><code>'+escapeHtml(codeLines.join('\n'))+'</code></pre>');codeLines=[];code=false}else code=true;
+   continue;
+  }
+  if(code){codeLines.push(line);continue}
+  if(!trim){close();continue}
+  if(trim.includes('|')&&i+1<lines.length&&isDivider(lines[i+1])){
+   close();const head=cells(trim);
+   parts.push('<div class="platform-scroll"><table class="platform-table"><thead><tr>'+head.map(c=>'<th>'+inline(c)+'</th>').join('')+'</tr></thead><tbody>');i++;
+   while(i+1<lines.length&&lines[i+1].trim().includes('|')){
+    const row=cells(lines[++i]);parts.push('<tr>'+head.map((_,j)=>'<td>'+inline(row[j]||'')+'</td>').join('')+'</tr>');
+   }
+   parts.push('</tbody></table></div>');continue;
+  }
+  const h=trim.match(/^(#{1,6})\s+(.+)$/);
+  if(h){close();const n=Math.min(h[1].length,4);parts.push('<h'+n+'>'+inline(h[2])+'</h'+n+'>');continue}
+  if(/^([-*_])\1{2,}\s*$/.test(trim)){close();parts.push('<hr>');continue}
+  const q=trim.match(/^>\s?(.*)$/);
+  if(q){close();parts.push('<blockquote><p>'+inline(q[1])+'</p></blockquote>');continue}
+  const ul=trim.match(/^[-*+]\s+(.+)$/),ol=trim.match(/^\d+[.)]\s+(.+)$/);
+  if(ul||ol){const target=ul?'ul':'ol';if(list!==target){close();parts.push('<'+target+'>');list=target}
+   parts.push('<li>'+inline((ul||ol)[1])+'</li>');continue}
+  close();parts.push('<p>'+inline(trim)+'</p>');
+ }
+ if(codeLines.length)parts.push('<pre><code>'+escapeHtml(codeLines.join('\n'))+'</code></pre>');
+ close();return parts.join('\n');
+}
+
+function openDoc(id,updateHash=true){const pos=docs.findIndex(x=>x.id===id);if(pos===-1)return;if(activeView!=='comandos')showPage('comandos',false);const d=docs[pos];current=id;setActiveNav(id);g('viewlabel').textContent=`${d.codigo} · Comando ${String(d.numero).padStart(2,'0')}`;g('viewtitle').textContent=d.titulo;g('viewmeta').textContent=`${subjectLabel(d.materia)} · ${label(d.categoria)} · ${d.palavras.toLocaleString('pt-BR')} palavras · pronto para copiar`;g('promptbody').innerHTML=renderMarkdownFromSource(d.conteudo);g('copyFallback').hidden=true;g('manualCopyText').value='';g('viewbody').scrollTop=0;g('promptbody').scrollTop=0;g('pagination').textContent=`${String(pos+1).padStart(2,'0')} / ${String(docs.length).padStart(2,'0')}`;g('prev').disabled=pos===0;g('next').disabled=pos===docs.length-1;if(!g('viewer').open)g('viewer').showModal();if(updateHash)try{history.replaceState(null,'','#comando-'+id)}catch(e){}}
 function openAdjacent(delta){const i=docs.findIndex(x=>x.id===current),next=docs[i+delta];if(next)openDoc(next.id)}
 function closeDoc(){g('viewer').close();if(/^#comando-\d+$/.test(location.hash))try{history.replaceState(null,'',(activeView==='principal'?location.pathname+location.search:'#'+activeView))}catch(e){}}
 function save(text,name,contentType='text/plain;charset=utf-8'){const blob=new Blob([text],{type:contentType});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=name;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(link.href),500)}
