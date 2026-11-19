@@ -1,5 +1,16 @@
 # Registro de alterações — Central de Estudos
 
+## 19/11/2026 — Correções de integridade, desempenho e comandos
+
+- **Registros independentes:** o formulário de desempenho não substitui tentativas anteriores do mesmo tópico/data e não replica resultados antigos de origem desconhecida; exclusões continuam condicionadas a confirmação explícita.
+- **Backups:** `pendencies` preservadas em exportação e importação; compatibilidade com backups antigos; novas coleções `simulations` e `writings` incluídas; checkpoint local obrigatório antes da importação, com restauração em caso de falha.
+- **Revisões:** indicadores diários de obrigação e pendência passam a utilizar `reviewIsRequired`. D+30 e etapas facultativas são mostradas separadamente dos atrasos obrigatórios.
+- **Carga diária:** quando o tempo já executado somado à carga prevista ultrapassa 180 minutos, o cronograma exibe alerta. Não altera o calendário nem conclui tarefas.
+- **Biblioteca:** visualização renderizada da fonte textual `conteudo`, idêntica à utilizada na cópia/exportação; retiradas somente representações HTML duplicadas. **Todos os 37 comandos, títulos e textos canônicos preservados**. O `index.html` ficou aproximadamente 674 mil caracteres menor.
+- **Simulados e discursivas:** seção de acompanhamento em Desempenho geral, com inclusão e exclusão manual de resultados reais. Simulados: acertos/erros/brancos/origem/duração e saldo C−E ilustrativo. Discursivas: modalidade/tema/nota eventual/duração. Nenhum resultado fictício; tempos dessas atividades não são somados automaticamente ao consolidado para evitar dupla contagem.
+- **Semana 4:** prevalece o encerramento operacional de 18/11/2026, sem conclusão fictícia. Citações antigas abaixo documentam decisões históricas e não prevalecem sobre a regra final.
+- **Validação:** JavaScript compilou sem erros; o catálogo contém as mesmas 650 unidades ativas e 13 arquivadas; 37 conteúdos de comandos preservados. Testadas renderização de Markdown, aceitação de backups antigos, preservação de novas coleções e rejeição de formatos inválidos. **Não equivale a teste interativo completo no navegador nem garante a publicação no Netlify.**
+
 ## 18/11/2026 — Adaptação final da metodologia (D+30 preservada)
 
 - **Decisão da Semana 4:** operacionalmente encerrada desde 18/11/2026, sem lançar conclusão fictícia. Os saldos de Aprofundamento/Questões são redistribuídos dinamicamente entre as Semanas 5 a 11; mantidas a pausa de 23 a 28/11, a sequência integrada e as datas históricas efetivas.
