@@ -696,7 +696,7 @@ function showPage(view='principal', updateHash=true){
 
 const DATA_KEY='central-estudos-registros-v1';
 const DISCIPLINES=['RICD','PL','RCCN','LP/LING','RFIA','CP','DC','DA','AP','TI'];
-let studyData={studies:[],reviews:[],attempts:[],classifications:[],pendencies:[]};
+let studyData={studies:[],reviews:[],attempts:[],classifications:[],pendencies:[],simulations:[],writings:[]};
 const viewFilters={};
 let showEntryForm='';
 let dataStorageAvailable=true;
@@ -1645,7 +1645,7 @@ function entryForm(type,v){
   fields=`${studySelect}${common}<label>Etapa / contato<select name="contact"><option value="Não informado">Não informado</option><option value="1º contato">1º contato — Estudo inicial</option><option value="2º contato">2º contato — Revisão D+1</option><option value="3º contato">3º contato — Revisão D+7</option><option value="4º contato">4º contato — Revisão D+30</option><option value="Revisão D+1">Revisão D+1 (teórica)</option><option value="Revisão D+7">Revisão D+7 (teórica)</option><option value="Revisão D+30">Revisão D+30 (teórica)</option></select></label><label>Data de atualização<input type="date" name="date"></label><label>Domínio avaliado<select name="domain"><option>Não avaliado</option><option>Seguro</option><option>Parcial</option><option>Fraco</option></select></label>${fieldsFor('chat','ChatGPT')}${fieldsFor('tec','TEC Concursos')}`;
  }
  if(type==='class')fields=`${common}<label>Classificação<select name="level"><option value="Forte">Ponto forte</option><option value="Fraco">Ponto fraco</option></select></label>`;
- const helper=type==='attempt'?'<p class="help">Um registro por tópico e data, com quantitativos de cada sessão separados entre ChatGPT e TEC. Não repita resultados de dias anteriores. A substituição de um tópico mantém os dados antigos sem origem identificada e os apresenta separadamente. Acertos inseguros pontuam integralmente.</p>':type==='review'?'<p class="help">Revisões não realizadas com data programada anterior à data atual aparecem automaticamente como pendentes. Marque “Realizada” apenas depois da execução efetiva.</p>':'';
+ const helper=type==='attempt'?'<p class="help">Cada lançamento representa uma sessão independente, inclusive quando há outras sessões do mesmo tópico e dia. Corrija registros excluindo apenas a sessão incorreta, sem relançar resultados já existentes. Acertos inseguros pontuam integralmente.</p>':type==='review'?'<p class="help">Revisões não realizadas com data programada anterior à data atual aparecem automaticamente como pendentes. Marque “Realizada” apenas depois da execução efetiva.</p>':'';
  return `<form class="regform" id="regform" data-formtype="${type}"><h2>${type==='study'?'Registrar estudo inicial':type==='review'?'Registrar revisão':type==='attempt'?'Resultado consolidado do tópico':'Classificar conteúdo'}</h2><div class="formgrid">${fields}</div>${helper}<div class="formfooter"><button type="button" class="smallbtn" data-action="cancel-form">Cancelar</button><button type="submit" class="primary">Salvar registro</button></div></form>`;
 }
 function actionsHtml(type,second=false){return `<div class="panel-actions"><button type="button" class="primary" data-action="toggle-form" data-formtype="${type}">${type==='study'?'+ Registrar estudo':type==='review'?'+ Registrar revisão':type==='attempt'?'+ Registrar resultado do tópico':'+ Classificar ponto'}</button>${!second?`<button type="button" class="smallbtn" data-action="export-data">Exportar dados (.json)</button><button type="button" class="smallbtn" data-action="import-data">Importar dados (.json)</button><input id="importDataFile" hidden type="file" accept="application/json,.json">`:''}</div>`}
@@ -2211,21 +2211,14 @@ function formSubmit(form){
     else if(u&&studyData.studies.some(x=>x.planId===u.id&&x.status==='Concluído')){record.studyId=u.id;record.subject=u.subject;record.topic=u.code+' — '+u.title}
     else {toast('Escolha um estudo concluído válido.');return}
    }
-   // Mantém dados legados cuja plataforma nunca foi declarada: não atribuir arbitrariamente ao TEC ou ChatGPT.
-   const old=studyData.attempts.filter(x=>topicKey(x)===topicKey(record)&&x.date===record.date);
-   const unknown=blankCounts();
-   for(const a of old)for(const k of RESULT_KEYS)unknown[k]+=sourceCounts(a)['Não informada'][k];
-   if(counted(unknown))record.platforms['Não informada']=unknown;
-   if(!Object.values(record.platforms).some(counted)){toast('Informe pelo menos uma questão respondida.');return}
+   // Não replicar no novo lançamento tentativas anteriores sem origem informada.
+   // Cada sessão tem sua própria origem, data e resultados.
    for(const k of RESULT_KEYS)record[k]=Object.values(record.platforms).reduce((total,p)=>total+p[k],0);
  }
  else return;
  const key={study:'studies',review:'reviews',attempt:'attempts'}[kind];
  if(!key)return;
- if(kind==='attempt'){
-  const k=topicKey(record);
-  studyData.attempts=studyData.attempts.filter(x=>topicKey(x)!==k||x.date!==record.date);
- }
+ // Mesmo tópico e mesma data não autorizam excluir sessões existentes.
  studyData[key].push(record);
  if(kind==='study')ensureScheduledReviews(record);
  if(kind==='attempt'){completeReviewFromContact(record);reconcileStudyRevisions();}
@@ -2249,12 +2242,26 @@ function deleteRecord(kind,id){
 function exportData(){save(JSON.stringify({format:'central-estudos-registros-v1',exportedAt:new Date().toISOString(),...studyData},null,2),'Central_de_Estudos_dados.json','application/json;charset=utf-8')}
 async function importData(file){
  try{
-   if(!file)return;
-   const data=JSON.parse(await file.text());
-   if(data.format!=='central-estudos-registros-v1'||!['studies','reviews','attempts','classifications'].every(k=>Array.isArray(data[k])))throw Error('Formato incompatível');
-   if(!window.confirm('Substituir TODOS os registros locais pelos dados deste arquivo?'))return;
-   studyData={studies:data.studies,reviews:data.reviews,attempts:data.attempts,classifications:data.classifications};linkDc01ToQuestionPlan();for(const study of studyData.studies)ensureScheduledReviews(study);reconcileContactsAsReviews();writeData();if(workspaceById[activeView])renderWorkspace(workspaceById[activeView]);refreshOverview();toast('Dados importados.');
- }catch(e){toast('Não foi possível importar: arquivo inválido ou incompatível.');}
+  if(!file)return;
+  const data=JSON.parse(await file.text()),must=['studies','reviews','attempts','classifications'];
+  if(!data||data.format!=='central-estudos-registros-v1'||
+    !must.every(k=>Array.isArray(data[k]))||
+    ['pendencies','simulations','writings'].some(k=>data[k]!==undefined&&!Array.isArray(data[k])))
+    throw Error('Formato de backup inválido');
+  const next=Object.fromEntries(['studies','reviews','attempts','classifications','pendencies','simulations','writings']
+    .map(k=>[k,Array.isArray(data[k])?data[k]:[]]));
+  if(!window.confirm('Importar registros deste arquivo? Os atuais serão substituídos somente após salvar um ponto de recuperação local.'))return;
+  const previous=studyData;
+  localStorage.setItem('central-estudos-recuperacao-preimportacao-v1',JSON.stringify(previous));
+  studyData=next;
+  if(!writeData()){studyData=previous;writeData();throw Error('Armazenamento indisponível')}
+  linkDc01ToQuestionPlan();
+  for(const study of studyData.studies)ensureScheduledReviews(study);
+  reconcileContactsAsReviews();
+  if(!writeData())throw Error('Falha ao finalizar importação');
+  if(workspaceById[activeView])renderWorkspace(workspaceById[activeView]);
+  refreshOverview();toast('Dados importados. Recuperação anterior preservada.');
+ }catch(e){toast('Importação não concluída: '+(e?.message||'erro desconhecido'))}
 }
 // Navegação e backup da Visão geral (os indicadores são derivados dos registros locais).
 g('dashboardRoot').addEventListener('click',e=>{
@@ -2708,7 +2715,7 @@ function renderReviewGeneralPanels(){
    ' realizadas" aria-valuenow="'+done+'" aria-valuemin="0" aria-valuemax="'+rows.length+
    '"><i style="width:'+pct+'%"></i></div><small>'+pct+'% das revisões exigidas realizado</small></div>';
  }).join('');
- const due=reviews.filter(r=>r.plannedDate===todayISO()&&['D+1','D+7'].includes(r.stage)&&!['Realizadas','Puladas','Não realizadas'].includes(statusReview(r))).length;
+ const due=reviews.filter(r=>r.plannedDate===todayISO()&&['D+1','D+7'].includes(r.stage)&&r.status!=='Realizada'&&reviewIsRequired(r)).length;
  const overdue=reviews.filter(r=>statusReview(r)==='Pendentes').length;
  const summary='<div class="review-stage-summary">'+cards+'</div>';
  return summary+'<div class="weekly-kpi">'+metricCard('Vencendo hoje',due)+metricCard('Atrasadas',overdue)+
@@ -2926,7 +2933,7 @@ function refreshOverview(){
  const prog=centralProgressModel(),history=weeklyHistoricalComparison(),reviews=studyData.reviews.filter(r=>!r.resetForRedo);
  const metrics=metricsAttempt(studyData.attempts.filter(a=>!a.resetForRedo));
  const today=todayISO();
- const dueReviews=reviews.filter(r=>r.status!=='Realizada'&&!r.closedNoFurtherTecReviews&&r.plannedDate&&r.plannedDate<=today);
+ const dueReviews=reviews.filter(r=>['D+1','D+7'].includes(r.stage)&&r.status!=='Realizada'&&reviewIsRequired(r)&&r.plannedDate&&r.plannedDate<=today);
  const plannedWeekIndex=detailedStudyWeekIndex(studyWeeks);
  const plannedWeek=plannedWeekIndex>=0?studyWeeks[plannedWeekIndex]:null;
  const availableDays=plannedWeek?plannedStudyDates(plannedWeek.start,plannedWeek.end):[];
@@ -2942,7 +2949,7 @@ function refreshOverview(){
 
  const stages=['D+1','D+7','D+30'].map(stage=>{
   const items=reviews.filter(r=>r.stage===stage);
-  return '<tr><th>'+stage+'</th><td>'+items.length+'</td><td>'+items.filter(r=>r.status==='Realizada').length+'</td><td>'+items.filter(r=>statusReview(r)==='Programadas').length+'</td><td>'+items.filter(r=>statusReview(r)==='Pendentes').length+'</td></tr>';
+  return '<tr><th>'+stage+'</th><td>'+items.length+'</td><td>'+items.filter(r=>r.status==='Realizada').length+'</td><td>'+items.filter(r=>statusReview(r)==='Programadas').length+'</td><td>'+items.filter(r=>statusReview(r)==='Pendentes').length+'</td><td>'+items.filter(r=>statusReview(r)==='Facultativas').length+'</td></tr>';
  }).join('');
  const nav=(id,label)=>'<button class="dash-link" type="button" data-dashboard-view="'+id+'">'+escapeHtml(label)+'</button>';
  const stats=(name,val,desc)=>'<div class="dash-kpi"><span class="dash-kpi-label">'+escapeHtml(name)+'</span><strong>'+escapeHtml(String(val))+'</strong><small>'+escapeHtml(desc)+'</small></div>';
@@ -2962,8 +2969,8 @@ function refreshOverview(){
  '<div class="dash-kpi-grid">'+stats('Revisões registradas',reviews.length,'Todas as etapas')+
  stats('Revisões realizadas',reviews.filter(r=>r.status==='Realizada').length,'Conclusões registradas')+
  stats('Revisões atrasadas',reviews.filter(r=>statusReview(r)==='Pendentes').length,'Pendentes vencidas')+
- stats('Revisões do dia',reviews.filter(r=>r.plannedDate===today&&r.status!=='Realizada').length,'Previstas para hoje')+'</div>'+
- '<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Etapa</th><th>Total</th><th>Realizadas</th><th>Programadas</th><th>Pendentes</th></tr></thead><tbody>'+stages+'</tbody></table></div></section>'+
+ stats('Revisões obrigatórias do dia',reviews.filter(r=>r.plannedDate===today&&r.status!=='Realizada'&&['D+1','D+7'].includes(r.stage)&&reviewIsRequired(r)).length,'Facultativas ficam fora do cumprimento')+'</div>'+
+ '<div class="platform-scroll"><table class="platform-table"><thead><tr><th>Etapa</th><th>Total</th><th>Realizadas</th><th>Programadas</th><th>Pendentes</th><th>Facultativas</th></tr></thead><tbody>'+stages+'</tbody></table></div></section>'+
  '<section class="dash-section"><div class="dash-titlebar"><div><h2>Desempenho</h2><p>Acertos seguros e inseguros pontuam integralmente, sem duplicação de sessões e fontes.</p></div>'+nav('desempenho-geral','Desempenho detalhado')+'</div>'+
  '<div class="dash-kpi-grid">'+stats('Questões resolvidas',formatNum(metrics.all),'ChatGPT + TEC')+
  stats('Acertos',formatNum(metrics.correct),'Inclui acertos inseguros')+
@@ -3281,8 +3288,9 @@ function estimateDayAvailability(date,completed,backlog){
  const previousA=earlierA.reduce((n,x)=>n+dayTheoreticalMinutes(x.unit),0);
  const reviewMinutes=(pendingReviews.length+(earlier.reviews||[]).length)*11;
  const compulsory=planA+previousA+reviewMinutes+tecReserve+overdueTecReserve;
- const remaining=Math.max(0,180-(used.known?used.minutes:0)-compulsory);
- return {compulsory,remaining,tecReserve,used,overdueTecReserve,tecScheduled:pendingQ.length+pendingC.length,
+ const plannedLoad=(used.known?used.minutes:0)+compulsory;
+ const remaining=Math.max(0,180-plannedLoad),overload=Math.max(0,plannedLoad-180);
+ return {compulsory,remaining,overload,plannedLoad,tecReserve,used,overdueTecReserve,tecScheduled:pendingQ.length+pendingC.length,
   planA,previousA,reviewMinutes,overdueTEC:earlierTec};
 }
 function dailyFreeTimePanel(date,completed,backlog){
@@ -3488,7 +3496,7 @@ function renderDailyStudyWorkspace(){
  const historyPanel=originalHistorical.length?'<details class="history-original"><summary>Programação original desta data · '+originalHistorical.length+' tópico(s)</summary><div class="daily-topic-list">'+originalHistorical.map(u=>{const record=completed.get(u.id);return '<div class="daily-review-item" data-state="'+(record?'done':'pending')+'"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span><small>'+(record?'Concluído em '+dateBR(record.date):'Não concluído na programação original')+'</small></div></div>'}).join('')+'</div></details>':'';
  return weekChoices+'<div class="daily-controls"><label for="dailyDate">Data · Semana '+planWeek.number+'</label><button type="button" data-daily-step="-1">‹ Anterior</button><input type="date" id="dailyDate" min="'+availableWeeks[0].start+'" max="'+availableWeeks.at(-1).end+'" value="'+date+'"><button type="button" data-daily-step="1">Próximo ›</button><button type="button" data-daily-date="'+studyDays[0]+'">Início da semana</button></div>'+
  '<div class="daily-weekstrip">'+days+'</div><p class="daily-note">Cronograma detalhado das '+availableWeeks.length+' semanas restantes (Semanas '+availableWeeks[0].number+' a '+availableWeeks.at(-1).number+'). Na Semana '+planWeek.number+', a meta de '+weeklyGoal+' tópicos ('+planWeek.quotaA+' A + '+planWeek.quotaQ+' Q) está distribuída de domingo a sexta; total diário conferido: '+scheduledWeekCount+'. As metas futuras podem ser recalculadas após o encerramento de cada semana, preservando os registros concluídos e a sequência pedagógica. Complementações TEC seguem liberação própria. Uma revisão principal D+1 ou D+7 é programada conforme desempenho; D+30 é facultativa. Sábados livres.</p>'+
- progressHeader+progress+nextMarkup+historyPanel+pendingActivitiesPanel(backlog)+'<div class="weekly-kpi">'+metricCard('Aprofundamentos do dia',A.length)+metricCard('Tópicos de Questões do dia',Q.length)+metricCard('Complementações do dia',displayedComplements.length)+metricCard('Revisões na agenda',revs.length)+metricCard('Pendências anteriores',carryCount)+metricCard('Tempo líquido',time.known?clockMinutes(time.minutes):'N/I')+metricCard('Meta de tempo','3h00 (TEC incluso)')+metricCard('Tempo programado',clockMinutes(budget.compulsory))+metricCard('Tempo livre estimado',clockMinutes(budget.remaining))+'</div>'+
+ progressHeader+progress+nextMarkup+historyPanel+pendingActivitiesPanel(backlog)+'<div class="weekly-kpi">'+metricCard('Aprofundamentos do dia',A.length)+metricCard('Tópicos de Questões do dia',Q.length)+metricCard('Complementações do dia',displayedComplements.length)+metricCard('Revisões na agenda',revs.length)+metricCard('Pendências anteriores',carryCount)+metricCard('Tempo líquido',time.known?clockMinutes(time.minutes):'N/I')+metricCard('Meta de tempo','3h00 (TEC incluso)')+metricCard('Tempo programado',clockMinutes(budget.compulsory))+metricCard('Tempo livre estimado',clockMinutes(budget.remaining))+'</div>'+(budget.overload?'<p class="daily-note"><strong>Atenção:</strong> carga estimada superior a 3h líquidas em '+clockMinutes(budget.overload)+'. Ajuste prioridades sem marcar tarefas como realizadas.</p>':'')+
 
  '<div class="section-divider"><strong>1 · Revisões — realizar primeiro</strong></div>'+
  panel('Revisões — aprofundamento',uiQuantity(revisionA.length,'revisão','revisões')+' de estudos de Aprofundamento (D+1, D+7 e D+30).',revisionA.length?groupedReviewRows(revisionA.slice().sort((a,b)=>({'D+1':0,'D+7':1,'D+30':2}[a.stage]??3)-({'D+1':0,'D+7':1,'D+30':2}[b.stage]??3))):blank)+
