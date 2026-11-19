@@ -3,6 +3,7 @@
 ## 19/11/2026 — Correções de integridade, desempenho e comandos
 
 - **Registros independentes:** o formulário de desempenho não substitui tentativas anteriores do mesmo tópico/data e não replica resultados antigos de origem desconhecida; exclusões continuam condicionadas a confirmação explícita.
+- **Restauração acessível:** após importar um backup, o botão “Restaurar pré-importação” aparece nos painéis com controles de exportação/importação. A restauração exige confirmação, valida o checkpoint e reconstitui os registros reconhecidos, sem apagar o próprio checkpoint.
 - **Backups:** `pendencies` preservadas em exportação e importação; compatibilidade com backups antigos; novas coleções `simulations` e `writings` incluídas; checkpoint local obrigatório antes da importação, com restauração em caso de falha.
 - **Revisões:** indicadores diários de obrigação e pendência passam a utilizar `reviewIsRequired`. D+30 e etapas facultativas são mostradas separadamente dos atrasos obrigatórios.
 - **Carga diária:** quando o tempo já executado somado à carga prevista ultrapassa 180 minutos, o cronograma exibe alerta. Não altera o calendário nem conclui tarefas.
