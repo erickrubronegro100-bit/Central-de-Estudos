@@ -1,5 +1,13 @@
 # Registro de alterações — Central de Estudos
 
+## 22/11/2026 — Antecipação das Semanas 5 a 11
+
+- **Semana 5:** antecipada para **23 a 27/11/2026**, com metas de Aprofundamento (A) e Questões (Q) distribuídas de **segunda a sexta**. A pausa anteriormente prevista de 23 a 28/11 deixa de bloquear os estudos programados; sábado 28/11 continua livre.
+- **Semanas 6 a 11:** mantidas na mesma sequência e antecipadas uma semana: 29/11–04/12, 06–11/12, 13–18/12, 20–25/12, 27/12–01/01 e 03–08/01. Distribuição de domingo a sexta; sábado sem metas.
+- **10 a 15/01/2027:** período reservado **sem metas de A/Q**. Revisões já registradas e sugestões facultativas não são apagadas; a D+30 e os demais critérios pedagógicos permanecem preservados.
+- **Integridade:** planejamento histórico (Semanas 1–4), conteúdo dos tópicos, vínculos TEC, dados locais, conclusão real e ordenação pedagógica preservados. Removidas as condições que bloqueavam 23–28/11 e corrigida a contagem de dias disponíveis, que excluía as sextas-feiras.
+- **Validação estrutural:** sete intervalos futuros conferidos: cinco dias úteis na Semana 5 e seis dias de domingo a sexta nas Semanas 6 a 11; nenhuma semana de metas A/Q cruza 10 a 15/01. Os quantitativos dinâmicos dependem dos registros locais e a publicação no Netlify deve ser verificada separadamente.
+
 ## 19/11/2026 — Correções de integridade, desempenho e comandos
 
 - **Registros independentes:** o formulário de desempenho não substitui tentativas anteriores do mesmo tópico/data e não replica resultados antigos de origem desconhecida; exclusões continuam condicionadas a confirmação explícita.
