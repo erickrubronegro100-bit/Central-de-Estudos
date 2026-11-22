@@ -1,5 +1,12 @@
 # Registro de alterações — Central de Estudos
 
+## 22/11/2026 — Correção do escopo: somente domingo 22/11 com 0 A + 0 Q
+
+- A reserva com **0 A + 0 Q** se aplica exclusivamente a **domingo 22/11/2026**, mostrado no calendário da Semana 5 para realizar atividades atrasadas.
+- Restaurada a programação normal dos próximos domingos (29/11, 06/12, 13/12, 20/12, 27/12 e 03/01); suas metas A/Q voltam a ser distribuídas de domingo a sexta, preservando o sábado livre.
+- Semana 5 mantém seus estudos A/Q novos exclusivamente de segunda a sexta (23–27/11). Semana final 10–15/01 permanece sem metas A/Q.
+- Não modifica registros concluídos, revisões, pontuações ou a ordem das unidades; a regra anterior para todos os domingos foi revogada.
+
 ## 22/11/2026 — Domingos com 0 A + 0 Q para pendências
 
 - **Domingos:** a partir da Semana 5, não recebem metas novas de Aprofundamento (A) nem de Questões (Q). Permanecem visíveis no calendário com **0 A + 0 Q**, para permitir foco em pendências e revisões.
