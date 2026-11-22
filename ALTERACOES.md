@@ -1,5 +1,13 @@
 # Registro de alterações — Central de Estudos
 
+## 22/11/2026 — Domingos com 0 A + 0 Q para pendências
+
+- **Domingos:** a partir da Semana 5, não recebem metas novas de Aprofundamento (A) nem de Questões (Q). Permanecem visíveis no calendário com **0 A + 0 Q**, para permitir foco em pendências e revisões.
+- **Redistribuição:** cotas semanais A/Q integralmente divididas entre segunda e sexta, preservando a quantidade semanal e a ordem dos tópicos. Sábados continuam livres.
+- **Cálculos:** corrigidas contagens de dias disponíveis e progressão esperada para não distribuir metas futuras aos domingos.
+- **Preservação:** nenhuma atividade concluída, pendência, revisão, complementação TEC ou regra de revisão foi alterada. Domingos históricos não foram regravados.
+- **Verificação:** sintaxe do JavaScript validada; teste funcional da Semana 6 com 19 A + 11 Q mostrou domingo 0+0 e distribuição completa dos 30 tópicos nos cinco dias úteis. A publicação no Netlify continua sujeita a deploy.
+
 ## 22/11/2026 — Antecipação das Semanas 5 a 11
 
 - **Semana 5:** antecipada para **23 a 27/11/2026**, com metas de Aprofundamento (A) e Questões (Q) distribuídas de **segunda a sexta**. A pausa anteriormente prevista de 23 a 28/11 deixa de bloquear os estudos programados; sábado 28/11 continua livre.
