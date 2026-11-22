@@ -3836,6 +3836,9 @@ function getWeekPosition(){
  return next>=0?{index:next,phase:'Entre semanas'}:{index:10,phase:'Planejamento encerrado'};
 }
 function dailyStudyAssignments(date){
+ // Exceção específica: domingo 22/11 aparece na Semana 5 com zero metas novas.
+ if(date==='2026-11-22')
+  return {week:studyWeeks[4]||null,configured:true,units:[],day:0,carriedCount:0};
  const week=studyWeeks.find(w=>dateBetween(date,w.start,w.end));
  if(!week)return {week:null,configured:false,units:[]};
  // Todas as semanas futuras possuem detalhamento diário; as encerradas não são alteradas.
@@ -3862,8 +3865,6 @@ function dailyStudyAssignments(date){
   return {week,configured:Boolean(deepening.length||normalTec.length),
    units:[...deepening,...normalTec],day:ix,carriedCount:0};
  }
- if(date==='2026-11-22')
-  return {week:studyWeeks[4]||week,configured:true,units:[],day:0,carriedCount:0}; // Apenas este domingo: 0 A + 0 Q.
  if(dow===6)return {week,configured:false,units:[]};
  if(week.index===0||week.index===1){
   // Histórico anterior é preservado. Nenhuma tarefa nova é marcada para a Semana 2.
