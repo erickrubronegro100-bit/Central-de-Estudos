@@ -1676,21 +1676,22 @@ const planQueries={},planSubjects={},planPages={};
 let weeklySubjectFilter='Todos';
 let dailySelectedDate=null;
 
-// Metas aprovadas em 04/11/2026: histórico até 04/11 e 10 semanas de metas até 15/01/2027.
-// Complementação (TEC) não recebe cota semanal. A Semana 4 vai até 22/11; a pausa de novos estudos fica de 23 a 28/11.
+// Reprogramação de 22/11/2026: semanas 1–4 preservadas; Semana 5 em 23–27/11,
+// Semanas 6–11 adiantadas em sete dias, e 10–15/01/2027 sem metas A/Q.
+// Complementação (TEC) mantém sua liberação própria; sábado permanece sem metas.
 const PLAN_BASELINE_DATE='2026-11-04';
 const PLAN_BASELINE_STORAGE='central-estudos-metas-baseline-20261104-v1';
 const PLANNED_RANGES=[
  ['2026-11-05','2026-11-06'],
  ['2026-11-08','2026-11-13'],
  ['2026-11-14','2026-11-22'],
+ ['2026-11-23','2026-11-27'],
  ['2026-11-29','2026-12-04'],
  ['2026-12-06','2026-12-11'],
  ['2026-12-13','2026-12-18'],
  ['2026-12-20','2026-12-25'],
  ['2026-12-27','2027-01-01'],
- ['2027-01-03','2027-01-08'],
- ['2027-01-10','2027-01-15']
+ ['2027-01-03','2027-01-08']
 ];
 function historicalPlanIds(){
  const eligible=id=>{const u=planById.get(id);return Boolean(u&&(u.flow==='A'||u.flow==='Q'));};
@@ -1715,7 +1716,7 @@ function lastClosedStudyWeekIndex(weeks=studyWeeks){
  if(studyData.attempts.some(a=>a.reportId==='relatorio-diario-20261113-definitivo'))
   index=Math.max(index,2);
  // Decisão de 18/11: encerrar operacionalmente a Semana 4, sem dar baixa fictícia.
- // Os estudos A/Q ainda não concluídos passam às Semanas 5–11 após a pausa de 23–28/11.
+ // Os estudos A/Q ainda não concluídos passam às Semanas 5–11, iniciadas em 23/11.
  if(today>='2026-11-18')index=Math.max(index,3);
  return index;
 }
@@ -1762,7 +1763,7 @@ function rebalanceAfterClosedStudyWeek(weeks){
   new Set(saved.days.flat()).size===toAllocate.length&&
   toAllocate.every(u=>saved.days.flat().includes(u.id));
  if(!valid){
-  // Metas: todos os A e Q que faltam até 15/01 distribuídos por igual
+  // Metas: todos os A e Q que faltam até 08/01 distribuídos por igual
   // entre as semanas ainda abertas; A preserva a sequência pedagógica.
   const a=toAllocate.filter(u=>u.flow==='A').sort(byOrder);
   const q=toAllocate.filter(u=>u.flow==='Q').sort(byOrder);
@@ -1933,7 +1934,7 @@ function distributeWeek4PendingThroughFriday(weeks){
 
 let studyWeeks=[];
 let weeklyUnitIndex=new Map();
-// Metas A/Q: nove aprofundamentos em 18–20/11 e saldo nas sete semanas seguintes.
+// Metas A/Q: nove aprofundamentos em 18–20/11 e saldo nas semanas 5–11 adiantadas.
 // Os 31 residuais permanecem cadastrados e exclusivamente facultativos.
 function rebuildWeeklyPlan(){
  const base=redistributeWeek3Aprofundamento(buildWeeklyPlan());
@@ -2030,7 +2031,7 @@ function plannedStudyDates(start,end){
  const days=[];
  for(let d=start;d<=end;d=shiftAgendaDate(d,1)){
   const dow=new Date(d+'T12:00:00Z').getUTCDay();
-  if(dow!==6&&!dateBetween(d,'2026-11-23','2026-11-28'))days.push(d);
+  if(dow!==6)days.push(d);
  }
  return days;
 }
@@ -2263,14 +2264,14 @@ function renderStudyWorkspace(v){
 }
 
 
-function studyDaysRemaining(day,limit='2027-01-15'){
+function studyDaysRemaining(day,limit='2027-01-08'){
  // Contagem inclusiva: apenas dias contidos nas semanas do planejamento.
  const start=day>studyWeeks[0].start?day:studyWeeks[0].start;
  if(start>limit)return 0;
  let total=0;
  for(let current=start;current<=limit;){
   const date=new Date(current+'T12:00:00Z');
-  if((date.getUTCDay()!==5||current==='2026-11-13')&&date.getUTCDay()!==6&&studyWeeks.some(w=>current>=w.start&&current<=w.end)&&!dateBetween(current,'2026-11-23','2026-11-28'))total++;
+  if(date.getUTCDay()!==6&&studyWeeks.some(w=>current>=w.start&&current<=w.end))total++;
   date.setUTCDate(date.getUTCDate()+1);
   current=date.toISOString().slice(0,10);
  }
@@ -2751,7 +2752,7 @@ function nextValidStudyDate(day){
  for(let i=0;i<8;i++){
   t=shiftAgendaDate(t,1);
   const dow=new Date(t+"T12:00:00Z").getUTCDay();
-  if(dow!==6&&!dateBetween(t,"2026-11-23","2026-11-28"))return t; // Domingo a sexta; sábado livre.
+  if(dow!==6)return t; // Domingo a sexta; sábado livre.
  }
  return null;
 }
@@ -3244,7 +3245,7 @@ function weeklySelectedDetails(data,w){
  const shownA=rows.filter(u=>u.flow==='A'),shownQ=rows.filter(u=>u.flow==='Q'),shownC=rows.filter(u=>u.flow==='C');
  const empty='<p class="weekly-empty">Nenhum tópico nesta categoria.</p>';
  return '<section class="weekly-selected"><h2>Semana '+w.number+' · '+weekRange(w)+'</h2>'+
- '<p class="weekly-note">Meta da semana: '+w.quotaA+' aprofundamentos, '+w.quotaQ+' tópicos de Questões e '+w.quotaC+' complementações TEC liberadas. Os tópicos A/Q estão distribuídos de domingo a sexta, respeitando a meta semanal e a sequência pedagógica; as metas futuras podem ser ajustadas ao encerramento de cada semana. Complementações seguem a liberação dinâmica. Sábados livres.</p>'+
+ '<p class="weekly-note">Meta da semana: '+w.quotaA+' aprofundamentos, '+w.quotaQ+' tópicos de Questões e '+w.quotaC+' complementações TEC liberadas. Os tópicos A/Q estão distribuídos de segunda a sexta na Semana 5 e de domingo a sexta nas demais, respeitando a meta semanal e a sequência pedagógica; as metas futuras podem ser ajustadas ao encerramento de cada semana. Complementações seguem a liberação dinâmica. Sábados livres.</p>'+
  '<div class="weekly-kpi">'+
  metricCard('Aprofundamento realizado',w.doneA)+
  metricCard('Questões realizadas',w.doneQ)+
@@ -3280,9 +3281,9 @@ function renderWeeklyWorkspace(){
  }).join('');
  const history=weeklyHistoricalComparison(d),historicalDone=history.done,historicalIdeal=history.ideal;
  return weeklySnapshot()+
- '<p class="weekly-pause">As Semanas 5 a 11 têm cronograma diário de domingo a sexta, com as metas A/Q integralmente distribuídas e sábado livre. A distribuição futura é provisória e poderá ser recalculada após cada encerramento semanal, mantendo o histórico e a sequência pedagógica. As complementações TEC possuem liberação própria. Clique no número de uma semana para consultar seus tópicos e use o Cronograma de estudos do dia para selecionar qualquer data dessas sete semanas.</p>'+
+ '<p class="weekly-pause">A Semana 5 está distribuída de segunda a sexta (23–27/11); as Semanas 6 a 11 foram antecipadas em sete dias, de domingo a sexta e com sábado livre. De 10 a 15/01 não há metas A/Q. A distribuição futura é provisória e poderá ser recalculada após cada encerramento semanal, mantendo o histórico e a sequência pedagógica. As complementações TEC possuem liberação própria. Clique no número de uma semana para consultar seus tópicos e use o Cronograma de estudos do dia para selecionar qualquer data dessas sete semanas.</p>'+
  '<div class="weekly-kpi">'+metricCard('Ideal histórico A/Q/C — Até semana atual (Semana '+history.weekNumber+')',historicalIdeal)+metricCard('Realizado histórico A/Q/C — Até semana atual (Semana '+history.weekNumber+')',historicalDone)+metricCard('Diferença histórica A/Q/C',(historicalDone-historicalIdeal>0?'+':'')+(historicalDone-historicalIdeal))+metricCard('Total de Aprofundamento',A.length)+metricCard('Total de Questões',Q.length)+metricCard('Complementação cadastrada',C.length)+'</div>'+
- panel('Metas semanais — Previsto × Realizado','Metas de semanas futuras são provisórias; as sete semanas restantes podem ser consultadas individualmente, com estudos distribuídos de domingo a sexta. O saldo compara o ideal histórico ao realizado.','<div class="platform-scroll"><table class="platform-table weekly-table"><thead><tr><th>Semana</th><th>Período</th><th>Meta A</th><th>Feito A</th><th>Meta Q</th><th>Feito Q</th><th>Meta C</th><th>Feito C</th><th>Meta Total</th><th>Feito Total</th><th>Pendentes</th><th>Ideal histórico A/Q/C</th><th>Saldo A/Q/C</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
+ panel('Metas semanais — Previsto × Realizado','Metas futuras provisórias: Semana 5 de segunda a sexta; Semanas 6–11 de domingo a sexta, antecipadas em uma semana. De 10 a 15/01, nenhuma meta A/Q. O saldo compara o ideal histórico ao realizado.','<div class="platform-scroll"><table class="platform-table weekly-table"><thead><tr><th>Semana</th><th>Período</th><th>Meta A</th><th>Feito A</th><th>Meta Q</th><th>Feito Q</th><th>Meta C</th><th>Feito C</th><th>Meta Total</th><th>Feito Total</th><th>Pendentes</th><th>Ideal histórico A/Q/C</th><th>Saldo A/Q/C</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
  (selected?weeklySelectedDetails(d,selected):'<p class="weekly-note">Todas as semanas planejadas foram encerradas.</p>');
 }
 // Quadro por matéria: unidade cadastrada conta uma vez por ID; complemento TEC
@@ -3821,7 +3822,7 @@ function getWeekPosition(){
  const day=todayISO();
  const current=studyWeeks.findIndex(w=>dateBetween(day,w.start,w.end));
  if(current>=0)return {index:current,phase:current===1&&day>='2026-11-05'?'Semana 2 encerrada para novos estudos · meta ajustada':studyWeeks[current].historical?'Semana histórica / corrente':'Em andamento'};
- if(dateBetween(day,'2026-11-23','2026-11-28'))return {index:4,phase:'Pausa de estudos'};
+ if(dateBetween(day,'2027-01-10','2027-01-15'))return {index:10,phase:'Semana final livre · sem metas A/Q'};
  if(day<studyWeeks[0].start)return {index:0,phase:'Antes do planejamento'};
  const next=studyWeeks.findIndex(w=>day<w.start);
  return next>=0?{index:next,phase:'Entre semanas'}:{index:10,phase:'Planejamento encerrado'};
@@ -3853,7 +3854,7 @@ function dailyStudyAssignments(date){
   return {week,configured:Boolean(deepening.length||normalTec.length),
    units:[...deepening,...normalTec],day:ix,carriedCount:0};
  }
- if(dow===6||dateBetween(date,'2026-11-23','2026-11-28'))return {week,configured:false,units:[]};
+ if(dow===6)return {week,configured:false,units:[]};
  if(week.index===0||week.index===1){
   // Histórico anterior é preservado. Nenhuma tarefa nova é marcada para a Semana 2.
   const historical=week.units.filter(u=>{
