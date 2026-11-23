@@ -1,5 +1,14 @@
 # Registro de alterações — Central de Estudos
 
+## 23/11/2026 — Etapa 4: Quadro final de consolidação obrigatório nas revisões
+
+- **Comandos gerais e por disciplina:** atualizados os **14 comandos de revisão** de RICD, RCCN, Processo Legislativo, Ciência Política, RFIA e LP/LING. Todas as revisões D+1, D+7 e D+30 apresentam, após as correções, a seção **ETAPA 4 — QUADRO FINAL DE CONSOLIDAÇÃO**.
+- **Ordem obrigatória:** Etapa 1 (questões) → Etapa 2 (resultado geral) → Etapa 3 (correções de erros e acertos inseguros) → Etapa 4 (quadro de todo o bloco) → Etapa 5 (avaliação da retenção e encaminhamento).
+- **Conteúdo:** consolidar conceitos, regras, relações, exceções, aplicações e pontos cobrados, conforme a disciplina; quadro obrigatório também sem erros/inseguranças, sem correção individual dos acertos seguros nem aula teórica independente.
+- **D+30:** restaurado o quadro final obrigatório sem converter a revisão em leitura passiva ou eliminar seu caráter facultativo. Removidas proibições históricas contraditórias.
+- **Questionários individuais:** atualizados **oito comandos de avaliação** para checar apresentação, abrangência e leitura/compreensão efetiva da Etapa 4; atividades não realizadas não são presumidas como concluídas, e registros exclusivamente TEC não são confundidos com questionários ChatGPT.
+- **Verificação:** 14 comandos com exatamente uma Etapa 4 e uma Etapa 5 na ordem correta; oito questionários com a nova verificação; dados históricos, questões respondidas, metas, revisões, filtros do TEC e lógica de agendamento não alterados. JavaScript conferido sintaticamente. Publicação no Netlify requer verificação independente.
+
 ## 22/11/2026 — Correção do escopo: somente domingo 22/11 com 0 A + 0 Q
 
 - A reserva com **0 A + 0 Q** se aplica exclusivamente a **domingo 22/11/2026**, mostrado no calendário da Semana 5 para realizar atividades atrasadas.
