@@ -1,5 +1,13 @@
 # Registro de alterações — Central de Estudos
 
+## 23/11/2026 — Itens CEBRASPE com menos pistas lexicais (todos os comandos)
+
+- **Escopo:** os 37 comandos da Biblioteca (RICD, RCCN, PL, CP, RFIA, LP/LING, TEC e Relatórios) receberam uma diretriz transversal; nos questionários e relatórios, sua incidência é condicional à elaboração efetiva de itens C/E.
+- **Formulação:** reduzir marcadores generalizantes/absolutos (p. ex. “sempre”, “nunca”, “necessariamente”, “por si só”, “automaticamente”, “apenas”, “exclusivamente”), com meta preferencial de até cerca de 10% por bateria, flexibilizada quando a fidelidade técnica ou literalidade normativa exigir.
+- **Qualidade:** evitar que esses marcadores revelem sistematicamente o gabarito; diversificar incorreções plausíveis por condição, competência, sujeito, prazo, quórum, procedimento, exceção e contexto. Revisão interna da bateria sem expor gabarito previamente.
+- **Preservação:** todos os textos originais dos 37 comandos permanecem intactos, exceto pelo acréscimo de uma seção idêntica após seus títulos e a atualização da contagem de palavras; nenhum dado histórico, calendário, resultado, ineditismo, quantidade de questões, etapa, prioridade, reforço ou ciclo de qualidade foi modificado. Nenhuma questão TEC externa é reescrita.
+- **Validação:** 37 inclusões únicas, IDs e títulos preservados, JSON válido; publicação no Netlify deve ser verificada separadamente.
+
 ## 23/11/2026 — Etapa 4: Quadro final de consolidação obrigatório nas revisões
 
 - **Comandos gerais e por disciplina:** atualizados os **14 comandos de revisão** de RICD, RCCN, Processo Legislativo, Ciência Política, RFIA e LP/LING. Todas as revisões D+1, D+7 e D+30 apresentam, após as correções, a seção **ETAPA 4 — QUADRO FINAL DE CONSOLIDAÇÃO**.
