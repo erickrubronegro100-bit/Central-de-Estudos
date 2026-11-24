@@ -990,7 +990,7 @@ function studyForReview(r){
   (r.studyId===s.id||(r.planId&&r.planId===s.planId)||reviewMatchesStudy(r,s)))||null;
 }
 function reviewIsRequired(r){
- if(!r||r.resetForRedo||r.closedNoFurtherTecReviews||reviewIsSkipped(r))return false;
+ if(!r||r.resetForRedo||r.closedNoFurtherTecReviews||r.status==='Não realizada'||reviewIsSkipped(r))return false;
  if(r.status==='Realizada')return true;
  if(r.stage==='D+30')return false;
  const study=studyForReview(r);
@@ -1437,7 +1437,7 @@ function requiresAdaptiveD1(r){return reviewIsRequired(r);}
 function statusReview(r){
  if(r.resetForRedo)return 'Reiniciada';
  if(r.status==='Realizada')return 'Realizadas';
- if(r.closedNoFurtherTecReviews)return 'Não realizadas';
+ if(r.closedNoFurtherTecReviews||r.status==='Não realizada')return 'Não realizadas';
  if(reviewIsSkipped(r))return 'Puladas';
  if(r.stage==='D+30')return 'Facultativas';
  if(['D+1','D+7'].includes(r.stage)&&!reviewIsRequired(r))return 'Facultativas';
@@ -2854,8 +2854,9 @@ function complementGate(u){
  // Deslocar somente complementações NÃO concluídas da Semana 2; preservar datas reais.
  const scheduled=ready&&!finished&&dateBetween(originalSchedule,'2026-11-01','2026-11-07')
   ?'2026-11-08':originalSchedule;
- const status=finished?"Concluído":progress?"Em andamento":ready?"Liberado":"Bloqueado";
- return {status,ready,releasedAt,scheduled,requirements,record:finished||progress||null};
+ const notPerformed=existing.find(x=>x.status==='Não realizada'&&x.wasNotPerformed);
+ const status=finished?"Concluído":progress?"Em andamento":notPerformed?"Não realizada":ready?"Liberado":"Bloqueado";
+ return {status,ready,releasedAt,scheduled,requirements,record:finished||progress||notPerformed||null};
 }
 
 function complementMetrics(u){
@@ -3498,7 +3499,7 @@ function reviewPriorityCode(r){
 }
 function optionalD30For(date){
  return studyData.reviews.filter(r=>!r.resetForRedo&&r.stage==='D+30'&&
-  !r.closedNoFurtherTecReviews&&r.status!=='Realizada'&&!reviewIsSkipped(r)&&
+  !r.closedNoFurtherTecReviews&&r.status!=='Não realizada'&&r.status!=='Realizada'&&!reviewIsSkipped(r)&&
   eligibleOptionalD30(r)&&Boolean(r.plannedDate&&r.plannedDate<=date));
 }
 function optionalD30Panel(date){
@@ -3764,7 +3765,7 @@ function renderDailyStudyWorkspace(){
  const revs=studyData.reviews.filter(r=>{
   if(r.resetForRedo||!['D+1','D+7'].includes(r.stage)||reviewIsSkipped(r)||
    (r.status!=='Realizada'&&!reviewIsRequired(r)))return false;
-  if(r.closedNoFurtherTecReviews)return r.plannedDate===date;
+  if(r.closedNoFurtherTecReviews||r.status==='Não realizada')return r.plannedDate===date||r.notPerformedDate===date;
   if(r.status==='Realizada')return r.plannedDate===date||r.doneDate===date;
   return date>=today&&r.plannedDate===date;
  });
@@ -3781,9 +3782,9 @@ function renderDailyStudyWorkspace(){
  const revisionOther=revs.filter(r=>!['A','Q','C'].includes(revisionFlow(r)));
  const rRow=r=>{
   const u=findTopicUnit(r.subject,r.topic);
-  const detail=r.closedNoFurtherTecReviews?'Não realizada: esgotamento das questões TEC; ciclo encerrado':r.status==='Realizada'?'Realizada'+(r.doneDate?' em '+dateBR(r.doneDate):''):
+  const detail=r.status==='Não realizada'||r.closedNoFurtherTecReviews?'Não realizada: '+(r.notPerformedReason||'indisponibilidade das questões TEC'):r.status==='Realizada'?'Realizada'+(r.doneDate?' em '+dateBR(r.doneDate):''):
    (r.stage==='D+1'&&r.adaptiveOptional&&!requiresAdaptiveD1(r)?'Adaptativa (não obrigatória)':'Pendente')+(r.plannedDate<date?' · Adiada desde '+dateBR(r.plannedDate):'');
-  return '<div class="daily-review-item" data-state="'+(r.status==='Realizada'?'done':r.closedNoFurtherTecReviews?'done':r.plannedDate<date?'late':'pending')+'"><div><strong>'+escapeHtml(r.stage)+'</strong><span>'+escapeHtml(visibleTopicTitle(r.topic))+'</span><small>'+escapeHtml(detail)+' · Prevista originalmente: '+dateBR(r.originalPlannedDate||r.plannedDate)+'</small></div>'+(u?'<button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="'+escapeHtml(r.stage)+'">Abrir</button>':'')+(r.stage==='D+1'&&r.status!=='Realizada'?'<button type="button" class="smallbtn" data-skip-review="'+escapeHtml(r.id)+'">Pular</button>':'')+'</div>';
+  return '<div class="daily-review-item" data-state="'+(r.status==='Realizada'?'done':r.closedNoFurtherTecReviews||r.status==='Não realizada'?'done':r.plannedDate<date?'late':'pending')+'"><div><strong>'+escapeHtml(r.stage)+'</strong><span>'+escapeHtml(visibleTopicTitle(r.topic))+'</span><small>'+escapeHtml(detail)+' · Prevista originalmente: '+dateBR(r.originalPlannedDate||r.plannedDate)+'</small></div>'+(u?'<button type="button" class="smallbtn" data-open-topic="'+escapeHtml(u.id)+'" data-open-stage="'+escapeHtml(r.stage)+'">Abrir</button>':'')+(r.stage==='D+1'&&r.status!=='Realizada'?'<button type="button" class="smallbtn" data-skip-review="'+escapeHtml(r.id)+'">Pular</button>':'')+'</div>';
  };
  const blank='<div class="emptytable">Nenhuma atividade programada para a data.</div>';
  const time=dailyRegisteredStudyMinutes(date);
@@ -3791,7 +3792,7 @@ function renderDailyStudyWorkspace(){
  const carryCount=backlog.count;
  const countRevsDone=revs.filter(r=>r.status==='Realizada').length;
  const countStudiesDone=entries.filter(x=>completed.has(x.unit.id)).length;
- const actionableRevs=revs.filter(r=>r.status!=='Realizada'&&!r.closedNoFurtherTecReviews);
+ const actionableRevs=revs.filter(r=>r.status!=='Realizada'&&r.status!=='Não realizada'&&!r.closedNoFurtherTecReviews);
  const countPending=actionableRevs.length+entries.length-countStudiesDone+scheduled.length;
  const progressHeader='<div class="execution-summary" aria-label="Resumo da execução">'+
   '<div class="execution-hero primary"><span class="kicker">Seu roteiro de estudo</span><strong>'+dateBR(date)+'</strong><small>Revisões primeiro · estudos iniciais depois; Aprofundamento antes de Questões.</small></div>'+
@@ -3803,7 +3804,7 @@ function renderDailyStudyWorkspace(){
  const actionableDone=revs.filter(r=>r.status==='Realizada').length+countStudiesDone+completedComplements.length;
  const completedPct=actionableTotal?Math.round(100*actionableDone/actionableTotal):0;
  const progress='<section class="daily-progress" aria-label="Progresso diário"><div class="daily-progress-top"><span>Progresso da agenda</span><small>'+actionableDone+'/'+actionableTotal+' atividades · '+completedPct+'% concluído</small></div><div class="daily-progress-track" role="progressbar" aria-label="Progresso diário" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+completedPct+'"><span style="width:'+completedPct+'%"></span></div></section>';
- const nextReview=[...revisionA,...revisionQ,...revisionC,...revisionOther].find(r=>r.status!=='Realizada'&&!r.closedNoFurtherTecReviews);
+ const nextReview=[...revisionA,...revisionQ,...revisionC,...revisionOther].find(r=>r.status!=='Realizada'&&r.status!=='Não realizada'&&!r.closedNoFurtherTecReviews);
  const nextInitial=[...A,...Q].find(x=>!completed.has(x.unit.id));
  const nextComplement=scheduled.find(u=>!completed.has(u.id));
  const next=nextReview?{label:nextReview.stage+' · '+visibleTopicTitle(nextReview.topic),unit:findTopicUnit(nextReview.subject,nextReview.topic),stage:nextReview.stage}:nextInitial?{label:nextInitial.unit.code+' — '+nextInitial.unit.title,unit:nextInitial.unit,stage:'Estudo inicial'}:nextComplement?{label:nextComplement.code+' — '+nextComplement.title,unit:nextComplement,stage:'Estudo inicial'}:null;
@@ -3812,7 +3813,7 @@ function renderDailyStudyWorkspace(){
   const pending=items.filter(x=>!isDone(x)),done=items.filter(isDone);
   return pending.map(toMarkup).join('')+(done.length?'<details class="finished-group"><summary>'+done.length+' concluída(s) / encerrada(s) · mostrar histórico</summary>'+done.map(toMarkup).join('')+'</details>':'');
  };
- const groupedReviewRows=rs=>groupRows(rs,rRow,r=>r.status==='Realizada'||r.closedNoFurtherTecReviews);
+ const groupedReviewRows=rs=>groupRows(rs,rRow,r=>r.status==='Realizada'||r.status==='Não realizada'||r.closedNoFurtherTecReviews);
  const groupedInitialRows=rs=>groupRows(rs,row,x=>completed.has(x.unit.id));
  const originalHistorical=date<today?dailyStudyAssignments(date).units:[];
  const historyPanel=originalHistorical.length?'<details class="history-original"><summary>Programação original desta data · '+originalHistorical.length+' tópico(s)</summary><div class="daily-topic-list">'+originalHistorical.map(u=>{const record=completed.get(u.id);return '<div class="daily-review-item" data-state="'+(record?'done':'pending')+'"><div><strong>'+escapeHtml(u.code)+'</strong><span>'+escapeHtml(u.title)+'</span><small>'+(record?'Concluído em '+dateBR(record.date):'Não concluído na programação original')+'</small></div></div>'}).join('')+'</div></details>':'';
@@ -5609,6 +5610,39 @@ function importNov24ReportOnce(){
  try{localStorage.setItem(key,'1')}catch(e){}
 }
 importNov24ReportOnce();
+
+// Auditoria de 24/11: não execução documental encerra apenas a ocorrência,
+// sem contabilizar conclusão; DA 36 tem encerramento expresso do ciclo.
+function importNov24NotPerformedOnce(){
+ const day='2026-11-24',origin='fechamento-2026-11-24';
+ const rows=[['Q-057','D+7','Banco de questões esgotado'],['Q-060','D+7','Banco de questões esgotado; não programar D+1/D+7/D+30'],['Q-066','D+7','Banco de questões esgotado'],['C-LP-LING-008','D+7','Sem questões no TEC'],['C-LP-LING-009','D+7','Sem questões no TEC'],['C-LP-LING-016','Estudo inicial','Filtro não encontrado'],['C-RCCN-002','D+7','Sem questões disponíveis']];
+ let changed=false;
+ const set=(o,fields)=>{for(const [k,v] of Object.entries(fields))if(o[k]!==v){o[k]=v;changed=true;}};
+ for(const [planId,stage,reason] of rows){
+  const u=planById.get(planId);if(!u)continue;
+  const topic=u.code+' — '+u.title;
+  const same=x=>!x.resetForRedo&&(x.planId===planId||(x.subject===u.subject&&topicKey(x)===topicKey({subject:u.subject,topic})));
+  const studies=studyData.studies.filter(same),study=studies.find(s=>s.status==='Concluído');
+  if(stage==='Estudo inicial'){
+   if(study)continue;
+   let entry=studies.find(s=>s.status==='Não realizada')||studies.find(s=>s.status!=='Concluído');
+   if(!entry){entry={id:'central-20261124-'+planId.toLowerCase()+'-not-performed'};studyData.studies.push(entry);changed=true;}
+   set(entry,{planId,subject:u.subject,topic,activity:'Complementação (TEC)',status:'Não realizada',plannedDate:entry.plannedDate||'2026-11-20',wasNotPerformed:true,notPerformedDate:day,notPerformedReason:reason,reportId:origin,recordOrigin:origin});
+   continue;
+  }
+  const stages=planId==='Q-060'?['D+1','D+7','D+30']:[stage];
+  for(const current of stages){
+   const reviews=studyData.reviews.filter(r=>same(r)&&r.stage===current);
+   let pending=reviews.filter(r=>r.status!=='Realizada'&&(planId==='Q-060'||!r.plannedDate||r.plannedDate<=day));
+   if(!pending.length&&current===stage&&!reviews.some(r=>r.status==='Realizada')){
+    const r={id:'central-20261124-'+planId.toLowerCase()+'-not-performed-'+current.replace('+',''),plannedDate:day};studyData.reviews.push(r);pending=[r];changed=true;
+   }
+   for(const r of pending)set(r,{planId,studyId:study?.id||r.studyId||planId,subject:u.subject,topic,stage:current,status:'Não realizada',doneDate:'',completionConfirmed:false,wasNotPerformed:true,notPerformedDate:day,notPerformedReason:reason,reportId:origin,recordOrigin:origin,...(planId==='Q-060'?{closedNoFurtherTecReviews:true}:{})});
+  }
+ }
+ if(changed)writeData();
+}
+importNov24NotPerformedOnce();
 
 reconcileStudyRevisions();
 rebuildWeeklyPlan();

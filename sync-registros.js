@@ -131,6 +131,43 @@
       var stage = stageName(row.etapa);
       var source = text(row.fonte).toUpperCase() === "TEC" ? "TEC" : "ChatGPT";
       if (!dateIsValid(day) || !code || !["Estudo inicial", "D+1", "D+7", "D+30"].includes(stage)) return;
+      if (/^n[aã]o realizada$/i.test(text(row.situacao))) {
+        var unavailableUnit = locateUnit(code, source);
+        if (!unavailableUnit) return;
+        var unavailableTopic = unavailableUnit.code + " — " + unavailableUnit.title;
+        var reason = text(row.observacoes);
+        var baseStudy = data.studies.find(function(s) {return !s.resetForRedo && s.status === "Concluído" && (s.planId === unavailableUnit.id || codeOf(s) === code);});
+        if (stage === "Estudo inicial") {
+          if (baseStudy) return;
+          var unavailableStudy = data.studies.find(function(s) {return !s.resetForRedo && (s.planId === unavailableUnit.id || codeOf(s) === code) && s.status !== "Concluído";});
+          if (!unavailableStudy) {
+            unavailableStudy = {id:stableId("sheet-not-performed-study",[day,code]),planId:unavailableUnit.id,subject:unavailableUnit.subject,topic:unavailableTopic,plannedDate:day,activity:unavailableUnit.flow==="C"?"Complementação (TEC)":"Questões"};
+            data.studies.push(unavailableStudy);changed=true;
+          }
+          setIfDifferent(unavailableStudy,"status","Não realizada");
+          setIfDifferent(unavailableStudy,"wasNotPerformed",true);
+          setIfDifferent(unavailableStudy,"notPerformedDate",day);
+          setIfDifferent(unavailableStudy,"notPerformedReason",reason);
+        } else {
+          var fullClosure = /n[aã]o programar D\+1\/D\+7\/D\+30/i.test(reason);
+          var stages = fullClosure ? ["D+1","D+7","D+30"] : [stage];
+          stages.forEach(function(current){
+            var matching=data.reviews.filter(function(r){return !r.resetForRedo && r.stage===current && (r.planId===unavailableUnit.id || codeOf(r)===code);});
+            var pending=matching.filter(function(r){return r.status!=="Realizada" && (fullClosure || !r.plannedDate || r.plannedDate<=day);});
+            if(!pending.length && current===stage && !matching.some(function(r){return r.status==="Realizada";})){
+              var r={id:stableId("sheet-not-performed-review",[day,code,current]),studyId:baseStudy?baseStudy.id:unavailableUnit.id,planId:unavailableUnit.id,subject:unavailableUnit.subject,topic:unavailableTopic,stage:current,plannedDate:day,doneDate:""};
+              data.reviews.push(r);pending=[r];changed=true;
+            }
+            pending.forEach(function(r){
+              setIfDifferent(r,"status","Não realizada");setIfDifferent(r,"doneDate","");
+              setIfDifferent(r,"wasNotPerformed",true);setIfDifferent(r,"completionConfirmed",false);
+              setIfDifferent(r,"notPerformedDate",day);setIfDifferent(r,"notPerformedReason",reason);
+              if(fullClosure)setIfDifferent(r,"closedNoFurtherTecReviews",true);
+            });
+          });
+        }
+        return;
+      }
       if (!/^(conclu[ií]d[oa]|realizad[oa])$/i.test(text(row.situacao))) return;
       var unit = locateUnit(code, source);
       if (!unit) { console.warn("Tópico da planilha ausente do planejamento", code); return; }
