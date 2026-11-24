@@ -1,5 +1,16 @@
 # Registro de alterações — Central de Estudos
 
+## 24/11/2026 — Motor de revisões condicionado à prioridade e ao domínio atual
+
+- **Objetivo:** consumir progressivamente diagnósticos dos Registros Individuais Padronizados (RIPs) de estudo inicial, D+1, D+7 e D+30 sem confundir prioridade estratégica com domínio ou reforço. Não alterar notas, calendários históricos, etapas concluídas ou critérios de correção e elaboração de questões.
+- **Evidência por etapa:** um único diagnóstico vigente por etapa do tópico, priorizando avaliação docente para domínio Seguro/Parcial/Fraco; transferir reforço Dispensável/Pontual/Extraordinário, profundidade indicada, foco, erros/inseguranças e recorrências expressamente documentadas. Não somar baterias sobrepostas nem inventar avaliações para campos ausentes.
+- **Revisão principal:** D+1 por domínio Parcial/Fraco, reforço Extraordinário, erros críticos/dificuldades relevantes, pelo menos 2 erros ou 2 inseguranças no estudo inicial; em P1/P2, um erro ou insegurança documentados já podem justificar D+1. Um deslize isolado de P3/P4 não produz D+1 automaticamente. Ausência de tais evidências mantém D+7.
+- **D+7 adicional:** após uma D+1 já executada, exige dificuldade ainda presente — domínio Parcial/Fraco, reforço Extraordinário, erro ou recorrência, insegurança em P1/P2 ou insegurança expressiva em P3/P4. Reforço Pontual isolado não gera etapa. Uma D+7 já realizada jamais é desfeita.
+- **D+30:** permanece facultativa para P1–P4, sem atraso. Elegibilidade seletiva considera erros, inseguranças, ⭐, domínio/reincidência/reforço efetivamente documentados. Nenhuma D+60 é criada e não há reabertura de estudos. Novas etapas com data prevista anterior ao dia atual não são criadas retroativamente.
+- **RCCN 17:** enriquecidos os dados da D+7 de 23/11/2026 com o RIP fornecido: P2, 20/20, um AI, domínio Seguro, reforço Pontual, profundidade Breve, insegurança repetida da Q19 D+1 na Q18 D+7 (CF, art. 57, § 6º, I e II), D+7 original de 18/11 e D+30 facultativa em 11/12. Migração idempotente para navegadores que já receberam o fechamento quantitativo; não recria D+1 ou estudo inicial.
+- **Interface:** painel consultivo de diagnósticos individuais recentes na visão geral de Revisões e ranking seletivo pré-prova que considera o estado mais recente, sem gerar obrigação de estudar. Calendário da Semana 5 (24–27/11) e os 37 comandos preservados.
+- **Validação:** JavaScript analisado sem erro de sintaxe; 11 cenários sintéticos de diferentes prioridades, domínios, inseguranças, recuperações e histórico concluído passaram. A publicação no Netlify e os dados armazenados no navegador devem ser conferidos separadamente.
+
 ## 24/11/2026 — Relatório diário com fichas operacionais de revisão condicional
 
 - **Escopo:** somente o conteúdo do Comando 27 — Relatório diário de desempenho, mantendo os 36 outros comandos, o planejamento e o motor de agendamento sem alterações.
