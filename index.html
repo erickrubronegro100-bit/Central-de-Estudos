@@ -2952,6 +2952,48 @@ function setPlanDone(id,done){
  renderWorkspace(workspaceById[activeView]);refreshOverview();toast(done?"Estudo concluído.":"Estudo reaberto.");
 }
 
+// Painel consultivo dos RIPs mais recentes. Não cria ou conclui revisões.
+function renderConditionalReviewDiagnoses(){
+ const recent=studyData.attempts.filter(a=>!a.resetForRedo&&
+  a.completionConfirmed!==false&&['D+1','D+7','D+30'].includes(a.stage)&&
+  (a.domain||a.teacherDomain||a.reinforcement||a.nextReviewDepth))
+  .slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+ const seen=new Set(),rows=[];
+ for(const attempt of recent){
+  const u=planById.get(attempt.planId)||findTopicUnit(attempt.subject,attempt.topic);
+  if(!u||seen.has(u.id))continue;
+  seen.add(u.id);
+  const study=studyData.studies.find(x=>x.planId===u.id&&!x.resetForRedo&&x.status==='Concluído');
+  const provisional=study||{planId:u.id,subject:u.subject,topic:u.code+' — '+u.title};
+  const result=studyReviewDecision(provisional),d=result.latest;
+  if(!d||d.stage==='Estudo inicial')continue;
+  const next=d.stage==='D+7'?
+   (result.eligibleD30?'D+30 facultativa, sem obrigação':'Ciclo regular concluído'):
+   d.stage==='D+1'?
+    (result.additionalD7?'D+7 adicional condicionada':'D+7 adicional não exigida'):
+    'Ciclo encerrado; sem nova revisão automática';
+  const focus=d.focus||d.notes||'Não informado';
+  rows.push('<tr><th>'+escapeHtml(u.code)+'<small> · '+escapeHtml(d.stage)+
+   ' ('+dateBR(d.date)+')</small></th><td>'+escapeHtml(u.priority||'N/I')+
+   '</td><td>'+escapeHtml(d.domain||'Não informado')+
+   '</td><td>'+escapeHtml(d.reinforcement||'Não informado')+
+   '</td><td>'+escapeHtml(d.depth||'Não informada')+
+   '</td><td>'+escapeHtml(String(focus).slice(0,155))+
+   (String(focus).length>155?'…':'')+
+   (d.recurring?' · insegurança recorrente':'')+
+   '</td><td>'+escapeHtml(next)+'</td></tr>');
+  if(rows.length>=20)break;
+ }
+ if(!rows.length)return '';
+ return '<details class="history-original"><summary>Diagnósticos por tópico · '+rows.length+
+  ' revisões recentes (abrir)</summary>'+
+  '<p class="weekly-note">O domínio e o reforço vêm dos registros individuais, não de novos cálculos. A prioridade orienta a decisão, a D+30 permanece facultativa e não são criadas revisões retroativas.</p>'+
+  '<div class="platform-scroll"><table class="platform-table"><thead><tr>'+
+  '<th>Tópico / etapa</th><th>Prioridade</th><th>Domínio</th><th>Reforço</th>'+
+  '<th>Próxima profundidade</th><th>Foco registrado</th><th>Encaminhamento</th>'+
+  '</tr></thead><tbody>'+rows.join('')+'</tbody></table></div></details>';
+}
+
 function renderReviewGeneralPanels(){
  const reviews=studyData.reviews.filter(r=>!r.resetForRedo);
  const stages=['D+1','D+7','D+30'];
@@ -2974,7 +3016,7 @@ function renderReviewGeneralPanels(){
  const summary='<div class="review-stage-summary">'+cards+'</div>';
  return summary+'<div class="weekly-kpi">'+metricCard('Vencendo hoje',due)+metricCard('Atrasadas',overdue)+
  metricCard('Concluídas',reviews.filter(r=>r.status==='Realizada').length)+
- metricCard('Total de revisões',reviews.length)+'</div>';
+ metricCard('Total de revisões',reviews.length)+'</div>'+renderConditionalReviewDiagnoses();
 }
 
 function renderWorkspace(v){
@@ -3604,14 +3646,21 @@ function residualComplementPanel(date,completed){
   .map(u=>{
    const study=studyData.studies.find(s=>s.planId===u.id&&s.status==='Concluído'&&!s.resetForRedo);
    const result=study?studyReviewDecision(study):{errors:0,insecurity:0,stars:false};
-   return {u,result,score:(u.priority==='P1'?10:5)+result.errors*3+result.insecurity*2+(result.stars?5:0)};
+   const current=result.latest||result.initial||{};
+   const weakness=current.domain==='Fraco'?12:current.domain==='Parcial'?8:0;
+   const support=current.reinforcement==='Extraordinário'?10:current.reinforcement==='Pontual'?3:0;
+   return {u,result,current,score:(u.priority==='P1'?10:5)+weakness+support+
+    (current.errors||0)*3+(current.insecurity||0)*2+(current.recurring?5:0)+(result.stars?5:0)};
   }).sort((a,b)=>b.score-a.score||a.u.order-b.u.order).slice(0,15);
  const finalOptional='<details class="history-original"><summary>Revisão final seletiva · '+
   focus.length+' sugestões facultativas</summary>'+
   '<p class="weekly-note">Priorizar P1/P2, erros, inseguranças e ⭐. Reutiliza o comando de questões e correções D+7; não agenda ou conclui automaticamente qualquer revisão.</p>'+
   (focus.length?focus.map(x=>'<div class="daily-review-item"><div><strong>'+
    escapeHtml(x.u.code)+' · '+escapeHtml(x.u.priority)+'</strong><span>'+escapeHtml(x.u.title)+
-   '</span><small>Erros: '+x.result.errors+' · Inseguranças: '+x.result.insecurity+
+   '</span><small>'+(x.current.stage?escapeHtml(x.current.stage)+' · ':'')+
+   'Erros: '+(x.current.errors||0)+' · Inseguranças: '+(x.current.insecurity||0)+
+   (x.current.domain?' · '+escapeHtml(x.current.domain):'')+
+   (x.current.reinforcement?' · Reforço '+escapeHtml(x.current.reinforcement):'')+
    (x.result.stars?' · ⭐':'')+'</small></div><button type="button" class="smallbtn" data-open-topic="'+
    escapeHtml(x.u.id)+'" data-open-stage="D+7">Abrir questões</button></div>').join(''):
    '<p class="weekly-note">Não há tópicos P1/P2 concluídos para selecionar.</p>')+'</details>';
