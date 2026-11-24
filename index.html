@@ -893,28 +893,97 @@ function reviewMatchesStudy(r,study){
  if(r.studyId===study.id||study.planId&&r.studyId===study.planId)return true;
  return topicKey(r)===topicKey(study);
 }
+// Prioridade e domínio são independentes. O RIP mais recente alimenta as
+// decisões seguintes; histórico concluído nunca é reinterpretado como pendente.
+function studyStageEvidence(study,stage){
+ if(!study)return null;
+ const unit=planById.get(study.planId)||findTopicUnit(study.subject,study.topic);
+ const same=r=>!r.resetForRedo&&((unit&&r.planId===unit.id)||
+  (study.id&&r.studyId===study.id)||
+  (study.subject===r.subject&&topicKey(r)===topicKey(study)));
+ const atStage=a=>stage==='Estudo inicial'?
+  a.stage==='Estudo inicial'||(!a.stage&&!stageForContact(a.contact)):
+  a.stage===stage||stageForContact(a.contact)===stage;
+ const attempts=studyData.attempts.filter(a=>same(a)&&atStage(a)&&
+  a.completionConfirmed!==false).sort((a,b)=>
+  String(b.date||'').localeCompare(String(a.date||''))||
+  Number(Boolean(b.teacherDomain||b.domain))-Number(Boolean(a.teacherDomain||a.domain)));
+ const completed=stage==='Estudo inicial'?[]:studyData.reviews.filter(r=>
+  same(r)&&r.stage===stage&&r.status==='Realizada').sort((a,b)=>
+  String(b.doneDate||'').localeCompare(String(a.doneDate||'')));
+ const base=stage==='Estudo inicial'&&study.status==='Concluído'?study:null;
+ const attempt=attempts[0]||null,review=completed[0]||null;
+ if(!attempt&&!review&&!base)return null;
+ const sources=[attempt,review,base].filter(Boolean);
+ const pick=(...names)=>{
+  for(const src of sources)for(const key of names){
+   const val=src[key];
+   if(val!==undefined&&val!==null&&val!=='')return val;
+  }
+  return null;
+ };
+ const normalized=(raw,options)=>options.find(v=>
+  new RegExp('^'+v,'i').test(String(raw||'').trim()))||null;
+ const domain=normalized(pick('teacherDomain','domain'),['Seguro','Parcial','Fraco']);
+ const reinforcement=normalized(pick('reinforcement'),['Dispensável','Pontual','Extraordinário']);
+ const metrics=attempt||review;
+ const errors=metrics?safeNum(metrics.ws)+safeNum(metrics.wu)+safeNum(metrics.wrongOther):0;
+ const insecurity=metrics?safeNum(metrics.cu)+safeNum(metrics.wu):0;
+ const recur=pick('recurrentInsecurity','insecurityRecurring');
+ const critical=pick('criticalErrors','hasCriticalErrors','currentCriticalErrors');
+ return {stage,date:attempt?.date||review?.doneDate||base?.date||null,
+  domain,reinforcement,errors,insecurity,
+  critical:critical===true||(Number.isFinite(critical)&&critical>0)||
+   (Array.isArray(critical)&&critical.length>0),
+  recurring:Boolean(recur&&(!Array.isArray(recur)||recur.length)),
+  recurrenceEvidence:recur||null,
+  depth:pick('nextReviewDepth','nextDepth','nextTecIntensity','depth'),
+  focus:pick('focus','priorityUnit','pedagogicalFocus'),
+  notes:pick('pedagogicalNotes','documentaryNotes'),
+  hasDifficulties:pick('hasDifficulties')===true,
+  provenance:pick('recordOrigin','reportId'),
+  sample:attempt?attemptTotal(attempt):null};
+}
 function studyReviewDecision(study){
  const unit=planById.get(study?.planId)||findTopicUnit(study?.subject,study?.topic);
+ const priority=unit?.priority||'P4',high=/^P[12]$/.test(priority);
+ const initial=studyStageEvidence(study,'Estudo inicial');
+ const d1=studyStageEvidence(study,'D+1');
+ const d7=studyStageEvidence(study,'D+7');
+ const d30=studyStageEvidence(study,'D+30');
+ const latest=d30||d7||d1||initial;
+ const errors=initial?.errors||0,insecurity=initial?.insecurity||0;
  const same=a=>!a.resetForRedo&&((unit&&a.planId===unit.id)||
-  (study?.id&&a.studyId===study.id)||(study?.subject===a.subject&&topicKey(a)===topicKey(study)));
- const sessions=studyData.attempts.filter(same);
- const initial=sessions.filter(a=>a.stage==='Estudo inicial'||(!a.stage&&!stageForContact(a.contact)));
- const errors=initial.reduce((n,a)=>n+safeNum(a.ws)+safeNum(a.wu)+safeNum(a.wrongOther),0);
- const insecurity=initial.reduce((n,a)=>n+safeNum(a.cu)+safeNum(a.wu),0);
- const weak=[study,...initial].some(x=>['Fraco','Parcial'].includes(x?.domain)||x?.hasDifficulties===true);
- const priority=unit?.priority||'P4',important=/^P[12]$/.test(priority);
- const relevant=weak||errors>=2||insecurity>=2;
- const difficulty=weak||errors>0||insecurity>0;
- const primary=difficulty&&(!important||relevant)?'D+1':'D+7';
- const d1=sessions.filter(a=>a.stage==='D+1'||stageForContact(a.contact)==='D+1');
- const persistent=d1.some(a=>safeNum(a.ws)+safeNum(a.wu)+safeNum(a.wrongOther)+safeNum(a.cu)>0||
-  ['Fraco','Parcial'].includes(a.domain));
- const stars=[study,...sessions].some(x=>x?.starred===true||x?.importantStar===true||
-  ['starTopics','starPoints','stars','importantTopics'].some(k=>Array.isArray(x?.[k])&&x[k].length>0));
- const additionalD7=primary==='D+1'&&(persistent||(important&&relevant&&errors>0));
- const eligibleD30=errors>0||insecurity>0||stars||sessions.some(a=>
-  safeNum(a.ws)+safeNum(a.wu)+safeNum(a.wrongOther)+safeNum(a.cu)>0);
- return {primary,additionalD7,eligibleD30,priority,errors,insecurity,stars};
+  (study?.id&&a.studyId===study.id)||
+  (study?.subject===a.subject&&topicKey(a)===topicKey(study)));
+ const stars=[study,...studyData.attempts.filter(same)].some(x=>
+  x?.starred===true||x?.importantStar===true||
+  ['starTopics','starPoints','stars','importantTopics'].some(k=>
+   Array.isArray(x?.[k])&&x[k].length>0));
+ // Não criar D+1 por um deslize isolado de P3/P4.
+ // P1/P2 recebem sensibilidade maior, sem usar a prioridade para simular domínio.
+ const substantive=initial?.domain==='Parcial'||initial?.domain==='Fraco'||
+  initial?.reinforcement==='Extraordinário'||initial?.critical||
+  initial?.hasDifficulties||errors>=2||insecurity>=2;
+ let primary=substantive||(high&&(errors>0||insecurity>0))?'D+1':'D+7';
+ // Etapas executadas prevalecem sobre mudanças posteriores no algoritmo.
+ if(d1)primary='D+1';
+ else if(d7||d30)primary='D+7';
+ const d1Need=Boolean(d1&&(d1.domain==='Parcial'||d1.domain==='Fraco'||
+  d1.reinforcement==='Extraordinário'||d1.critical||d1.hasDifficulties||
+  d1.errors>0||d1.recurring||(high&&d1.insecurity>0)||d1.insecurity>=2));
+ const additionalD7=primary==='D+1'&&(Boolean(d7)||d1Need);
+ const eligibleD30=stars||[initial,d1,d7].some(x=>x&&(
+  x.errors>0||x.insecurity>0||x.critical||x.recurring||
+  x.domain==='Parcial'||x.domain==='Fraco'||
+  x.reinforcement==='Pontual'||x.reinforcement==='Extraordinário'));
+ return {primary,additionalD7,eligibleD30,priority,errors,insecurity,stars,
+  initial,d1,d7,d30,latest,
+  currentDomain:latest?.domain||null,
+  currentReinforcement:latest?.reinforcement||null,
+  nextReviewDepth:latest?.depth||null,nextReviewFocus:latest?.focus||null,
+  additionalReason:d1Need?'D+1 com dificuldade ainda demonstrada':null,
+  d30AlwaysOptional:true};
 }
 function studyForReview(r){
  return studyData.studies.find(s=>!s.resetForRedo&&s.status==='Concluído'&&
@@ -952,6 +1021,8 @@ function ensureScheduledReviews(study){
    }
    continue;
   }
+  // Não criar retrospectivamente uma etapa cuja data-base já passou.
+  if(plannedDate<todayISO())continue;
   studyData.reviews.push({
    id:freshId(),studyId:study.id,planId:study.planId,subject:study.subject,topic:study.topic,
    stage,status:'Programada',plannedDate,doneDate:'',autoScheduled:true,
