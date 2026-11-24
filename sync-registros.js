@@ -238,6 +238,18 @@
     revisionRows.forEach(function (row) {
       var code = normalizeCode(row.codigo), stage = stageName(row.etapa), when = text(row.proxima_data);
       if (!code || !["D+1","D+7","D+30"].includes(stage) || !dateIsValid(when)) return;
+      if (text(row.situacao) === "Pulada") {
+        var skippedUnit = locateUnit(code,"ChatGPT");
+        if (!skippedUnit) return;
+        var skippedTopic = skippedUnit.code + " — " + skippedUnit.title;
+        var skippedReviews = data.reviews.filter(function(r){return !r.resetForRedo && r.stage===stage && (r.planId===skippedUnit.id||codeOf(r)===code) && r.status!=="Realizada" && (!r.plannedDate||r.plannedDate===when);});
+        if(!skippedReviews.length && !data.reviews.some(function(r){return !r.resetForRedo&&r.stage===stage&&(r.planId===skippedUnit.id||codeOf(r)===code)&&r.status==="Realizada";})){
+          var sk={id:stableId("sheet-skipped",[code,stage,when]),planId:skippedUnit.id,subject:skippedUnit.subject,topic:skippedTopic,stage:stage,plannedDate:when,doneDate:""};
+          data.reviews.push(sk);skippedReviews=[sk];changed=true;
+        }
+        skippedReviews.forEach(function(r){setIfDifferent(r,"status","Pulada");setIfDifferent(r,"skipped",true);setIfDifferent(r,"doneDate","");setIfDifferent(r,"completionConfirmed",false);setIfDifferent(r,"skippedReason",text(row.observacoes));});
+        return;
+      }
       if (text(row.situacao) !== "Programada") return;
       var unit = locateUnit(code,"ChatGPT");
       if (!unit) return;
