@@ -1,5 +1,13 @@
 # Registro de alterações — Central de Estudos
 
+## 23/11/2026 — Fechamento de 12 revisões D+7 e metas da Semana 5 redistribuídas
+
+- **Dados:** incorporado o relatório definitivo de 23/11 com 12 revisões D+7 de RICD 13; RCCN 14, 15, 16, 17 e 18; LP/LING 11, 12, 13 e 14; CP 4 e 5. Registradas 309 respostas válidas (265 AS, 26 AI, 8 ES e 10 EI), 291 acertos, 18 erros, insegurança de 36 questões e tempo líquido conhecido de 103 minutos. Todos os 12 resultados pertencem ao ChatGPT; não foram gerados resultados TEC nem estudos iniciais fictícios.
+- **Importação idempotente:** inclusão condicionada à abertura de uma versão publicada pelo navegador. Confere data, tópico, modalidade e plataforma para evitar duplicação; divergências de tentativas pré-existentes são sinalizadas, sem sobregravar números discrepantes. Preservadas as ressalvas do relatório (RCCN 18 sem confirmação expressa da data, LP/LING 13 sem comprovação explícita de ausência de consulta, abrangência não informada em LP/LING 11 e 12; Q02 de LP/LING 14 sem resposta).
+- **Semana 5:** mantida a janela geral 23–27/11; **domingo 22/11 e segunda-feira 23/11 exibem 0 A + 0 Q**. Metas novas A/Q alocadas integralmente, em sequência, entre **terça 24/11 e sexta 27/11**, com arredondamento equilibrado dos dois fluxos. As 12 revisões concluídas na segunda não são convertidas em metas A/Q.
+- **Preservação:** semanas 1–4, 6–11, complementações TEC, históricos, prioridades, lógica adaptativa, D+30 facultativa, finais de semana posteriores, sequência dos tópicos e os 37 comandos mantidos. Não há conclusão fictícia de estudos, nem alteração de totais semanais.
+- **Verificação:** fechamento recomposto com 12 revisões, 309 questões válidas, 291 acertos, 103 minutos; script principal compilado; dados de planejamento preservados. Publicação no Netlify e estado local do navegador requerem verificação separada.
+
 ## 23/11/2026 — Itens CEBRASPE com menos pistas lexicais (todos os comandos)
 
 - **Escopo:** os 37 comandos da Biblioteca (RICD, RCCN, PL, CP, RFIA, LP/LING, TEC e Relatórios) receberam uma diretriz transversal; nos questionários e relatórios, sua incidência é condicional à elaboração efetiva de itens C/E.
