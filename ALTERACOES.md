@@ -1,5 +1,13 @@
 # Registro de alterações — Central de Estudos
 
+## 24/11/2026 — Relatório diário com fichas operacionais de revisão condicional
+
+- **Escopo:** somente o conteúdo do Comando 27 — Relatório diário de desempenho, mantendo os 36 outros comandos, o planejamento e o motor de agendamento sem alterações.
+- **Fonte:** Registros Individuais Padronizados (RIPs) de cada tópico/etapa, com exemplo conferido em RCCN 17 D+7 de 23/11/2026. O relatório diário não faz reavaliação independente, não recalcula domínio, não inventa reforços e não determina metas.
+- **Nova camada operacional:** tabela por atividade de prioridade P1–P4 (independente da densidade), domínio docente/consolidado, reforço, profundidade indicada, conteúdo focal, histórico de erros/inseguranças e próxima revisão prevista/facultativa; transferência somente de dados presentes em cada RIP.
+- **Auditoria:** preservação das datas originais/efetivas, atraso, anulações e questões não respondidas, reincidência de insegurança, unidades de erros atuais sujeitas a mínimo de questões na próxima revisão efetivamente prevista, observações de origem e D+30 facultativa para todas as prioridades.
+- **Invariantes:** somatórios e classificações das plataformas permanecem independentes; nenhum estudo/revisão se torna concluído por inferência; algoritmo de revisão principal D+1/D+7 e importações históricas não foram alterados. Fichas são para transferência e não equivalem a importação automática no navegador.
+
 ## 23/11/2026 — Fechamento de 12 revisões D+7 e metas da Semana 5 redistribuídas
 
 - **Dados:** incorporado o relatório definitivo de 23/11 com 12 revisões D+7 de RICD 13; RCCN 14, 15, 16, 17 e 18; LP/LING 11, 12, 13 e 14; CP 4 e 5. Registradas 309 respostas válidas (265 AS, 26 AI, 8 ES e 10 EI), 291 acertos, 18 erros, insegurança de 36 questões e tempo líquido conhecido de 103 minutos. Todos os 12 resultados pertencem ao ChatGPT; não foram gerados resultados TEC nem estudos iniciais fictícios.
