@@ -895,6 +895,14 @@ function reviewMatchesStudy(r,study){
 }
 // Prioridade e domínio são independentes. O RIP mais recente alimenta as
 // decisões seguintes; histórico concluído nunca é reinterpretado como pendente.
+// Domínio operacional: exclusivamente pelo aproveitamento quando houver
+// questões válidas, sem sobrescrever a avaliação docente documentada.
+function operationalDomainFromCounts(correct,total,fallback=null){
+ if(!Number.isFinite(correct)||!Number.isFinite(total)||total<=0||correct<0||correct>total)return fallback;
+ if(correct*100>=90*total)return 'Seguro';
+ if(correct*100>=80*total)return 'Parcial';
+ return 'Fraco';
+}
 function studyStageEvidence(study,stage){
  if(!study)return null;
  const unit=planById.get(study.planId)||findTopicUnit(study.subject,study.topic);
@@ -924,15 +932,22 @@ function studyStageEvidence(study,stage){
  };
  const normalized=(raw,options)=>options.find(v=>
   new RegExp('^'+v,'i').test(String(raw||'').trim()))||null;
- const domain=normalized(pick('teacherDomain','domain'),['Seguro','Parcial','Fraco']);
+ const teacherDomain=pick('teacherDomain','domain');
+ const documentedDomain=normalized(teacherDomain,['Seguro','Parcial','Fraco']);
  const reinforcement=normalized(pick('reinforcement'),['Dispensável','Pontual','Extraordinário']);
- const metrics=attempt||review;
- const errors=metrics?safeNum(metrics.ws)+safeNum(metrics.wu)+safeNum(metrics.wrongOther):0;
- const insecurity=metrics?safeNum(metrics.cu)+safeNum(metrics.wu):0;
+ // Prefere a sessão efetiva; se ausente, usa métricas documentadas da revisão
+ // ou do registro inicial. Sem questões, preserva a avaliação conhecida.
+ const metrics=attempt||review||base;
+ const counts=blankCounts();
+ if(metrics)for(const part of Object.values(sourceCounts(metrics)))for(const key of RESULT_KEYS)counts[key]+=safeNum(part[key]);
+ const total=counted(counts),correct=correctCount(counts);
+ const domain=operationalDomainFromCounts(correct,total,documentedDomain);
+ const errors=safeNum(counts.ws)+safeNum(counts.wu)+safeNum(counts.wrongOther);
+ const insecurity=safeNum(counts.cu)+safeNum(counts.wu);
  const recur=pick('recurrentInsecurity','insecurityRecurring');
  const critical=pick('criticalErrors','hasCriticalErrors','currentCriticalErrors');
  return {stage,date:attempt?.date||review?.doneDate||base?.date||null,
-  domain,reinforcement,errors,insecurity,
+  domain,teacherDomain,documentedDomain,accuracy:total?correct/total:null,reinforcement,errors,insecurity,
   critical:critical===true||(Number.isFinite(critical)&&critical>0)||
    (Array.isArray(critical)&&critical.length>0),
   recurring:Boolean(recur&&(!Array.isArray(recur)||recur.length)),
@@ -942,7 +957,7 @@ function studyStageEvidence(study,stage){
   notes:pick('pedagogicalNotes','documentaryNotes'),
   hasDifficulties:pick('hasDifficulties')===true,
   provenance:pick('recordOrigin','reportId'),
-  sample:attempt?attemptTotal(attempt):null};
+  sample:total||null};
 }
 function studyReviewDecision(study){
  const unit=planById.get(study?.planId)||findTopicUnit(study?.subject,study?.topic);
@@ -980,6 +995,8 @@ function studyReviewDecision(study){
  return {primary,additionalD7,eligibleD30,priority,errors,insecurity,stars,
   initial,d1,d7,d30,latest,
   currentDomain:latest?.domain||null,
+  currentTeacherDomain:latest?.teacherDomain||null,
+  currentAccuracy:latest?.accuracy??null,
   currentReinforcement:latest?.reinforcement||null,
   nextReviewDepth:latest?.depth||null,nextReviewFocus:latest?.focus||null,
   additionalReason:d1Need?'D+1 com dificuldade ainda demonstrada':null,
@@ -1034,8 +1051,13 @@ function ensureScheduledReviews(study){
    }
    continue;
   }
-  // Não criar retrospectivamente uma etapa cuja data-base já passou.
-  if(plannedDate<todayISO())continue;
+  // Não criar retrospectivamente uma etapa cuja data-base já passou,
+  // salvo quando a nova classificação substitui uma D+1 ainda pendente.
+  // Nesse caso, conserva a data-base real, sem dar baixa fictícia.
+  const replacingOutstandingD1=stage==='D+7'&&decision.primary==='D+7'&&!decision.d1&&
+   d1Rows.some(r=>['Programada','Pendente','Facultativa'].includes(r.status)&&!reviewIsSkipped(r)&&
+    !r.closedNoFurtherTecReviews&&!r.manualD1Reactivated);
+  if(plannedDate<todayISO()&&!replacingOutstandingD1)continue;
   studyData.reviews.push({
    id:freshId(),studyId:study.id,planId:study.planId,subject:study.subject,topic:study.topic,
    stage,status:'Programada',plannedDate,doneDate:'',autoScheduled:true,
