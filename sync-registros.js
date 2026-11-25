@@ -279,7 +279,7 @@
     });
 
     if (changed) localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
-    return {changed:changed, imported:imported, planned:planned};
+    return {changed:changed, imported:imported, planned:planned, data:changed?data:null};
   }
 
   async function refresh() {
@@ -287,10 +287,20 @@
     running = true;
     try {
       var results = await Promise.all([fetchTab("Atividades"),fetchTab("Revisoes")]);
+      // Não alterar a base durante preenchimento de formulário nem recarregar a página.
+      if ((typeof window.centralStudySyncCanApply==="function"&&!window.centralStudySyncCanApply()) ||
+          document.querySelector("dialog[open]")) {
+        showStatus("Sincronização adiada durante a edição.",false);
+        return;
+      }
       var output = mergeRows(results[0],results[1]);
       if (output.changed) {
-        showStatus("Novos registros recebidos. Atualizando a Central de Estudos…",false);
-        if (!document.querySelector("dialog[open]")) location.reload();
+        if (typeof window.centralStudySyncApply==="function") {
+          window.centralStudySyncApply(output.data);
+          showStatus("Planilha sincronizada · registros atualizados",false);
+        } else {
+          showStatus("Registros salvos. Reabra a página quando conveniente.",false);
+        }
       } else {
         showStatus("Planilha sincronizada · " + output.imported + " atividades verificadas",false);
       }
@@ -303,6 +313,7 @@
   }
 
   // Verificação ao abrir o site e periodicamente. Sem alterações de código, sem deploy.
-  refresh();
+  // Deixa a interface inicial renderizar antes da primeira consulta.
+  setTimeout(refresh,1200);
   setInterval(refresh,REFRESH_INTERVAL_MS);
 }());

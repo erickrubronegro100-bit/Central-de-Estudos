@@ -5614,6 +5614,8 @@ importNov24ReportOnce();
 // Auditoria de 24/11: não execução documental encerra apenas a ocorrência,
 // sem contabilizar conclusão; DA 36 tem encerramento expresso do ciclo.
 function importNov24NotPerformedOnce(){
+ const key='central-estudos-nao-execucoes-20261124-v2';
+ try{if(localStorage.getItem(key)==='1')return;}catch(e){}
  const day='2026-11-24',origin='fechamento-2026-11-24';
  const rows=[['Q-057','D+7','Banco de questões esgotado'],['Q-060','D+7','Banco de questões esgotado; não programar D+1/D+7/D+30'],['Q-066','D+7','Banco de questões esgotado'],['C-LP-LING-008','D+7','Sem questões no TEC'],['C-LP-LING-009','D+7','Sem questões no TEC'],['C-LP-LING-016','Estudo inicial','Filtro não encontrado'],['C-RCCN-002','D+7','Sem questões disponíveis'],['A-027','D+7','Não realizada por declaração expressa do estudante; motivo não informado']];
  let changed=false;
@@ -5640,13 +5642,16 @@ function importNov24NotPerformedOnce(){
    for(const r of pending)set(r,{planId,studyId:study?.id||r.studyId||planId,subject:u.subject,topic,stage:current,status:'Não realizada',doneDate:'',completionConfirmed:false,wasNotPerformed:true,notPerformedDate:day,notPerformedReason:reason,reportId:origin,recordOrigin:origin,...(planId==='Q-060'?{closedNoFurtherTecReviews:true}:{})});
   }
  }
- if(changed)writeData();
+ if(changed&&!writeData())return;
+ try{localStorage.setItem(key,'1')}catch(e){}
 }
 importNov24NotPerformedOnce();
 
 // Retificação expressa de 24/11: TI 12 e CP/TEC 1 eram D+7; D+1 puladas.
 // Corrige também navegadores que já receberam a classificação anterior.
 function rectifyNov24TecStages(){
+ const key='central-estudos-retificacao-20261124-v2';
+ try{if(localStorage.getItem(key)==='1')return;}catch(e){}
  const day='2026-11-24',origin='fechamento-2026-11-24';
  let changed=false;
  const set=(o,fields)=>{for(const [k,v] of Object.entries(fields))if(o[k]!==v){o[k]=v;changed=true;}};
@@ -5680,16 +5685,33 @@ function rectifyNov24TecStages(){
   }
   for(const r of d1){set(r,{planId,studyId:study?.id||r.studyId||planId,subject:u.subject,topic,stage:'D+1',status:'Pulada',skipped:true,doneDate:'',durationMinutes:0,completionConfirmed:false,skippedDate:day,skippedReason:'D+1 pulada por determinação expressa; D+7 realizada em 24/11.',recordOrigin:origin,reportId:origin});}
  }
- if(changed)writeData();
+ if(changed&&!writeData())return;
+ try{localStorage.setItem(key,'1')}catch(e){}
 }
 rectifyNov24TecStages();
 
 reconcileStudyRevisions();
 rebuildWeeklyPlan();
 installComplementationEvents();
+// Integração em memória: mantém a página, navegação e dados locais.
+// Não substitui formulários abertos nem exige recarregar o documento.
+window.centralStudySyncCanApply=function(){
+ const active=document.activeElement;
+ return !showEntryForm&&!document.querySelector('dialog[open]')&&
+  !(active&&(active.matches('input,textarea,select,[contenteditable="true"]')));
+};
+window.centralStudySyncApply=function(data){
+ if(!data||typeof data!=='object')return false;
+ for(const k of Object.keys(studyData))if(Array.isArray(data[k]))studyData[k]=data[k];
+ reconcileStudyRevisions();
+ rebuildWeeklyPlan();
+ if(workspaceById[activeView])renderWorkspace(workspaceById[activeView]);
+ refreshOverview();
+ return true;
+};
 draw();refreshOverview();setActiveNav(null);const hash=location.hash.replace(/^#/,'');const match=location.hash.match(/^#comando-(\d+)$/);if(match)openDoc(Number(match[1]),false);else if(workspaceById[hash]||hash==='comandos')showPage(hash,false);
 })();
 </script>
-<script src="./sync-registros.js"></script>
+<script src="./sync-registros.js?v=20261124-stability"></script>
 </body>
 </html>
