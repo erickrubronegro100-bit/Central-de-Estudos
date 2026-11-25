@@ -209,6 +209,17 @@
       if (text(row.dominio)) setIfDifferent(attempt, "domain", text(row.dominio));
       if (text(row.reforco)) setIfDifferent(attempt, "reinforcement", text(row.reforco));
       if (notes && !text(attempt.pedagogicalNotes)) setIfDifferent(attempt,"pedagogicalNotes",notes);
+      if (report==="fechamento-2026-11-25") {
+        var teacher=notes.match(/Docente: (.*?)\. Intensidade: /);
+        var intensity=notes.match(/Intensidade: (.*?)\./);
+        var self=notes.match(/Autoavaliação: (.*?)\. Docente: /);
+        if(teacher)setIfDifferent(attempt,"teacherDomain",teacher[1]);
+        if(intensity)setIfDifferent(attempt,"nextTecIntensity",intensity[1]);
+        if(self)setIfDifferent(attempt,"selfAssessment",self[1]);
+        setIfDifferent(attempt,"correctedErrors",scores.ws+scores.wu);
+        setIfDifferent(attempt,"insecureCorrectStudied",scores.cu);
+        setIfDifferent(attempt,"completionConfirmed",true);
+      }
       if (report && !text(attempt.reportId)) setIfDifferent(attempt,"reportId",report);
       if (text(row.data_confirmada).toLowerCase() === "sim" && attempt.effectiveDateConfirmation) {
         setIfDifferent(attempt,"effectiveDateConfirmation","Confirmada");

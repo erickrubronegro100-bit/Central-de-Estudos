@@ -2048,6 +2048,61 @@ let studyWeeks=[];
 let weeklyUnitIndex=new Map();
 // Metas A/Q: nove aprofundamentos em 18–20/11 e saldo nas semanas 5–11 adiantadas.
 // Os 31 residuais permanecem cadastrados e exclusivamente facultativos.
+function redistributeNov25Plan(weeks,last,getCompletion) {
+ if(last<3||last>=weeks.length-1)return;
+ const active=weeks.slice(last+1),order=(a,b)=>a.order-b.order;
+ const original=active.flatMap(w=>w.units.filter(u=>u.flow==='A'));
+ const completion=new Map(original.map(u=>[u.id,getCompletion(u)]));
+ const doneByWeek=new Map(active.map(w=>[w.index,w.units.filter(u=>u.flow==='A'&&completion.get(u.id))]));
+ let pending=original.filter(u=>!completion.get(u.id)).sort(order);
+ const write=(w,a)=>{const q=w.units.filter(u=>u.flow==='Q');w.units=[...a,...q];w.quotaA=a.length;};
+ if(active[0].index===4){
+  const w=active.shift(),done=doneByWeek.get(w.index);
+  const lateDone=done.filter(u=>completion.get(u.id)?.date>='2026-11-26');
+  const selected=pending.filter(u=>u.subject!=='RFIA').slice(0,Math.max(0,20-lateDone.length));
+  const ids=new Set(selected.map(u=>u.id));pending=pending.filter(u=>!ids.has(u.id));
+  const early=done.filter(u=>!lateDone.includes(u)).sort(order);
+  const dayA={'2026-11-26':[],'2026-11-27':[]};
+  for(const u of lateDone){const date=completion.get(u.id)?.date;(dayA[date]||(dayA[date]=[])).push(u);}
+  let cursor=0;
+  for(const date of ['2026-11-26','2026-11-27']){
+   const list=dayA[date],take=Math.max(0,10-list.length);
+   list.sort(order);list.push(...selected.slice(cursor,cursor+take));cursor+=take;
+  }
+  if(cursor<selected.length)dayA['2026-11-27'].push(...selected.slice(cursor));
+  for(const u of early){const date=completion.get(u.id)?.date;if(date)(dayA[date]||(dayA[date]=[])).push(u);}
+  w.nov25AByDate=dayA;
+  write(w,[...early,...lateDone,...selected]);
+ }
+ if(active.length){
+  const rfia=pending.filter(u=>u.subject==='RFIA'),other=pending.filter(u=>u.subject!=='RFIA');
+  const quota=(n,k)=>Array.from({length:k},(_,i)=>Math.floor(n/k)+(i<n%k?1:0));
+  const totalTargets=quota(pending.length,active.length),rfiaTargets=quota(rfia.length,active.length);
+  const pairs={'A-184':'A-CP-NEW-020','A-273':'A-CP-NEW-030','A-302':'A-CP-NEW-034','A-312':'A-CP-NEW-036'};
+  const byId=new Map(other.map(u=>[u.id,u])),used=new Set(),groups=[];
+  for(const u of other){if(used.has(u.id))continue;const partner=byId.get(pairs[u.id]);const g=partner&&!used.has(partner.id)?[u,partner]:[u];g.forEach(x=>used.add(x.id));groups.push(g);}
+  let ri=0,gi=0,otherDone=0;
+  for(let i=0;i<active.length;i++){
+   const w=active[i],r=rfia.slice(ri,ri+rfiaTargets[i]);ri+=r.length;
+   const target=totalTargets.slice(0,i+1).reduce((s,x,j)=>s+x-rfiaTargets[j],0);
+   const selected=[];
+   if(i===active.length-1){while(gi<groups.length)selected.push(groups[gi++]);}
+   else{
+    let size=0;
+    while(gi<groups.length&&otherDone+size+groups[gi].length<=target){const g=groups[gi++];selected.push(g);size+=g.length;}
+    if(gi<groups.length&&groups[gi].length===2&&target-otherDone-size>1){selected.push(groups[gi++]);}
+   }
+   otherDone+=selected.reduce((n,g)=>n+g.length,0);
+   // Interleave RFIA across each week; never insert it inside a paired CP group.
+   const mixed=[],slots=selected.length+1,buckets=Array.from({length:slots},()=>[]);
+   for(let j=0;j<r.length;j++){const slot=Math.floor((j+1)*slots/(r.length+1));buckets[Math.min(slots-1,slot)].push(r[j]);}
+   for(let j=0;j<slots;j++){mixed.push(...buckets[j]);if(j<selected.length)mixed.push(...selected[j]);}
+   write(w,[...doneByWeek.get(w.index),...mixed]);
+  }
+ }
+ const after=weeks.slice(last+1).flatMap(w=>w.units.filter(u=>u.flow==='A').map(u=>u.id));
+ if(after.length!==original.length||new Set(after).size!==original.length||original.some(u=>!after.includes(u.id)))throw Error('Redistribuição 25/11: tópico omitido ou duplicado.');
+}
 function rebuildWeeklyPlan(){
  const base=redistributeWeek3Aprofundamento(buildWeeklyPlan());
  const last=lastClosedStudyWeekIndex(base);
@@ -2136,6 +2191,16 @@ function rebuildWeeklyPlan(){
    if(days.flatMap(d=>w.nov17To20ByDate[d]||[]).filter(u=>u.flow==='A'&&!done.has(u.id)).length!==
     w.nov17To20Quotas.remainingA)throw Error('Semana 4: nove tópicos não distribuídos.');
   }
+ }
+ if(todayISO()>='2026-11-25'){
+  redistributeNov25Plan(studyWeeks,last,completionOf);
+  // A sequência integrada usa a mesma ordem A das semanas; C continua
+  // junto a seus gatilhos e conteúdos residuais mantêm caráter facultativo.
+  nov25IntegratedRank.clear();
+  let rank=0;
+  for(const w of studyWeeks)for(const u of w.units)if(u.flow==='A'&&!nov25IntegratedRank.has(u.id))nov25IntegratedRank.set(u.id,rank++);
+  integratedSequenceOrder.clear();
+  complementSequence().forEach((u,i)=>integratedSequenceOrder.set(u.id,i));
  }
  weeklyUnitIndex=new Map(studyWeeks.flatMap(w=>w.units.map(u=>[u.id,w.index])));
 }
@@ -2838,8 +2903,12 @@ g('themeBtn').addEventListener('click',toggleTheme);g('dashboardThemeBtn').addEv
 try{let theme=localStorage.getItem('cm-theme');if(theme)document.documentElement.setAttribute('data-theme',theme)}catch{}
 document.addEventListener('keydown',e=>{if(g('viewer').open){if(e.key==='ArrowLeft'&&e.altKey)openAdjacent(-1);if(e.key==='ArrowRight'&&e.altKey)openAdjacent(1)}});
 window.addEventListener('hashchange',()=>{const match=location.hash.match(/^#comando-(\d+)$/);if(match){openDoc(Number(match[1]),false);return}const id=location.hash.replace(/^#/, '');if(!g('viewer').open)showPage((workspaceById[id]||id==='comandos')?id:'principal',false)});
+const nov25IntegratedRank=new Map();
 function complementSequence(){
- const all=planUnits.filter(x=>x.flow==="A").slice().sort((a,b)=>a.order-b.order);
+ const all=planUnits.filter(x=>x.flow==="A").slice().sort((a,b)=>{
+  if(!nov25IntegratedRank.size)return a.order-b.order;
+  return (nov25IntegratedRank.get(a.id)??(100000+a.order))-(nov25IntegratedRank.get(b.id)??(100000+b.order));
+ });
  const C=planUnits.filter(x=>x.flow==="C");
  const grouped=new Map();
  for(const u of C){if(!grouped.has(u.afterCode))grouped.set(u.afterCode,[]);grouped.get(u.afterCode).push(u);}
@@ -3447,9 +3516,9 @@ function renderWeeklyWorkspace(){
  }).join('');
  const history=weeklyHistoricalComparison(d),historicalDone=history.done,historicalIdeal=history.ideal;
  return weeklySnapshot()+
- '<p class="weekly-pause">Somente domingo 22/11 aparece na Semana 5 com 0 A + 0 Q, reservado para atividades atrasadas. A Semana 5 distribui as metas de 23 a 27/11; os domingos das Semanas 6 a 11 voltam a receber metas normalmente, de domingo a sexta. Sábados livres. De 10 a 15/01 não há metas A/Q. A distribuição futura é provisória e poderá ser recalculada após cada encerramento semanal, mantendo o histórico e a sequência pedagógica. As complementações TEC possuem liberação própria. Clique no número de uma semana para consultar seus tópicos e use o Cronograma de estudos do dia para selecionar qualquer data dessas sete semanas.</p>'+
+ '<p class="weekly-pause">Somente domingo 22/11 aparece na Semana 5 com 0 A + 0 Q, reservado para atividades atrasadas. A Semana 5 reserva 20 novos aprofundamentos, sem RFIA: 10 em 26/11 e 10 em 27/11. RFIA e os demais aprofundamentos excedentes foram redistribuídos entre as Semanas 6–11; as metas TEC continuam independentes; os domingos das Semanas 6 a 11 voltam a receber metas normalmente, de domingo a sexta. Sábados livres. De 10 a 15/01 não há metas A/Q. A distribuição futura é provisória e poderá ser recalculada após cada encerramento semanal, mantendo o histórico e a sequência pedagógica. As complementações TEC possuem liberação própria. Clique no número de uma semana para consultar seus tópicos e use o Cronograma de estudos do dia para selecionar qualquer data dessas sete semanas.</p>'+
  '<div class="weekly-kpi">'+metricCard('Ideal histórico A/Q/C — Até semana atual (Semana '+history.weekNumber+')',historicalIdeal)+metricCard('Realizado histórico A/Q/C — Até semana atual (Semana '+history.weekNumber+')',historicalDone)+metricCard('Diferença histórica A/Q/C',(historicalDone-historicalIdeal>0?'+':'')+(historicalDone-historicalIdeal))+metricCard('Total de Aprofundamento',A.length)+metricCard('Total de Questões',Q.length)+metricCard('Complementação cadastrada',C.length)+'</div>'+
- panel('Metas semanais — Previsto × Realizado','Metas futuras provisórias: 22 e 23/11 com 0 A + 0 Q; Semana 5 de terça a sexta (24–27/11) e Semanas 6–11 de domingo a sexta; sábados livres. De 10 a 15/01, nenhuma meta A/Q. O saldo compara o ideal histórico ao realizado.','<div class="platform-scroll"><table class="platform-table weekly-table"><thead><tr><th>Semana</th><th>Período</th><th>Meta A</th><th>Feito A</th><th>Meta Q</th><th>Feito Q</th><th>Meta C</th><th>Feito C</th><th>Meta Total</th><th>Feito Total</th><th>Pendentes</th><th>Ideal histórico A/Q/C</th><th>Saldo A/Q/C</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
+ panel('Metas semanais — Previsto × Realizado','Metas futuras provisórias: 22 e 23/11 com 0 A + 0 Q; Semana 5 com 10 A em 26/11 e 10 A em 27/11, sem RFIA; questões TEC independentes; Semanas 6–11 de domingo a sexta; sábados livres. De 10 a 15/01, nenhuma meta A/Q. O saldo compara o ideal histórico ao realizado.','<div class="platform-scroll"><table class="platform-table weekly-table"><thead><tr><th>Semana</th><th>Período</th><th>Meta A</th><th>Feito A</th><th>Meta Q</th><th>Feito Q</th><th>Meta C</th><th>Feito C</th><th>Meta Total</th><th>Feito Total</th><th>Pendentes</th><th>Ideal histórico A/Q/C</th><th>Saldo A/Q/C</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div>')+
  (selected?weeklySelectedDetails(d,selected):'<p class="weekly-note">Todas as semanas planejadas foram encerradas.</p>');
 }
 // Quadro por matéria: unidade cadastrada conta uma vez por ID; complemento TEC
@@ -4073,19 +4142,10 @@ function dailyStudyAssignments(date){
  if(qQuotas.some(n=>n<0)||qQuotas.reduce((n,x)=>n+x,0)!==q.length)throw Error('Distribuição diária de Questões inconsistente.');
  const take=(units,quotas)=>units.slice(quotas.slice(0,ix).reduce((n,x)=>n+x,0),
                                        quotas.slice(0,ix+1).reduce((n,x)=>n+x,0));
- // Fechamento de 24/11: nenhum aprofundamento inicial executado nesse dia.
- // Redistribuição exclusiva do fluxo A da Semana 5 para 25–27/11; Q mantém a
- // alocação de 24–27/11 e as revisões seguem sua programação original.
- if(week.index===4&&week.start==='2026-11-23'){
-  const targetDays=['2026-11-25','2026-11-26','2026-11-27'];
-  const early=a.filter(u=>completionOf(u)?.date&&completionOf(u).date<'2026-11-25');
-  const earlyIds=new Set(early.map(u=>u.id));
-  const pending=a.filter(u=>!earlyIds.has(u.id)).sort((x,y)=>x.order-y.order);
-  const quotas=evenQuotas(pending.length,targetDays.length),di=targetDays.indexOf(date);
-  const start=di<0?0:quotas.slice(0,di).reduce((n,v)=>n+v,0);
-  const assigned=di<0?[]:pending.slice(start,start+quotas[di]);
-  const actual=early.filter(u=>completionOf(u).date===date);
-  return {week,configured:true,units:[...actual,...assigned,...take(q,qQuotas)],day:ix,carriedCount:0};
+ // Semana 5: vinte novos aprofundamentos, 10 em 26/11 e 10 em 27/11.
+ // As questões TEC continuam com sua programação independente.
+ if(week.index===4&&week.nov25AByDate){
+  return {week,configured:true,units:[...(week.nov25AByDate[date]||[]),...take(q,qQuotas)],day:ix,carriedCount:0};
  }
  return {week,configured:true,units:[...take(a,aQuotas),...take(q,qQuotas)],day:ix,carriedCount:0};
 }
@@ -5753,6 +5813,6 @@ window.centralStudySyncApply=function(data){
 draw();refreshOverview();setActiveNav(null);const hash=location.hash.replace(/^#/,'');const match=location.hash.match(/^#comando-(\d+)$/);if(match)openDoc(Number(match[1]),false);else if(workspaceById[hash]||hash==='comandos')showPage(hash,false);
 })();
 </script>
-<script src="./sync-registros.js?v=20261125-adaptive-d1"></script>
+<script src="./sync-registros.js?v=20261125-report-plan"></script>
 </body>
 </html>
