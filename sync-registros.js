@@ -232,6 +232,7 @@
         setIfDifferent(review,"status","Realizada");
         setIfDifferent(review,"doneDate",day);
         setIfDifferent(review,"durationMinutes",minutes);
+        ["skipped","adaptiveSkip","manualD1Reactivated","skippedAt","skippedReason"].forEach(function(k){if(Object.prototype.hasOwnProperty.call(review,k)){delete review[k];changed=true;}});
       }
     });
 

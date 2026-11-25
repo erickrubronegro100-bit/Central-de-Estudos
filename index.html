@@ -993,6 +993,7 @@ function reviewIsRequired(r){
  if(!r||r.resetForRedo||r.closedNoFurtherTecReviews||r.status==='Não realizada'||reviewIsSkipped(r))return false;
  if(r.status==='Realizada')return true;
  if(r.stage==='D+30')return false;
+ if(r.stage==='D+1'&&r.manualD1Reactivated)return true;
  const study=studyForReview(r);
  if(!study)return !r.adaptiveOptional;
  const choice=studyReviewDecision(study);
@@ -1004,11 +1005,23 @@ function eligibleOptionalD30(r){
  return Boolean(study&&studyReviewDecision(study).eligibleD30);
 }
 function ensureScheduledReviews(study){
- if(!study||study.status!=='Concluído'||['Q-038','C-RCCN-001','Q-040','Q-060'].includes(study.planId)||
+ if(!study||study.resetForRedo||study.status!=='Concluído'||['Q-038','C-RCCN-001','Q-040','Q-060'].includes(study.planId)||
   /^(?:DA\s*0*23|RCCN\/TEC\s*0*1)\b/i.test(String(study.topic||'')))return false;
  const decision=studyReviewDecision(study);
  const stages=[decision.primary,...(decision.additionalD7?['D+7']:[]),...(decision.eligibleD30?['D+30']:[])];
  let modified=false;
+ const d1Rows=studyData.reviews.filter(r=>!r.resetForRedo&&r.stage==='D+1'&&reviewMatchesStudy(r,study));
+ // A D+1 dispensada pela regra adaptativa é registrada como pulada,
+ // nunca como realizada. Se novas evidências exigirem D+1 antes da D+7,
+ // somente uma dispensa automática pode ser revertida.
+ if(decision.primary==='D+1'){
+  for(const r of d1Rows){
+   if(r.status==='Pulada'&&r.adaptiveSkip===true&&!r.closedNoFurtherTecReviews&&!decision.d7){
+    r.status='Programada';delete r.skipped;delete r.adaptiveSkip;delete r.skippedAt;delete r.skippedReason;
+    delete r.completionConfirmed;delete r.durationMinutes;modified=true;
+   }
+  }
+ }
  for(const stage of new Set(stages)){
   const offset={'D+1':1,'D+7':7,'D+30':30}[stage];
   const originalReviewDate=shiftReviewDate(study.date,offset);
@@ -1031,6 +1044,32 @@ function ensureScheduledReviews(study){
     rescheduledReason:'Sábado sem estudos: revisão transferida para domingo.'}:{})
   });
   modified=true;
+ }
+ // Só registrar a dispensa se existir D+7 programada/realizada ou evidência
+ // de D+7 efetivamente realizada. Não inferir ciclos inexistentes.
+ const hasD7=Boolean(decision.d7)||studyData.reviews.some(r=>!r.resetForRedo&&r.stage==='D+7'&&
+  reviewMatchesStudy(r,study)&&!r.closedNoFurtherTecReviews&&['Programada','Pendente','Realizada'].includes(r.status));
+ if(decision.primary==='D+7'&&!decision.d1&&hasD7){
+  const protectedD1=d1Rows.some(r=>r.status==='Realizada'||r.status==='Não realizada'||
+   r.closedNoFurtherTecReviews||reviewIsSkipped(r)||r.manualD1Reactivated);
+  if(!protectedD1){
+   const originalDate=shiftReviewDate(study.date,1);
+   const plannedDate=nextPermittedReviewDate(originalDate);
+   if(plannedDate){
+    let rows=d1Rows.filter(r=>['Programada','Pendente','Facultativa'].includes(r.status)||r.proposed===true);
+    if(!rows.length&&!d1Rows.length){
+     const r={id:freshId(),studyId:study.id,planId:study.planId,subject:study.subject,topic:study.topic,
+      stage:'D+1',plannedDate,originalPlannedDate:originalDate,autoScheduled:true};
+     studyData.reviews.push(r);rows=[r];
+    }
+    for(const r of rows){
+     Object.assign(r,{status:'Pulada',skipped:true,adaptiveSkip:true,doneDate:'',durationMinutes:0,
+      completionConfirmed:false,skippedAt:todayISO(),
+      skippedReason:'D+1 dispensada pela regra adaptativa: revisão direta em D+7.'});
+     delete r.proposed;modified=true;
+    }
+   }
+  }
  }
  return modified;
 }
@@ -1078,6 +1117,7 @@ function completeReviewFromContact(attempt){
   if(value!==undefined&&row[key]!==value){row[key]=value;changed=true}
  }
  if(row.proposed===true){delete row.proposed;changed=true}
+ for(const k of ['skipped','adaptiveSkip','manualD1Reactivated','skippedAt','skippedReason'])if(Object.prototype.hasOwnProperty.call(row,k)){delete row[k];changed=true;}
  return changed;
 }
 function reconcileContactsAsReviews(){
@@ -1712,7 +1752,7 @@ function renderEntry(x,kind){
  const meta=kind==='study'?`Estudo inicial · ${dateBR(x.date)}`:kind==='review'?`${x.stage} · Data prevista: ${dateBR(x.plannedDate)}${x.proposed?' (proposta não confirmada)':''}${x.doneDate?' · Realizada: '+dateBR(x.doneDate):''}`:kind==='attempt'?`Último registro: ${dateBR(x.date)}`:'';
  const quantitative=kind==='attempt'?attemptResultsHtml(x)+attemptHistoryHtml(x):kind==='study'?studyPerformanceHtml(x):'';
  const domain=kind==='attempt'?`<span class="logbadge">Domínio: ${escapeHtml(x.domain||'Não avaliado')}</span>`:'';
- const reviewExtra=kind==='review'?[x.depth?'Profundidade: '+x.depth:null,x.focus?'Reforço: '+x.focus:null].filter(Boolean).map(line=>`<p class="study-pedagogical">${escapeHtml(line)}</p>`).join(''):'';
+ const reviewExtra=kind==='review'?[x.depth?'Profundidade: '+x.depth:null,x.focus?'Reforço: '+x.focus:null,reviewIsSkipped(x)?(x.skippedReason||'Revisão pulada; não contabilizada como realizada.'):null].filter(Boolean).map(line=>`<p class="study-pedagogical">${escapeHtml(line)}</p>`).join(''):'';
  const pedagogy=kind==='attempt'?[x.originalDomain&&x.originalDomain!==x.domain?'Classificação original: '+x.originalDomain:null,x.reinforcement?'Reforço: '+x.reinforcement:null,x.nextTecIntensity?'Próximo TEC: intensidade '+x.nextTecIntensity.toLocaleLowerCase('pt-BR'):null,x.correctedErrors?'Erros corrigidos: '+x.correctedErrors:null,x.errorNote?'Observações pedagógicas: '+x.errorNote:null,x.pedagogicalNotes||null,x.completionConfirmed===false?'Conclusão formal não informada':null,x.reviewConfirmed===false&&!stageForContact(x.contact)?'Contato TEC sem etapa de revisão identificada':null,x.insecureCorrectUnstudied?'Acertos inseguros ainda não estudados: '+x.insecureCorrectUnstudied:null,x.domainCorrection||null].filter(Boolean).map(t=>`<p class="study-pedagogical">${escapeHtml(t)}</p>`).join(''):'';
   const relatedUnit=kind==='review'?findTopicUnit(x.subject,x.topic):null;
  const openMaterials=relatedUnit?`<button class="block-access" type="button" data-open-topic="${escapeHtml(relatedUnit.id)}" data-open-stage="${escapeHtml(x.stage||'Estudo inicial')}">◫ Materiais e comandos</button>`:'';
@@ -2490,14 +2530,15 @@ g('workspacePage').addEventListener('click',e=>{
   const r=studyData.reviews.find(x=>x.id===btn.dataset.unskipReview);
   if(!r||!reviewIsSkipped(r))return;
   if(!confirm('Reativar esta revisão sem marcá-la como realizada?'))return;
-  r.status='Programada';delete r.skipped;delete r.skippedAt;
+  r.status='Programada';delete r.skipped;delete r.skippedAt;delete r.adaptiveSkip;delete r.skippedReason;
+  if(r.stage==='D+1')r.manualD1Reactivated=true;
   writeData();renderWorkspace(workspaceById[activeView]);refreshOverview();return;
  }
  if(btn.dataset.skipReview){
   const review=studyData.reviews.find(r=>r.id===btn.dataset.skipReview);
   if(!review||!['D+1','D+30'].includes(review.stage)||review.status==='Realizada')return;
   if(!confirm('Registrar '+review.stage+' como pulada? Isso não conta como revisão realizada.'))return;
-  review.status='Pulada';review.skipped=true;review.skippedAt=todayISO();
+  review.status='Pulada';review.skipped=true;review.skippedAt=todayISO();delete review.adaptiveSkip;delete review.manualD1Reactivated;
   writeData();renderWorkspace(workspaceById[activeView]);refreshOverview();return;
  }
  if(btn.dataset.pendencyId){const task=(studyData.pendencies||[]).find(p=>p.id===btn.dataset.pendencyId);if(task){task.done=!task.done;writeData();renderWorkspace(workspaceById[activeView]);refreshOverview()}return}
@@ -5712,6 +5753,6 @@ window.centralStudySyncApply=function(data){
 draw();refreshOverview();setActiveNav(null);const hash=location.hash.replace(/^#/,'');const match=location.hash.match(/^#comando-(\d+)$/);if(match)openDoc(Number(match[1]),false);else if(workspaceById[hash]||hash==='comandos')showPage(hash,false);
 })();
 </script>
-<script src="./sync-registros.js?v=20261124-stability"></script>
+<script src="./sync-registros.js?v=20261125-adaptive-d1"></script>
 </body>
 </html>
