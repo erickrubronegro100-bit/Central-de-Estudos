@@ -669,6 +669,41 @@ dialog.viewer,.block-viewer{width:min(1040px,100vw);max-width:100vw;height:100dv
 <script>
 (function(){
 const docs=JSON.parse(document.getElementById('docdata').textContent);
+// Integração metodológica: questionários de aprofundamento permanecem como fonte única.
+// A composição ocorre antes de qualquer leitura, personalização, cópia ou exportação de docs.
+const integratedClosingRule = [
+ '## REGRA PREVALENTE — ENCERRAMENTO INTEGRADO (26/11/2026)',
+ '',
+ '**Um único comando, em três momentos distintos:** execute primeiro o estudo inicial ou a revisão e entregue a bateria sem gabarito; aguarde as respostas. Após as respostas, apresente o resultado, as correções seletivas, o quadro final e o diagnóstico pedagógico preliminar, respeitando as etapas e limites originais. Na sequência, apresente automaticamente o questionário individual integrado, sem exigir novo comando. Aguarde o preenchimento do questionário antes de emitir o RIP.',
+ '',
+ '**Prevalência decisória:** todo encaminhamento, classificação, profundidade, reforço ou sugestão de revisão apresentado antes do questionário é preliminar. Somente o encaminhamento fundamentado do Registro Individual Padronizado (RIP), após as respostas ao questionário, é definitivo para o Planejamento Geral. Aplique integralmente a regra operacional de domínio e calendário do questionário correspondente (espelho de studyReviewDecision), inclusive quando divergir de recomendações anteriores. Registre a divergência e a razão objetiva; não mantenha uma revisão obrigatória apenas porque foi sugerida antes. Não transforme recomendações condicionais, facultativas ou dispensadas em obrigações. Preserve o histórico e as datas-base.',
+ '',
+ '**Controle do fluxo:** as instruções do questionário para executar “agora”, apresentar “somente o questionário” ou aguardar respostas aplicam-se exclusivamente ao momento posterior à conclusão das entregas pedagógicas, nunca à primeira resposta do comando principal. Não antecipe o questionário à bateria ou à correção, não repita perguntas já respondidas, não presuma execução, tempo, retenção ou conclusão e não emita RIP antes das respostas de avaliação. Apresente o questionário com controle de envio quando o ambiente permitir, ou modelo copiável como alternativa. A conclusão do estudo/revisão depende de confirmação efetiva, não de mera apresentação das etapas. Preserve todas as regras específicas de disciplina, ineditismo, quantidade, correção, limites de leitura, auditoria e separação do TEC. O questionário e o RIP não alteram o teto de correção e consolidação.',
+ '',
+ '**Não crie etapas adicionais de ensino ou novas questões C/E para o questionário de avaliação.** O questionário é o fechamento administrativo-pedagógico obrigatório após a Etapa 5, e não uma revisão adicional.'
+].join('\n');
+const integratedStandaloneRule = [
+ '## PREVALÊNCIA DO RIP — REGRA VIGENTE (26/11/2026)',
+ '',
+ 'O encaminhamento definitivo é o do RIP produzido após as respostas a este questionário, conforme a regra operacional de domínio e calendário aqui estabelecida. Diagnósticos, profundidade, reforços e próximas revisões sugeridos pelo comando pedagógico anterior são preliminares; confirme ou ajuste com justificativa verificável, preservando o histórico e distinguindo obrigatório, facultativo, dispensado e condicional. O RIP não equivale a agendamento automático. Não emita o RIP antes das respostas.'
+].join('\n');
+for(const doc of docs){
+ if(doc.categoria!=='Estudo inicial'&&doc.categoria!=='Revisão')continue;
+ const initial=doc.categoria==='Estudo inicial';
+ const questionnaire=docs.find(q=>q.materia===doc.materia&&q.categoria===(initial?'Questionário de estudo inicial':'Questionário de revisão'));
+ if(!questionnaire)throw new Error('Questionário integrado ausente: '+doc.codigo);
+ const body=doc.conteudo;
+ const firstBreak=body.indexOf('\n');
+ doc.conteudo=body.slice(0,firstBreak+1)+'\n'+integratedClosingRule+'\n\n'+body.slice(firstBreak+1)+'\n\n---\n\n## FECHAMENTO OBRIGATÓRIO — QUESTIONÁRIO INDIVIDUAL INTEGRADO\n\nExecute o protocolo integral abaixo apenas após o resultado, as correções, o quadro e o diagnóstico preliminar. A etapa efetiva é a do comando principal; não escolha outra etapa. Aguarde as respostas de avaliação e então emita o RIP definitivo. As regras operacionais vigentes do questionário prevalecem no encaminhamento.\n\n'+questionnaire.conteudo;
+ doc.palavras=doc.conteudo.trim().split(/\s+/).length;
+}
+for(const doc of docs){
+ if(!doc.categoria.startsWith('Questionário')||!['RICD','RCCN','PL','CP','RFIA','LP/LING'].includes(doc.materia))continue;
+ const firstBreak=doc.conteudo.indexOf('\n');
+ doc.conteudo=doc.conteudo.slice(0,firstBreak+1)+'\n'+integratedStandaloneRule+'\n\n'+doc.conteudo.slice(firstBreak+1);
+ doc.palavras=doc.conteudo.trim().split(/\s+/).length;
+}
+
 // Códigos numéricos dos tópicos TEC sem zeros à esquerda (ex.: DA 1, DC 1).
 const allPlanUnits=JSON.parse(document.getElementById('planData').textContent).map(u=>{
  if(u.flow==='Q')u.code=u.code.replace(/^([A-Z/]+)\s*0*(\d+)$/i,(_,prefix,n)=>prefix.toUpperCase()+' '+Number(n));
@@ -2747,7 +2782,7 @@ function renderTopicBlock(){
  const docQuest=docs.find(d=>d.materia===(u.flow==='Q'?'Estudo – Questões':u.subject)&&d.categoria===(initial?'Questionário de estudo inicial':'Questionário de revisão'));
  const reviews=studyData.reviews.filter(r=>findTopicUnit(r.subject,r.topic)?.id===u.id&&r.stage===currentBlockStage);
  const reviewStatus=!initial?(reviews.length?'<p>Revisão registrada: '+escapeHtml(reviews.at(-1).status)+(reviews.at(-1).plannedDate?' · '+dateBR(reviews.at(-1).plannedDate):'')+'</p>':'<p>Revisão ainda não registrada. Acesse Revisões para registrar a realização.</p>'):'';
- g('blockContent').innerHTML=`<section class="block-section"><h3>1. Documentos-base</h3><p>Os arquivos vinculados a ${escapeHtml(u.code)} ficam disponíveis em todas as etapas. O Google Drive exige permissão de acesso.</p>${fileBody}${extraBody}</section><section class="block-section"><h3>2. ${escapeHtml(currentBlockStage)} · comandos personalizados</h3><p>O nome e o código deste bloco já estão preenchidos. Campos pedagógicos não informados permanecem identificados nos comandos-base.</p><div class="block-actions">${docStudy?`<button type="button" class="block-action" data-block-prompt="${docStudy.id}"><strong>📖 ${initial?'Comando de estudo inicial':'Comando da revisão '+currentBlockStage}</strong><span>Abrir, conferir e copiar o comando completo</span></button>`:''}${docQuest?`<button type="button" class="block-action" data-block-prompt="${docQuest.id}"><strong>▤ Questionário de avaliação</strong><span>Questionário correspondente à etapa, pronto para copiar</span></button>`:''}</div></section>${questionPdfBody}<section class="block-section"><h3>${nextQuestionPdf?'4':'3'}. Acompanhamento</h3><p>Os resultados do Aprofundamento pertencem às questões do ChatGPT; os do TEC são registrados separadamente nas unidades de Complementação. As revisões têm controle próprio de execução.</p>${reviewStatus}</section>`;
+ g('blockContent').innerHTML=`<section class="block-section"><h3>1. Documentos-base</h3><p>Os arquivos vinculados a ${escapeHtml(u.code)} ficam disponíveis em todas as etapas. O Google Drive exige permissão de acesso.</p>${fileBody}${extraBody}</section><section class="block-section"><h3>2. ${escapeHtml(currentBlockStage)} · comandos personalizados</h3><p>O nome e o código deste bloco já estão preenchidos. Campos pedagógicos não informados permanecem identificados nos comandos-base.</p><div class="block-actions">${docStudy?`<button type="button" class="block-action" data-block-prompt="${docStudy.id}"><strong>📖 ${initial?'Comando de estudo inicial':'Comando da revisão '+currentBlockStage}</strong><span>Comando completo com questionário integrado e RIP final</span></button>`:''}${docQuest&&!docStudy?`<button type="button" class="block-action" data-block-prompt="${docQuest.id}"><strong>▤ Questionário de avaliação</strong><span>Questionário correspondente à etapa, pronto para copiar</span></button>`:''}</div></section>${questionPdfBody}<section class="block-section"><h3>${nextQuestionPdf?'4':'3'}. Acompanhamento</h3><p>Os resultados do Aprofundamento pertencem às questões do ChatGPT; os do TEC são registrados separadamente nas unidades de Complementação. As revisões têm controle próprio de execução.</p>${reviewStatus}</section>`;
 }
 function renderTopicPrompt(){
  const d=docs.find(x=>x.id===currentBlockPrompt),u=currentBlockUnit;
