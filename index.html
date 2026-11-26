@@ -764,6 +764,9 @@ const dateBR=(date)=>date&&/^\d{4}-\d{2}-\d{2}$/.test(date)?date.split('-').reve
 const formatNum=n=>Number(n).toLocaleString('pt-BR');
 const formatPercent=v=>v===null?'—':`${(v*100).toLocaleString('pt-BR',{maximumFractionDigits:1,minimumFractionDigits:1})}%`;
 const safeNum=n=>(Number.isSafeInteger(+n)&&+n>=0)?+n:0;
+// Constantes de métricas utilizadas também durante a importação e reconciliação iniciais.
+const RESULT_KEYS=['cs','cu','ws','wu','correctOther','wrongOther'];
+const PLATFORM_NAMES=['ChatGPT','TEC','Não informada'];
 const subjOpts=(selected='')=>DISCIPLINES.map(k=>`<option value="${escapeHtml(k)}" ${k===canonicalSubject(selected)?'selected':''}>${escapeHtml(subjectLabel(k))}</option>`).join('');
 
 // Migração da sequência de 227 para 232 tópicos: preserva conclusões e vínculos
@@ -1507,8 +1510,6 @@ function statusReview(r){
  return r.status==='Pendente'||(r.plannedDate&&r.plannedDate<todayISO())?'Pendentes':'Programadas';
 }
 function statusStudy(x){return x.status==='Concluído'?'Concluídos':'Planejados'}
-const RESULT_KEYS=['cs','cu','ws','wu','correctOther','wrongOther'];
-const PLATFORM_NAMES=['ChatGPT','TEC','Não informada'];
 function blankCounts(){return {cs:0,cu:0,ws:0,wu:0,correctOther:0,wrongOther:0}}
 function counted(x){return RESULT_KEYS.reduce((n,k)=>n+safeNum(x?.[k]),0)}
 function correctCount(x){return safeNum(x?.cs)+safeNum(x?.cu)+safeNum(x?.correctOther)}
