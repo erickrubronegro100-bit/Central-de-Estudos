@@ -1,5 +1,12 @@
 # Registro de alterações — Central de Estudos
 
+## 26/11/2026 — Padronização dos limites de leitura das seis disciplinas
+
+- **Escopo:** atualizados os 24 comandos de PL, CP, LP/LING e RFIA (estudo inicial, D+1/D+7/D+30 e questionários), preservando os oito de RICD/RCCN já harmonizados e os cinco de TEC/relatórios. Total de 37 comandos mantido.
+- **Estudo inicial, Etapas 1–3 somadas:** teto obrigatório por densidade a 180 palavras/minuto: PL, CP e LP/LING 3/5/7 min (540/900/1.260 palavras); RFIA 6/10/15 min (1.080/1.800/2.700). Sem extrapolação não autorizada; registrar lacunas e não simular cobertura integral. RICD/RCCN preservam exceção de lei seca integral comentada, com comentários curtos e excedente inevitável informado.
+- **Revisões, Etapas 3–4 somadas:** D+1/D+7 5/2,5 min (900/450 palavras), exceto RFIA 10/5 min (1.800/900). RICD/RCCN mantêm alvos conservadores de 800/400 palavras e exceção de conteúdo obrigatório. D+30 facultativa sem teto numérico fixo. Correção seletiva, enunciados originais completos e quadro final de todo o bloco preservados; incompatibilidade material deve ser informada, sem omissões ou conformidade fictícia.
+- **Comandos personalizados:** cabeçalho de cada tópico indica teto por densidade, exceção de lei seca e limites de D+1/D+7; contexto especial de CP harmonizado. Validação de vínculos: 308 tópicos classificados, 2.464 combinações de tópico/etapa/tipo de comando, nenhuma ausente; 37 IDs únicos e contagens de palavras conferidas. Cadastro, planejamento, histórico, questões, prioridades e estimativas de resolução/correção não foram alterados. Publicação no Netlify e teste interativo no navegador não verificados.
+
 ## 26/11/2026 — Harmonização dos oito comandos de RICD e RCCN
 
 - Atualizados IDs 1–8, abrangendo estudo inicial, revisão adaptativa e respectivos questionários individuais. Exceção de lei seca integral de todo o bloco expressamente limitada ao estudo inicial, sem omitir dispositivos; comentários curtos se houver excedente.
