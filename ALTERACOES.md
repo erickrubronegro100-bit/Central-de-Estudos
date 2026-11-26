@@ -1,5 +1,12 @@
 # Registro de alterações — Central de Estudos
 
+## 26/11/2026 — Exceção de lei seca: RICD e RCCN
+
+- **Escopo:** comandos de estudo inicial e questionários pós-estudo inicial de RICD/RCCN (IDs 1, 3, 5 e 7), além do cabeçalho personalizado dos tópicos. Demais comandos e revisões preservados.
+- **Referência conjunta das Etapas 1–3:** 3/5/7 minutos (540/900/1.260 palavras), a 180 palavras/minuto. A leitura literal integral comentada de todos os dispositivos do bloco prevalece sobre a referência. Se houver risco de excedente, reduzir comentários de cada unidade a frases curtas indispensáveis, eliminar redundâncias e exemplos acessórios e manter a sistematização mínima. Se inevitável, admitir excedente e informar palavras, tempo estimado e diferença; não omitir ou parafrasear dispositivos.
+- **Avaliação:** excedente inevitável justificado pela leitura integral comentada não configura falha de conformidade; registrar omissões ou excesso evitável, sem confundir tempo estimado com tempo efetivo. Removidas as antigas referências contraditórias a 10 minutos/1.800 palavras nos quatro comandos.
+- **Preservação:** 37 comandos, demais disciplinas, quantidades de questões, revisões, cadastro, cronograma e históricos. As estimativas de carga diária mantêm 3/5/7 min de teoria + 8 min de questões + 3 min de correção, sem pretender medir o excedente específico de cada bloco antes da leitura.
+
 ## 24/11/2026 — Motor de revisões condicionado à prioridade e ao domínio atual
 
 - **Objetivo:** consumir progressivamente diagnósticos dos Registros Individuais Padronizados (RIPs) de estudo inicial, D+1, D+7 e D+30 sem confundir prioridade estratégica com domínio ou reforço. Não alterar notas, calendários históricos, etapas concluídas ou critérios de correção e elaboração de questões.
