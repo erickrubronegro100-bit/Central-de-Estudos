@@ -1,5 +1,12 @@
 # Registro de alterações — Central de Estudos
 
+## 26/11/2026 — Harmonização dos oito comandos de RICD e RCCN
+
+- Atualizados IDs 1–8, abrangendo estudo inicial, revisão adaptativa e respectivos questionários individuais. Exceção de lei seca integral de todo o bloco expressamente limitada ao estudo inicial, sem omitir dispositivos; comentários curtos se houver excedente.
+- D+1/D+7: correção seletiva e transcrição pontual indispensável, sem leitura autônoma; quadro final obrigatório de todo o bloco. Etapas 3–4 somadas: referência 5/2,5 min a 180 palavras/minuto (900/450 palavras; alvos conservadores 800/400). Excedente inevitável devidamente informado não implica falha. Corrigida divergência de 1.600/800 palavras no comando RCCN.
+- D+30 facultativa: leitura literal integral comentada somente dos subtópicos associados a erros/acertos inseguros atuais; não se aplicam automaticamente os tetos D+1/D+7. Questionários auditam por modalidade e removida divisão histórica por grupos dos questionários pós-estudo inicial.
+- Validação: oito comandos modificados, 29 demais preservados, 37 IDs e JSON válidos; não alterados cadastros, calendário, resultados ou quantidades de questões. Publicação no Netlify não verificada.
+
 ## 26/11/2026 — Exceção de lei seca: RICD e RCCN
 
 - **Escopo:** comandos de estudo inicial e questionários pós-estudo inicial de RICD/RCCN (IDs 1, 3, 5 e 7), além do cabeçalho personalizado dos tópicos. Demais comandos e revisões preservados.
