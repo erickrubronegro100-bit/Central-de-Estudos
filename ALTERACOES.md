@@ -1,5 +1,12 @@
 # Registro de alterações — Central de Estudos
 
+## 26/11/2026 — Questionário integrado e prevalência do RIP
+
+- Os 20 comandos principais de Aprofundamento (6 iniciais, 14 de revisão) passam a incorporar integralmente, em tempo de carregamento, os 12 questionários correspondentes por disciplina/modalidade, com fonte única e sem duplicar o cadastro. Todos os 37 comandos são preservados, incluindo questionários avulsos para recuperação e os quatro questionários TEC independentes.
+- Após bateria, resultado, correções, quadro e diagnóstico preliminar, o comando apresenta automaticamente o questionário de avaliação; aguarda as respostas antes de emitir o RIP. O encaminhamento fundamentado do RIP prevalece sobre sugestões anteriores, sem alterar o motor adaptativo, datas-base, critérios de domínio, limites de leitura, ineditismo ou quantitativos. Divergências devem ser justificadas e conclusão não presumida.
+- Na visão por tópico de Aprofundamento, o botão principal indica questionário integrado; o botão avulso deixa de ser necessário. Biblioteca, cópia, personalização e exportação usam os mesmos documentos compostos. TEC permanece independente.
+- Verificação estrutural: 20 vínculos únicos, 37 comandos originais e todos os blocos JSON intactos, incluindo planejamento e registros históricos. Commit de implementação `ca497b823e17365270f6982d55640f64423d311f`. Publicação Netlify e execução interativa no navegador ainda não verificadas.
+
 ## 26/11/2026 — Quatro ajustes integrados: correção/consolidação, RIPs, relatório e lei seca
 
 - **Teto único:** todos os 32 comandos de aprofundamento (seis matérias; estudo inicial, revisões D+1/D+7/D+30 e questionários) passaram a prever 5 minutos/900 palavras contabilizáveis para correção e consolidação final somadas, excluindo exclusivamente os enunciados originais completos das questões corrigidas. A contagem inclui fundamentação, respostas, gabaritos, citações normativas e quadro; tempo estimado não é tempo efetivo. Não há exceção de RFIA ou D+30 nesse teto. Mantidos os limites teóricos por densidade e exceção de lei seca das Etapas 1–3. Em incompatibilidade material, informar lacunas/excedente e solicitar autorização, sem simular conformidade.
