@@ -1,5 +1,9 @@
 # Registro de alterações — Central de Estudos
 
+## 27/11/2026 — Questões normativas sem identificação de dispositivos
+
+- Regra transversal nos 37 comandos, incluindo os 20 pedagógicos e seus questionários integrados: novas questões autorais não devem identificar artigo, parágrafo, inciso, alínea, item ou outro dispositivo específico em enunciados, casos, alternativas e títulos exibidos antes das respostas. Nome/número da norma permitido quando necessário, sem localização do dispositivo. A vinculação interna para cobertura e reforço é preservada. A identificação normativa precisa continua exigida na teoria, sistematização, correção, gabarito comentado e registros. Questões externas TEC e enunciados históricos reproduzidos para correção permanecem intactos. Validação estrutural: 37 comandos com a regra, 17 outros blocos JSON preservados. Commit `e8e2928842dc40d40d8d3881cf7f93cad0cfc10c`; publicação Netlify não verificada.
+
 ## 26/11/2026 — Matriz adaptativa percentual, fechamento diário e replanejamento
 
 - Atualizados os 37 comandos (20 pedagógicos, 16 questionários incluindo TEC, 1 relatório), regra prevalente P1 90%, P2 85%, P3/P4 80%, RIP integrado definitivo, relatório com auditoria individual e transição sem apagar o diagnóstico anterior. Um D+1 ou D+7 obrigatório; D+7 adicional somente abaixo da meta na D+1; D+30 facultativa recomendada quando última revisão obrigatória concluída abaixo da meta e ciclo encerrado. Erros, inseguranças, ⭐ e reforço não geram revisões automáticas. Domínio objetivo preservado.
